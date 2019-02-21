@@ -27,7 +27,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Models {
         /// encoded in json and containing the tunneled
         /// Historian reader request.
         /// </summary>
-        public JToken Request { get; set; }
+        public JToken Details { get; set; }
 
         /// <summary>
         /// Index range to read, e.g. 1:2,0:1 for 2 slices

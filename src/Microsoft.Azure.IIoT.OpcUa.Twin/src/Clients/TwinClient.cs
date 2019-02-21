@@ -18,7 +18,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
     /// Implements node and publish services through command control against
     /// the OPC twin module receiving service requests via device method calls.
     /// </summary>
-    public sealed class TwinClient : IBrowseServices<string>,
+    public sealed class TwinClient : IBrowseServices<string>, IHistorianServices<string>,
         INodeServices<string>, IPublishServices<string>, IUploadServices<string> {
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<HistoryReadResultModel> NodeHistoryReadAsync(
+        public async Task<HistoryReadResultModel> HistoryReadAsync(
             string endpointId, HistoryReadRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
@@ -191,7 +191,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<HistoryReadNextResultModel> NodeHistoryReadNextAsync(
+        public async Task<HistoryReadNextResultModel> HistoryReadNextAsync(
             string endpointId, HistoryReadNextRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
@@ -204,13 +204,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<HistoryUpdateResultModel> NodeHistoryUpdateAsync(
+        public async Task<HistoryUpdateResultModel> HistoryUpdateAsync(
             string endpointId, HistoryUpdateRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
             }
-            if (request.Request == null) {
-                throw new ArgumentNullException(nameof(request.Request));
+            if (request.Details == null) {
+                throw new ArgumentNullException(nameof(request.Details));
             }
             return await CallServiceOnTwin<HistoryUpdateRequestModel, HistoryUpdateResultModel>(
                 "HistoryUpdate_V1", endpointId, request);

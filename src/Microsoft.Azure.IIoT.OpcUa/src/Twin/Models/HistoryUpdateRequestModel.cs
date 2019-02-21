@@ -12,11 +12,23 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Models {
     public class HistoryUpdateRequestModel {
 
         /// <summary>
-        /// The HistoryUpdateDetailsType extension object
-        /// encoded in json and containing the tunneled
-        /// update request for the Historian server.
+        /// Node to update 
         /// </summary>
-        public JToken Request { get; set; }
+        public string NodeId { get; set; }
+
+        /// <summary>
+        /// An optional path from NodeId instance to
+        /// an actual node.
+        /// </summary>
+        public string[] BrowsePath { get; set; }
+
+        /// <summary>
+        /// The HistoryUpdateDetailsType extension object
+        /// encoded as json Variant and containing the tunneled
+        /// update request for the Historian server. The value
+        /// is updated at edge using above node address.
+        /// </summary>
+        public JToken Details { get; set; }
 
         /// <summary>
         /// Optional header

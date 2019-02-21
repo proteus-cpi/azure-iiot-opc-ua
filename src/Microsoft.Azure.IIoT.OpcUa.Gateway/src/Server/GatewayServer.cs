@@ -61,20 +61,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
         /// <param name="registry"></param>
         /// <param name="sessions"></param>
         /// <param name="nodes"></param>
+        /// <param name="historian"></param>
         /// <param name="browser"></param>
         /// <param name="codec"></param>
         /// <param name="auth"></param>
         /// <param name="validator"></param>
         /// <param name="logger"></param>
         public GatewayServer(IApplicationRegistry registry, ISessionServices sessions,
-            INodeServices<string> nodes, IBrowseServices<string> browser,
-            IVariantEncoder codec, IAuthConfig auth, ITokenValidator validator,
-            ILogger logger) {
+            INodeServices<string> nodes, IHistorianServices<string> historian,
+            IBrowseServices<string> browser, IVariantEncoder codec,
+            IAuthConfig auth, ITokenValidator validator, ILogger logger) {
 
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _codec = codec ?? throw new ArgumentNullException(nameof(codec));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _browser = browser ?? throw new ArgumentNullException(nameof(browser));
+            _historian = historian ?? throw new ArgumentNullException(nameof(historian));
             _nodes = nodes ?? throw new ArgumentNullException(nameof(nodes));
             _auth = auth ?? throw new ArgumentNullException(nameof(auth));
             _validator = validator ?? throw new ArgumentNullException(nameof(_validator));
@@ -1277,12 +1279,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
                 try {
                     if (nodesToRead[i].ContinuationPoint == null) {
                         // Call read first
-                        var response = await _nodes.NodeHistoryReadAsync(endpointId,
+                        var response = await _historian.HistoryReadAsync(endpointId,
                             new HistoryReadRequestModel {
                                 NodeId = nodesToRead[i].NodeId
                                     .AsString(context.Session.MessageContext),
                                 IndexRange = nodesToRead[i].IndexRange,
-                                Request = historyReadDetails == null ? null :
+                                Details = historyReadDetails == null ? null :
                                     _codec.Encode(new Variant(historyReadDetails), out var tmp,
                                         context.Session.MessageContext),
                                 Header = new RequestHeaderModel {
@@ -1306,7 +1308,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
                     }
                     else {
                         // Continue reading
-                        var response = await _nodes.NodeHistoryReadNextAsync(endpointId,
+                        var response = await _historian.HistoryReadNextAsync(endpointId,
                             new HistoryReadNextRequestModel {
                                 ContinuationToken = nodesToRead[i].ContinuationPoint
                                     .ToBase64String(),
@@ -1360,15 +1362,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
             for (var i = 0; i < historyUpdateDetails.Count; i++) {
                 try {
                     // Call service
-                    var response = await _nodes.NodeHistoryUpdateAsync(endpointId,
+                    var response = await _historian.HistoryUpdateAsync(endpointId,
                         new HistoryUpdateRequestModel {
-                            Request = historyUpdateDetails == null ? null :
+                            Details = historyUpdateDetails == null ? null :
                                 _codec.Encode(new Variant(historyUpdateDetails), out var tmp,
                                     context.Session.MessageContext),
-Header = new RequestHeaderModel {
+                            Header = new RequestHeaderModel {
                                 Diagnostics = diagnostics,
                                 Elevation = elevation
-                            }                        });
+                            }
+                        });
 
                     // Update results
                     diagnosticInfos[i] = response.ErrorInfo.ToDiagnosticsInfo(
@@ -2067,6 +2070,7 @@ Header = new RequestHeaderModel {
         private readonly IVariantEncoder _codec;
         private readonly ILogger _logger;
         private readonly IBrowseServices<string> _browser;
+        private readonly IHistorianServices<string> _historian;
         private readonly INodeServices<string> _nodes;
         private readonly IAuthConfig _auth;
         private readonly ITokenValidator _validator;

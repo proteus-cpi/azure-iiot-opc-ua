@@ -19,7 +19,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
     /// Represents the supervisor api surface for browse and node operations.
     /// </summary>
     public sealed class SupervisorClient : IBrowseServices<EndpointRegistrationModel>,
-        INodeServices<EndpointRegistrationModel>, IPublishServices<EndpointRegistrationModel> {
+        IHistorianServices<EndpointRegistrationModel>, INodeServices<EndpointRegistrationModel>,
+        IPublishServices<EndpointRegistrationModel> {
 
         /// <summary>
         /// Create service
@@ -173,7 +174,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<HistoryReadResultModel> NodeHistoryReadAsync(
+        public async Task<HistoryReadResultModel> HistoryReadAsync(
             EndpointRegistrationModel registration, HistoryReadRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
@@ -183,7 +184,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<HistoryReadNextResultModel> NodeHistoryReadNextAsync(
+        public async Task<HistoryReadNextResultModel> HistoryReadNextAsync(
             EndpointRegistrationModel registration, HistoryReadNextRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
@@ -196,13 +197,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<HistoryUpdateResultModel> NodeHistoryUpdateAsync(
+        public async Task<HistoryUpdateResultModel> HistoryUpdateAsync(
             EndpointRegistrationModel registration, HistoryUpdateRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
             }
-            if (request.Request == null) {
-                throw new ArgumentNullException(nameof(request.Request));
+            if (request.Details == null) {
+                throw new ArgumentNullException(nameof(request.Details));
             }
             return await CallServiceOnSupervisor<HistoryUpdateRequestModel, HistoryUpdateResultModel>(
                 "HistoryUpdate_V1", registration, request);

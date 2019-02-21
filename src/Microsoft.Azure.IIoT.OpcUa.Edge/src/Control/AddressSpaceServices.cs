@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
     /// the server.
     /// </summary>
     public sealed class AddressSpaceServices : INodeServices<EndpointModel>,
-        IBrowseServices<EndpointModel> {
+        IHistorianServices<EndpointModel>, IBrowseServices<EndpointModel> {
 
         /// <summary>
         /// Create node service
@@ -623,13 +623,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
         }
 
         /// <inheritdoc/>
-        public Task<HistoryReadResultModel> NodeHistoryReadAsync(EndpointModel endpoint,
+        public Task<HistoryReadResultModel> HistoryReadAsync(EndpointModel endpoint,
             HistoryReadRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
             }
-            if (request.Request == null) {
-                throw new ArgumentNullException(nameof(request.Request));
+            if (request.Details == null) {
+                throw new ArgumentNullException(nameof(request.Details));
             }
             if (string.IsNullOrEmpty(request.NodeId) &&
                 (request.BrowsePath == null || request.BrowsePath.Length == 0)) {
@@ -646,10 +646,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
                 if (NodeId.IsNull(nodeId)) {
                     throw new ArgumentException(nameof(request.NodeId));
                 }
-                var details = _codec.Decode(request.Request,
+                var details = _codec.Decode(request.Details,
                     BuiltInType.ExtensionObject, session.MessageContext);
                 if (!(details.Value is ExtensionObject readDetails)) {
-                    throw new ArgumentNullException(nameof(request.Request));
+                    throw new ArgumentNullException(nameof(request.Details));
                 }
                 var response = await session.HistoryReadAsync(
                     (request.Header?.Diagnostics).ToStackModel(), readDetails,
@@ -676,7 +676,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
         }
 
         /// <inheritdoc/>
-        public Task<HistoryReadNextResultModel> NodeHistoryReadNextAsync(EndpointModel endpoint,
+        public Task<HistoryReadNextResultModel> HistoryReadNextAsync(EndpointModel endpoint,
             HistoryReadNextRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
@@ -710,25 +710,37 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
         }
 
         /// <inheritdoc/>
-        public Task<HistoryUpdateResultModel> NodeHistoryUpdateAsync(EndpointModel endpoint,
+        public Task<HistoryUpdateResultModel> HistoryUpdateAsync(EndpointModel endpoint,
             HistoryUpdateRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
             }
-            if (request.Request == null) {
-                throw new ArgumentNullException(nameof(request.Request));
+            if (request.Details == null) {
+                throw new ArgumentNullException(nameof(request.Details));
             }
-            return _client.ExecuteServiceAsync(endpoint, request.Header?.Elevation,
-                async session => {
+            return _client.ExecuteServiceAsync(endpoint, request.Header?.Elevation, async session => {
                 var diagnostics = new List<OperationResultModel>();
-                var details = _codec.Decode(request.Request,
+                var nodeId = request.NodeId.ToNodeId(session.MessageContext);
+                if (request.BrowsePath != null && request.BrowsePath.Length > 0) {
+                    nodeId = await ResolveBrowsePathToNodeAsync(session, nodeId,
+                        nameof(request.BrowsePath), request.BrowsePath,
+                        request.Header?.Diagnostics, diagnostics);
+                }
+                if (NodeId.IsNull(nodeId)) {
+                    throw new ArgumentException(nameof(request.NodeId));
+                }
+                var details = _codec.Decode(request.Details,
                     BuiltInType.ExtensionObject, session.MessageContext);
-                if (!(details.Value is ExtensionObject updateDetails)) {
-                    throw new ArgumentNullException(nameof(request.Request));
+                if (!(details.Value is ExtensionObject extensionObject)) {
+                    throw new ArgumentNullException(nameof(request.Details));
+                }
+                if (extensionObject.Body is HistoryUpdateDetails updateDetails) {
+                    // Update the node id to target based on the request
+                    updateDetails.NodeId = nodeId;
                 }
                 var response = await session.HistoryUpdateAsync(
                     (request.Header?.Diagnostics).ToStackModel(),
-                    new ExtensionObjectCollection { updateDetails });
+                    new ExtensionObjectCollection { extensionObject });
                 OperationResultEx.Validate("HistoryUpdate",
                     diagnostics, response.Results.Select(r => r.StatusCode),
                     response.DiagnosticInfos, false);
