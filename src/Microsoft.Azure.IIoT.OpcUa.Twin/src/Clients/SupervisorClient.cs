@@ -6,6 +6,9 @@
 namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
     using Microsoft.Azure.IIoT.OpcUa.Twin.Models;
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
+    using Microsoft.Azure.IIoT.OpcUa.Twin;
+    using Microsoft.Azure.IIoT.OpcUa.History.Models;
+    using Microsoft.Azure.IIoT.OpcUa.History;
     using Microsoft.Azure.IIoT.Module;
     using Microsoft.Azure.IIoT.Hub;
     using Serilog;
@@ -14,12 +17,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
     using System.Threading.Tasks;
     using System.Diagnostics;
     using System.Linq;
+    using Newtonsoft.Json.Linq;
 
     /// <summary>
     /// Represents the supervisor api surface for browse and node operations.
     /// </summary>
     public sealed class SupervisorClient : IBrowseServices<EndpointRegistrationModel>,
-        IHistorianServices<EndpointRegistrationModel>, INodeServices<EndpointRegistrationModel>,
+        IHistoricAccessServices<EndpointRegistrationModel>, INodeServices<EndpointRegistrationModel>,
         IPublishServices<EndpointRegistrationModel> {
 
         /// <summary>
@@ -174,17 +178,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<HistoryReadResultModel> HistoryReadAsync(
-            EndpointRegistrationModel registration, HistoryReadRequestModel request) {
+        public async Task<HistoryReadResultModel<JToken>> HistoryReadAsync(
+            EndpointRegistrationModel registration, HistoryReadRequestModel<JToken> request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
             }
-            return await CallServiceOnSupervisor<HistoryReadRequestModel, HistoryReadResultModel>(
+            return await CallServiceOnSupervisor<HistoryReadRequestModel<JToken>, HistoryReadResultModel<JToken>>(
                 "HistoryRead_V1", registration, request);
         }
 
         /// <inheritdoc/>
-        public async Task<HistoryReadNextResultModel> HistoryReadNextAsync(
+        public async Task<HistoryReadNextResultModel<JToken>> HistoryReadNextAsync(
             EndpointRegistrationModel registration, HistoryReadNextRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
@@ -192,20 +196,20 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
             if (string.IsNullOrEmpty(request.ContinuationToken)) {
                 throw new ArgumentNullException(nameof(request.ContinuationToken));
             }
-            return await CallServiceOnSupervisor<HistoryReadNextRequestModel, HistoryReadNextResultModel>(
+            return await CallServiceOnSupervisor<HistoryReadNextRequestModel, HistoryReadNextResultModel<JToken>>(
                 "HistoryRead_V1", registration, request);
         }
 
         /// <inheritdoc/>
         public async Task<HistoryUpdateResultModel> HistoryUpdateAsync(
-            EndpointRegistrationModel registration, HistoryUpdateRequestModel request) {
+            EndpointRegistrationModel registration, HistoryUpdateRequestModel<JToken> request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
             }
             if (request.Details == null) {
                 throw new ArgumentNullException(nameof(request.Details));
             }
-            return await CallServiceOnSupervisor<HistoryUpdateRequestModel, HistoryUpdateResultModel>(
+            return await CallServiceOnSupervisor<HistoryUpdateRequestModel<JToken>, HistoryUpdateResultModel>(
                 "HistoryUpdate_V1", registration, request);
         }
 

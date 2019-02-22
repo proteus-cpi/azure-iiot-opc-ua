@@ -3,15 +3,16 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Twin {
-    using Microsoft.Azure.IIoT.OpcUa.Twin.Models;
+namespace Microsoft.Azure.IIoT.OpcUa.History {
+    using Microsoft.Azure.IIoT.OpcUa.History.Models;
+    using Newtonsoft.Json.Linq;
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Historian services
+    /// Historic access services
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IHistorianServices<T> { 
+    public interface IHistoricAccessServices<T> { 
 
         /// <summary>
         /// Read node history
@@ -19,8 +20,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin {
         /// <param name="endpoint"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        Task<HistoryReadResultModel> HistoryReadAsync(T endpoint,
-            HistoryReadRequestModel request);
+        Task<HistoryReadResultModel<JToken>> HistoryReadAsync(T endpoint,
+            HistoryReadRequestModel<JToken> request);
 
         /// <summary>
         /// Read node history continuation
@@ -28,7 +29,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin {
         /// <param name="endpoint"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        Task<HistoryReadNextResultModel> HistoryReadNextAsync(T endpoint,
+        Task<HistoryReadNextResultModel<JToken>> HistoryReadNextAsync(T endpoint,
             HistoryReadNextRequestModel request);
 
         /// <summary>
@@ -38,6 +39,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin {
         /// <param name="request"></param>
         /// <returns></returns>
         Task<HistoryUpdateResultModel> HistoryUpdateAsync(T endpoint,
-            HistoryUpdateRequestModel request);
+            HistoryUpdateRequestModel<JToken> request);
     }
 }

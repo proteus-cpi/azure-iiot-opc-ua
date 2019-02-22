@@ -7,6 +7,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using Microsoft.Azure.IIoT.OpcUa.Twin.Models;
     using Microsoft.Azure.IIoT.OpcUa.Twin;
+    using Microsoft.Azure.IIoT.OpcUa.History.Models;
+    using Microsoft.Azure.IIoT.OpcUa.History;
     using Microsoft.Azure.IIoT.OpcUa.Protocol;
     using Microsoft.Azure.IIoT.OpcUa.Protocol.Models;
     using Microsoft.Azure.IIoT.Exceptions;
@@ -19,6 +21,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Newtonsoft.Json.Linq;
 
     /// <summary>
     /// This class provides access to a servers address space providing node
@@ -26,7 +29,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
     /// the server.
     /// </summary>
     public sealed class AddressSpaceServices : INodeServices<EndpointModel>,
-        IHistorianServices<EndpointModel>, IBrowseServices<EndpointModel> {
+        IHistoricAccessServices<EndpointModel>, IBrowseServices<EndpointModel> {
 
         /// <summary>
         /// Create node service
@@ -623,8 +626,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
         }
 
         /// <inheritdoc/>
-        public Task<HistoryReadResultModel> HistoryReadAsync(EndpointModel endpoint,
-            HistoryReadRequestModel request) {
+        public Task<HistoryReadResultModel<JToken>> HistoryReadAsync(EndpointModel endpoint,
+            HistoryReadRequestModel<JToken> request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
             }
@@ -665,7 +668,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
                     response.DiagnosticInfos, false);
                 SessionClientEx.Validate(response.Results, response.DiagnosticInfos);
 
-                return new HistoryReadResultModel {
+                return new HistoryReadResultModel<JToken> {
                     ContinuationToken = response.Results[0].ContinuationPoint.ToBase64String(),
                     History = _codec.Encode(new Variant(response.Results[0].HistoryData),
                         out var tmp, session.MessageContext),
@@ -676,7 +679,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
         }
 
         /// <inheritdoc/>
-        public Task<HistoryReadNextResultModel> HistoryReadNextAsync(EndpointModel endpoint,
+        public Task<HistoryReadNextResultModel<JToken>> HistoryReadNextAsync(EndpointModel endpoint,
             HistoryReadNextRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
@@ -699,7 +702,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
                     diagnostics, response.Results.Select(r => r.StatusCode),
                     response.DiagnosticInfos, false);
                 SessionClientEx.Validate(response.Results, response.DiagnosticInfos);
-                return new HistoryReadNextResultModel {
+                return new HistoryReadNextResultModel<JToken> {
                     ContinuationToken = response.Results[0].ContinuationPoint.ToBase64String(),
                     History = _codec.Encode(new Variant(response.Results[0].HistoryData),
                         out var tmp, session.MessageContext),
@@ -711,7 +714,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
 
         /// <inheritdoc/>
         public Task<HistoryUpdateResultModel> HistoryUpdateAsync(EndpointModel endpoint,
-            HistoryUpdateRequestModel request) {
+            HistoryUpdateRequestModel<JToken> request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
             }

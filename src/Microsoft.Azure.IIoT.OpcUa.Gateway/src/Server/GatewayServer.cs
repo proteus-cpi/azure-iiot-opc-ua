@@ -12,6 +12,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using Microsoft.Azure.IIoT.OpcUa.Twin;
     using Microsoft.Azure.IIoT.OpcUa.Twin.Models;
+    using Microsoft.Azure.IIoT.OpcUa.History.Models;
+    using Microsoft.Azure.IIoT.OpcUa.History;
     using Microsoft.Azure.IIoT.Auth.Server;
     using Microsoft.Azure.IIoT.Auth;
     using Serilog;
@@ -27,6 +29,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using System.Text;
+    using Newtonsoft.Json.Linq;
 
     /// <summary>
     /// Gateway server controller implementation
@@ -68,7 +71,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
         /// <param name="validator"></param>
         /// <param name="logger"></param>
         public GatewayServer(IApplicationRegistry registry, ISessionServices sessions,
-            INodeServices<string> nodes, IHistorianServices<string> historian,
+            INodeServices<string> nodes, IHistoricAccessServices<string> historian,
             IBrowseServices<string> browser, IVariantEncoder codec,
             IAuthConfig auth, ITokenValidator validator, ILogger logger) {
 
@@ -1280,7 +1283,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
                     if (nodesToRead[i].ContinuationPoint == null) {
                         // Call read first
                         var response = await _historian.HistoryReadAsync(endpointId,
-                            new HistoryReadRequestModel {
+                            new HistoryReadRequestModel<JToken> {
                                 NodeId = nodesToRead[i].NodeId
                                     .AsString(context.Session.MessageContext),
                                 IndexRange = nodesToRead[i].IndexRange,
@@ -1363,7 +1366,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
                 try {
                     // Call service
                     var response = await _historian.HistoryUpdateAsync(endpointId,
-                        new HistoryUpdateRequestModel {
+                        new HistoryUpdateRequestModel<JToken> {
                             Details = historyUpdateDetails == null ? null :
                                 _codec.Encode(new Variant(historyUpdateDetails), out var tmp,
                                     context.Session.MessageContext),
@@ -2070,7 +2073,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
         private readonly IVariantEncoder _codec;
         private readonly ILogger _logger;
         private readonly IBrowseServices<string> _browser;
-        private readonly IHistorianServices<string> _historian;
+        private readonly IHistoricAccessServices<string> _historian;
         private readonly INodeServices<string> _nodes;
         private readonly IAuthConfig _auth;
         private readonly ITokenValidator _validator;

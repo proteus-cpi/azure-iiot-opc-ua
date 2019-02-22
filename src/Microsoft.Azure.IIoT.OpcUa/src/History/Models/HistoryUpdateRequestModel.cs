@@ -3,13 +3,13 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Twin.Models {
-    using Newtonsoft.Json.Linq;
+namespace Microsoft.Azure.IIoT.OpcUa.History.Models {
+    using Microsoft.Azure.IIoT.OpcUa.Twin.Models;
 
     /// <summary>
     /// Request node history update
     /// </summary>
-    public class HistoryUpdateRequestModel {
+    public class HistoryUpdateRequestModel<T> {
 
         /// <summary>
         /// Node to update 
@@ -18,7 +18,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Models {
 
         /// <summary>
         /// An optional path from NodeId instance to
-        /// an actual node.
+        /// the actual node.
         /// </summary>
         public string[] BrowsePath { get; set; }
 
@@ -28,10 +28,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Models {
         /// update request for the Historian server. The value
         /// is updated at edge using above node address.
         /// </summary>
-        public JToken Details { get; set; }
+        public T Details { get; set; }
 
         /// <summary>
-        /// Optional header
+        /// Optional request header
         /// </summary>
         public RequestHeaderModel Header { get; set; }
     }
