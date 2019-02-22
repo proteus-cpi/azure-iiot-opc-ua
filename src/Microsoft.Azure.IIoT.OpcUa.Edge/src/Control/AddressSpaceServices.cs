@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
     /// the server.
     /// </summary>
     public sealed class AddressSpaceServices : INodeServices<EndpointModel>,
-        IHistoricAccessServices<EndpointModel>, IBrowseServices<EndpointModel> {
+        IHistoricAccessServices<EndpointModel>, OpcUa.Twin.IBrowseServices<EndpointModel> {
 
         /// <summary>
         /// Create node service
@@ -729,9 +729,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
                         nameof(request.BrowsePath), request.BrowsePath,
                         request.Header?.Diagnostics, diagnostics);
                 }
-                if (NodeId.IsNull(nodeId)) {
-                    throw new ArgumentException(nameof(request.NodeId));
-                }
                 var details = _codec.Decode(request.Details,
                     BuiltInType.ExtensionObject, session.MessageContext);
                 if (!(details.Value is ExtensionObject extensionObject)) {
@@ -739,7 +736,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
                 }
                 if (extensionObject.Body is HistoryUpdateDetails updateDetails) {
                     // Update the node id to target based on the request
-                    updateDetails.NodeId = nodeId;
+                    if (!NodeId.IsNull(nodeId)) {
+                        updateDetails.NodeId = nodeId;
+                    }
+                    if (NodeId.IsNull(updateDetails.NodeId)) {
+                        throw new ArgumentNullException(nameof(request.NodeId));
+                    }
                 }
                 var response = await session.HistoryUpdateAsync(
                     (request.Header?.Diagnostics).ToStackModel(),

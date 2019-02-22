@@ -11,7 +11,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.History {
     /// Historian services
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IHistorianServices<T> : IHistoricAccessServices<T> {
+    public interface IHistorianServices<T> {
 
         /// <summary>
         /// Delete events

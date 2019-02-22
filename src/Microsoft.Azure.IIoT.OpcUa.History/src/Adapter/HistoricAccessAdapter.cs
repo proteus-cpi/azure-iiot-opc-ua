@@ -7,7 +7,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.History.Clients {
     using Microsoft.Azure.IIoT.OpcUa.History;
     using Microsoft.Azure.IIoT.OpcUa.History.Models;
     using Microsoft.Azure.IIoT.OpcUa.Protocol;
-    using Newtonsoft.Json.Linq;
     using Serilog;
     using System;
     using System.Threading.Tasks;
@@ -114,18 +113,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.History.Clients {
             var results = await _client.HistoryReadNextAsync(endpoint, request);
             return results.ToSpecificModel(_codec.DecodeValues);
         }
-
-        /// <inheritdoc/>
-        public Task<HistoryReadResultModel<JToken>> HistoryReadAsync(T endpoint,
-            HistoryReadRequestModel<JToken> request) => _client.HistoryReadAsync(endpoint, request);
-
-        /// <inheritdoc/>
-        public Task<HistoryReadNextResultModel<JToken>> HistoryReadNextAsync(T endpoint,
-            HistoryReadNextRequestModel request) => _client.HistoryReadNextAsync(endpoint, request);
-
-        /// <inheritdoc/>
-        public Task<HistoryUpdateResultModel> HistoryUpdateAsync(T endpoint,
-            HistoryUpdateRequestModel<JToken> request) => _client.HistoryUpdateAsync(endpoint, request);
 
         private readonly IVariantEncoder _codec;
         private readonly IHistoricAccessServices<T> _client;

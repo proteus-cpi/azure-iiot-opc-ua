@@ -72,7 +72,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
         /// <param name="logger"></param>
         public GatewayServer(IApplicationRegistry registry, ISessionServices sessions,
             INodeServices<string> nodes, IHistoricAccessServices<string> historian,
-            IBrowseServices<string> browser, IVariantEncoder codec,
+            Twin.IBrowseServices<string> browser, IVariantEncoder codec,
             IAuthConfig auth, ITokenValidator validator, ILogger logger) {
 
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
@@ -2072,7 +2072,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
         private readonly IApplicationRegistry _registry;
         private readonly IVariantEncoder _codec;
         private readonly ILogger _logger;
-        private readonly IBrowseServices<string> _browser;
+        private readonly Twin.IBrowseServices<string> _browser;
         private readonly IHistoricAccessServices<string> _historian;
         private readonly INodeServices<string> _nodes;
         private readonly IAuthConfig _auth;

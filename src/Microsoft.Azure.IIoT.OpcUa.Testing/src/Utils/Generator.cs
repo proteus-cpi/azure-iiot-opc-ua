@@ -11,6 +11,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Utils {
     using System.Runtime.CompilerServices;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+    using Microsoft.Azure.IIoT.OpcUa.History.Models;
 
     internal static class Generator {
 
@@ -62,6 +63,28 @@ $@"                reference => {{
             references += ");";
 
             System.Diagnostics.Trace.WriteLine(references);
+        }
+
+        internal static void Write(HistoricValueModel[] history, [CallerMemberName] string methodname = null) {
+            var test = JsonConvert.SerializeObject(history, Formatting.Indented,
+                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+            var args = $@"
+            Assert.Collection(results.History, ";
+            foreach (var arg in history) {
+                args += $@"
+                arg => {{
+                    Assert.Equal({arg.StatusCode}, arg.StatusCode);
+                    Assert.Equal({arg.Value}, arg.Value);
+                }},";
+            }
+            args = args.TrimEnd().TrimEnd(',');
+
+
+            System.Diagnostics.Trace.WriteLine(methodname);
+            System.Diagnostics.Trace.WriteLine("");
+            System.Diagnostics.Trace.WriteLine(args);
+            System.Diagnostics.Trace.WriteLine("");
         }
 
         internal static void WriteResponse(MethodMetadataResultModel results, [CallerMemberName] string methodname = null) {

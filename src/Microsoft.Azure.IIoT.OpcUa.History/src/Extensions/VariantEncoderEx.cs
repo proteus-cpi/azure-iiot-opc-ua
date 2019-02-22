@@ -65,6 +65,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Protocol {
             if (details == null) {
                 throw new ArgumentNullException(nameof(details));
             }
+            if (details.EndTime == null && details.StartTime == null) {
+                throw new ArgumentException("Start time and end time cannot both be null", nameof(details));
+            }
             return codec.Encode(new ExtensionObject(new DeleteRawModifiedDetails {
                 NodeId = NodeId.Null,
                 EndTime = details.EndTime ?? DateTime.MinValue,
@@ -173,6 +176,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Protocol {
             if (details == null) {
                 throw new ArgumentNullException(nameof(details));
             }
+            if (details.EndTime == null && details.StartTime == null) {
+                throw new ArgumentException("Start time and end time cannot both be null", nameof(details));
+            }
+            if ((details.StartTime == null || details.EndTime == null) && ((details.NumEvents ?? 0) == 0)) {
+                throw new ArgumentException("Value bound must be set", nameof(details.NumEvents));
+            }
             return codec.Encode(new ExtensionObject(new ReadEventDetails {
                 EndTime = details.EndTime ?? DateTime.MinValue,
                 StartTime = details.StartTime ?? DateTime.MinValue,
@@ -190,6 +199,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Protocol {
         public static JToken Encode(this IVariantEncoder codec, ReadProcessedValuesDetailsModel details) {
             if (details == null) {
                 throw new ArgumentNullException(nameof(details));
+            }
+            if (details.EndTime == null && details.StartTime == null) {
+                throw new ArgumentException("Start time and end time cannot both be null", nameof(details));
             }
             // Convert aggregate id with a temporary namespace table that will contain the aggregate namespace
             var context = new ServiceMessageContext();
@@ -225,6 +237,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Protocol {
             if (details == null) {
                 throw new ArgumentNullException(nameof(details));
             }
+            if (details.EndTime == null && details.StartTime == null) {
+                throw new ArgumentException("Start time and end time cannot both be null", nameof(details));
+            }
+            if ((details.StartTime == null || details.EndTime == null) && ((details.NumValues ?? 0) == 0)) {
+                throw new ArgumentException("Value bound must be set", nameof(details.NumValues));
+            }
             return codec.Encode(new ExtensionObject(new ReadRawModifiedDetails {
                 EndTime = details.EndTime ?? DateTime.MinValue,
                 StartTime = details.StartTime ?? DateTime.MinValue,
@@ -243,6 +261,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Protocol {
         public static JToken Encode(this IVariantEncoder codec, ReadModifiedValuesDetailsModel details) {
             if (details == null) {
                 throw new ArgumentNullException(nameof(details));
+            }
+            if (details.EndTime == null && details.StartTime == null) {
+                throw new ArgumentException("Start time and end time cannot both be null", nameof(details));
+            }
+            if ((details.StartTime == null || details.EndTime == null) && ((details.NumValues ?? 0) == 0)) {
+                throw new ArgumentException("Value bound must be set", nameof(details.NumValues));
             }
             return codec.Encode(new ExtensionObject(new ReadRawModifiedDetails {
                 EndTime = details.EndTime ?? DateTime.MinValue,
@@ -267,7 +291,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Protocol {
                     ServerTimestamp = d.ServerTimestamp.ToNullable(DateTime.MinValue),
                     SourceTimestamp = d.SourceTimestamp.ToNullable(DateTime.MinValue),
                     StatusCode = d.StatusCode.ToNullable(StatusCodes.Good)?.CodeBits,
-                    Value = codec.Encode(d.WrappedValue)
+                    Value = d.WrappedValue == Variant.Null ? null : codec.Encode(d.WrappedValue)
                 }).ToArray();
                 if (extensionObject?.Body is HistoryModifiedData modified) {
                     if (modified.ModificationInfos.Count != data.DataValues.Count) {
@@ -299,7 +323,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Protocol {
             var extensionObject = codec.DecodeExtensionObject(result);
             if (extensionObject?.Body is HistoryEvent ev) {
                 return ev.Events.Select(d => new HistoricEventModel {
-                    EventFields = d.EventFields.Select(codec.Encode).ToList()
+                    EventFields = d.EventFields
+                        .Select(v => v == Variant.Null ? null : codec.Encode(v))
+                        .ToList()
                 }).ToArray();
             }
             return null;
