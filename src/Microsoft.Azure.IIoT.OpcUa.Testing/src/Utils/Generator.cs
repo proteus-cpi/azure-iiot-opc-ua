@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Utils {
             Assert.Equal(NodeEventNotifier.{results.Node.EventNotifier}, results.Node.EventNotifier);
             Assert.{(results.Node.Executable ?? false ? "True" : "False")}(results.Node.Executable);
             Assert.{(results.Node.UserExecutable ?? false ? "True" : "False")}(results.Node.UserExecutable);
-            Assert.{(results.Node.HasChildren ?? false ? "True" : "False")}(results.Node.HasChildren);
+            Assert.{(results.Node.Children ?? false ? "True" : "False")}(results.Node.HasChildren);
             Assert.Collection(results.References, ";
             foreach (var reference in results.References) {
                 references +=
@@ -56,7 +56,7 @@ $@"                reference => {{
                     Assert.Equal(NodeEventNotifier.{reference.Target.EventNotifier}, reference.Target.EventNotifier);
                     Assert.{(reference.Target.Executable ?? false ? "True" : "False")}(reference.Target.Executable);
                     Assert.{(reference.Target.UserExecutable ?? false ? "True" : "False")}(reference.Target.UserExecutable);
-                    Assert.{(reference.Target.HasChildren ?? false ? "True" : "False")}(reference.Target.HasChildren);
+                    Assert.{(reference.Target.Children ?? false ? "True" : "False")}(reference.Target.HasChildren);
                 }},";
             }
             references.TrimEnd().TrimEnd(',');

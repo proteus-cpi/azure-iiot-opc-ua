@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
     /// Implements node and publish services through command control against
     /// the OPC twin module receiving service requests via device method calls.
     /// </summary>
-    public sealed class TwinClient : Twin.IBrowseServices<string>, IHistoricAccessServices<string>,
+    public sealed class TwinClient : IBrowseServices<string>, IHistoricAccessServices<string>,
         INodeServices<string>, IPublishServices<string>, IUploadServices<string> {
 
         /// <summary>

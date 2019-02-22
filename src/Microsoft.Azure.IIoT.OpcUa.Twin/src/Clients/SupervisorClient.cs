@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Twin.Clients {
     /// <summary>
     /// Represents the supervisor api surface for browse and node operations.
     /// </summary>
-    public sealed class SupervisorClient : Twin.IBrowseServices<EndpointRegistrationModel>,
+    public sealed class SupervisorClient : IBrowseServices<EndpointRegistrationModel>,
         IHistoricAccessServices<EndpointRegistrationModel>, INodeServices<EndpointRegistrationModel>,
         IPublishServices<EndpointRegistrationModel> {
 

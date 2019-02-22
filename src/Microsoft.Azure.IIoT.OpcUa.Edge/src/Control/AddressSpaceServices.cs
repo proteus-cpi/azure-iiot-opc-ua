@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
     /// the server.
     /// </summary>
     public sealed class AddressSpaceServices : INodeServices<EndpointModel>,
-        IHistoricAccessServices<EndpointModel>, OpcUa.Twin.IBrowseServices<EndpointModel> {
+        IHistoricAccessServices<EndpointModel>, IBrowseServices<EndpointModel> {
 
         /// <summary>
         /// Create node service
@@ -786,7 +786,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
             var node = await RawNodeModel.ReadAsync(session, header, nodeId, skipValue,
                 diagnostics, traceOnly);
             return new NodeModel {
-                HasChildren = children,
+                Children = children,
                 NodeId = id,
                 BrowseName = node.BrowseName.AsString(session.MessageContext),
                 DisplayName = node.DisplayName?.ToString(),
@@ -869,7 +869,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Control {
                             }
                         }
                         catch (Exception ex) {
-                            _logger.Debug(ex, "Failed to obtain hasChildren information");
+                            _logger.Debug(ex, "Failed to obtain child information");
                             // TODO: Add diagnostics result for diagnostics.
                         }
                     }
