@@ -1530,6 +1530,51 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
         }
 
 
+        public async Task NodeBrowsePathStaticScalarMethodsTest() {
+            var nodeId = "http://test.org/UA/Data/#i=10157"; // Data
+            var pathElements3 = new[] {
+                ".http://test.org/UA/Data/#Static",
+                ".http://test.org/UA/Data/#MethodTest",
+                ".http://test.org/UA/Data/#ScalarMethod3"
+            };
+            var pathElements2 = new[] {
+                ".http://test.org/UA/Data/#Static",
+                ".http://test.org/UA/Data/#MethodTest",
+                ".http://test.org/UA/Data/#ScalarMethod2"
+            };
+
+            var browser = _services();
+
+            // Act
+            var results = await browser.NodeBrowsePathAsync(_endpoint,
+                new BrowsePathRequestModel {
+                    Header = new RequestHeaderModel {
+                        Diagnostics = new DiagnosticsModel {
+                            Level = DiagnosticsLevel.None
+                        }
+                    },
+                    NodeId = nodeId,
+                    BrowsePaths = new List<string[]> { pathElements3, pathElements2 }
+                });
+
+            // Assert
+            Assert.Null(results.ErrorInfo);
+            Assert.Collection(results.Targets, target => {
+                Assert.Equal("http://test.org/UA/Data/#ScalarMethod3", target.Target.BrowseName);
+                Assert.Equal("ScalarMethod3", target.Target.DisplayName);
+                Assert.Equal("http://test.org/UA/Data/#i=10762", target.Target.NodeId);
+                Assert.Equal(false, target.Target.Children);
+                Assert.Equal(-1, target.RemainingPathIndex);
+            }, target => {
+                Assert.Equal("http://test.org/UA/Data/#ScalarMethod2", target.Target.BrowseName);
+                Assert.Equal("ScalarMethod2", target.Target.DisplayName);
+                Assert.Equal("http://test.org/UA/Data/#i=10759", target.Target.NodeId);
+                Assert.Equal(false, target.Target.Children);
+                Assert.Equal(-1, target.RemainingPathIndex);
+            });
+        }
+
+
         public async Task NodeBrowseDiagnosticsNoneTest() {
 
             var browser = _services();
