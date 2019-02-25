@@ -11,6 +11,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
     using System.Threading.Tasks;
     using Xunit;
     using System;
+    using System.Collections.Generic;
 
     public class BrowseServicesTests<T> {
 
@@ -1446,7 +1447,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
                         }
                     },
                     NodeId = nodeId,
-                    PathElements = pathElements
+                    BrowsePaths = new List<string[]> { pathElements }
                 });
 
             // Assert
@@ -1480,7 +1481,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
                         }
                     },
                     NodeId = nodeId,
-                    PathElements = pathElements
+                    BrowsePaths = new List<string[]>{ pathElements }
                 });
 
             // Assert
@@ -1514,7 +1515,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
                         }
                     },
                     NodeId = nodeId,
-                    PathElements = pathElements
+                    BrowsePaths = new List<string[]> { pathElements }
                 });
 
             // Assert
