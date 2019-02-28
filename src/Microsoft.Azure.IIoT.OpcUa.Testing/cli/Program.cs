@@ -980,10 +980,8 @@ Operations (Mutually exclusive):
             public string SiteId { get; } = "";
 
             /// <inheritdoc/>
-            public Task SendFileAsync(string fileName, string contentType) {
-                using (var stream = new FileStream(fileName, FileMode.Open)) {
-                    Console.WriteLine(new StringReader(fileName).ReadToEnd());
-                }
+            public Task SendFileAsync(string fileName, Stream stream, string contentType) {
+                Console.WriteLine(new StreamReader(stream).ReadToEnd());
                 return Task.CompletedTask;
             }
         }
