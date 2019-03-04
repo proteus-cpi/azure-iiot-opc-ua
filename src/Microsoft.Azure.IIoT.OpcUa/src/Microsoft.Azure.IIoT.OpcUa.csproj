@@ -4,7 +4,7 @@
     <LangVersion>7</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Description>Azure Industrial IoT OPC UA Twin Core business logic</Description>
+    <Description>Azure Industrial IoT OPC UA Abstractions</Description>
   </PropertyGroup>
   <Choose>
     <When Condition="Exists('..\..\..\..\..\common')">

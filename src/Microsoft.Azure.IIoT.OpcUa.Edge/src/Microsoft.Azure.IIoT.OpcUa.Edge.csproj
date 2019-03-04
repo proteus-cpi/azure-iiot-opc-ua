@@ -4,7 +4,7 @@
     <LangVersion>7</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Description>Azure Industrial IoT OPC UA Module business logic</Description>
+    <Description>Azure Industrial IoT OPC UA Edge components</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Microsoft.Azure.IIoT.OpcUa.Protocol\src\Microsoft.Azure.IIoT.OpcUa.Protocol.csproj" />
