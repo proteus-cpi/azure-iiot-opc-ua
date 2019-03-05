@@ -288,9 +288,10 @@ Options:
 
 Operations (Mutually exclusive):
 
-     -s                     
+     -s
     --sample / -s           Run sample server and wait for cancellation.
 
+    --iop                   Iop discovery and browsing.
     --scan-net              Tests network scanning.
     --scan-ports            Tests port scanning.
     --scan-servers          Tests opc server scanning on single machine.
@@ -555,7 +556,9 @@ Operations (Mutually exclusive):
             var rand = new Random();
             while (true) {
                 discovery.Configuration = new DiscoveryConfigModel {
-                    IdleTimeBetweenScans = TimeSpan.FromMilliseconds(1)
+                    IdleTimeBetweenScans = TimeSpan.FromMilliseconds(1),
+                    MaxNetworkProbes = 1000,
+                    MaxPortProbes = 1000
                 };
                 discovery.Mode = DiscoveryMode.Scan;
                 await discovery.ScanAsync();
