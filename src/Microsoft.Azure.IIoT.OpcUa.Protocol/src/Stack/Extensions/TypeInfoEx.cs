@@ -54,10 +54,13 @@ namespace Opc.Ua {
                     typeInfo.ValueRank);
                 if (typeInfo.BuiltInType == BuiltInType.Null) {
                     if (typeInfo.ValueRank == 1) {
-                        systemType = typeof(Variant[]);
+                        systemType = typeof(object[]);
+                    }
+                    else {
+                        return Variant.Null; // Matrix or scalar
                     }
                 }
-                if (value is object[] boxed) {
+                else if (systemType.IsPrimitive && value is object[] boxed) {
                     var array = Array.CreateInstance(
                         TypeInfo.GetSystemType(typeInfo.BuiltInType, -1), boxed.Length);
                     Array.Copy(boxed, array, boxed.Length);
