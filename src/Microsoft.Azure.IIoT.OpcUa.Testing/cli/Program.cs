@@ -558,7 +558,7 @@ Operations (Mutually exclusive):
                 discovery.Configuration = new DiscoveryConfigModel {
                     IdleTimeBetweenScans = TimeSpan.FromMilliseconds(1),
                     MaxNetworkProbes = 1000,
-                    MaxPortProbes = 1000
+                    MaxPortProbes = 5000
                 };
                 discovery.Mode = DiscoveryMode.Scan;
                 await discovery.ScanAsync();
@@ -596,7 +596,7 @@ Operations (Mutually exclusive):
                         continue;
                     }
                     try {
-                        _logger.Information("Writing {id}.json for event {@ev}", ev.Registration.Id, ev);
+                        _logger.Information("Writing {id}.json for {@ev}", ev.Registration.Id, ev);
                         using (var writer = File.CreateText($"iop_{ev.Registration.Id}.json"))
                         using (var json = new JsonTextWriter(writer) {
                             AutoCompleteOnClose = true,
