@@ -111,6 +111,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Cli {
                                 throw new ArgumentException("Operations are mutually exclusive");
                             }
                             op = Op.TestOpcUaIop;
+                            i++;
+                            if (i < args.Length)
+                            {
+                                addressRanges = args[i];
+                            }
                             break;
                         case "--stress":
                             stress = true;
