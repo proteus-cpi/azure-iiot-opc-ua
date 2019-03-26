@@ -264,6 +264,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             devices = endpoints
                 .Select(a => {
+                    a.Registration.EndpointUrl = a.Registration.Endpoint.Url;
                     var r = EndpointRegistration.FromServiceModel(a);
                     var t = EndpointRegistration.Patch(null, r);
                     t.Properties.Reported = new Dictionary<string, JToken> {

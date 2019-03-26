@@ -387,7 +387,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
         }
 
 
-
         public async Task NodeReadStaticScalarInt32ValueVariableTest() {
 
             var browser = _services();
@@ -409,7 +408,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
                 $"Expected: {expected} ({expected?.Type}) != Actual: {result.Value} ({result?.Value?.Type})");
             Assert.Equal("Int32", result.DataType);
         }
-
 
 
         public async Task NodeReadStaticScalarUInt32ValueVariableTest() {
@@ -435,7 +433,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
         }
 
 
-
         public async Task NodeReadStaticScalarInt64ValueVariableTest() {
 
             var browser = _services();
@@ -457,8 +454,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
                 $"Expected: {expected} ({expected?.Type}) != Actual: {result.Value} ({result?.Value?.Type})");
             Assert.Equal("Int64", result.DataType);
         }
-
-
 
         public async Task NodeReadStaticScalarUInt64ValueVariableTest() {
 
@@ -482,8 +477,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
             Assert.Equal("UInt64", result.DataType);
         }
 
-
-
         public async Task NodeReadStaticScalarFloatValueVariableTest() {
 
             var browser = _services();
@@ -506,8 +499,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
             Assert.Equal("Float", result.DataType);
         }
 
-
-
         public async Task NodeReadStaticScalarDoubleValueVariableTest() {
 
             var browser = _services();
@@ -529,8 +520,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
                 $"Expected: {expected} ({expected?.Type}) != Actual: {result.Value} ({result?.Value?.Type})");
             Assert.Equal("Double", result.DataType);
         }
-
-
 
         public async Task NodeReadStaticScalarStringValueVariableTest() {
 
@@ -555,7 +544,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
         }
 
 
-
         public async Task NodeReadStaticScalarDateTimeValueVariableTest() {
 
             var browser = _services();
@@ -577,7 +565,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
                 $"Expected: {expected} ({expected?.Type}) != Actual: {result.Value} ({result?.Value?.Type})");
             Assert.Equal("DateTime", result.DataType);
         }
-
 
 
         public async Task NodeReadStaticScalarGuidValueVariableTest() {
@@ -604,7 +591,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
         }
 
 
-
         public async Task NodeReadStaticScalarByteStringValueVariableTest() {
 
             var browser = _services();
@@ -618,7 +604,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Tests {
                 });
 
             // Assert
-            Assert.NotNull(result.Value);
             Assert.NotNull(result.SourceTimestamp);
             Assert.NotNull(result.ServerTimestamp);
             Assert.True(JToken.DeepEquals(expected, result.Value),
