@@ -132,8 +132,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// </summary>
         /// <param name="existing"></param>
         /// <param name="update"></param>
-        public static DeviceTwinModel Patch(
-            SupervisorRegistration existing,
+        public static DeviceTwinModel Patch(SupervisorRegistration existing,
             SupervisorRegistration update) {
 
             var twin = new DeviceTwinModel {
