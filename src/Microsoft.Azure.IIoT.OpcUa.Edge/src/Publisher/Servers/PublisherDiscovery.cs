@@ -4,24 +4,26 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Edge.Publisher.Servers {
-    using Microsoft.Azure.IIoT.OpcUa.Edge.Publisher.Clients;
-    using Microsoft.Azure.IIoT.OpcUa.Edge.Publisher.Clients.Models;
-    using Microsoft.Azure.IIoT.OpcUa.Edge.Discovery;
-    using Microsoft.Azure.IIoT.OpcUa.Protocol;
-    using Serilog;
     using Microsoft.Azure.IIoT.Hub;
     using Microsoft.Azure.IIoT.Module;
     using Microsoft.Azure.IIoT.Net;
     using Microsoft.Azure.IIoT.Net.Models;
     using Microsoft.Azure.IIoT.Net.Scanner;
-    using Autofac;
+    using Microsoft.Azure.IIoT.OpcUa.Edge.Discovery;
+    using Microsoft.Azure.IIoT.OpcUa.Edge.Publisher.Clients;
+    using Microsoft.Azure.IIoT.OpcUa.Edge.Publisher.Clients.Models;
+    using Microsoft.Azure.IIoT.OpcUa.Protocol;
+    using Microsoft.Azure.IIoT.OpcUa.Twin.Models;
+    using Newtonsoft.Json;
     using Opc.Ua;
+    using Serilog;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Autofac;
 
     /// <summary>
     /// Finds the best publisher server and creates a client
@@ -50,7 +52,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Publisher.Servers {
 
         /// <inheritdoc/>
         public async Task<IPublisherClient> ConnectAsync() {
-            const string kPublisherName = "publisher";
+            const string kPublisherName = "opcpublisher";
             const int kPublisherPort = 62222;
 
             _logger.Information("Finding publisher to use as publish service...");
@@ -61,22 +63,33 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Publisher.Servers {
                 deviceId = Environment.GetEnvironmentVariable("IOTEDGE_DEVICEID");
             }
             if (!string.IsNullOrEmpty(deviceId)) {
+                _logger.Debug("Get all modules in current edge context.");
                 // Get modules
                 var modules = await _modules.GetModulesAsync(deviceId);
                 var publisherModule = modules
                     .Where(m => m.Status.EqualsIgnoreCase("running"))
                     .FirstOrDefault(m =>
-                        m.ImageName?.Contains(kPublisherName) ?? false ||
+                        m.ImageName?.Contains("opc-publisher") ?? false ||
                         m.Id.EqualsIgnoreCase(kPublisherName));
+
+                if (publisherModule == null) {
+                    _logger.Warning("No publisher module running in edge context.");
+                }
+
                 // Have publisher module
                 var moduleId = publisherModule?.Id ?? kPublisherName;
+                _logger.Information("Testing publisher module {moduleId} using methods...",
+                    moduleId);
                 var publisher = new PublisherMethodClient(_methods, deviceId, moduleId, _logger);
-                if (await TestConnectivityAsync(publisher)) {
-                    _logger.Information("Using publisher module '{moduleId}' via methods.",
-                        moduleId);
+                var error = await TestConnectivityAsync(publisher);
+                if (error == null) {
+                    _logger.Information(
+                        "Success - using publisher module '{moduleId}' ({image}) via methods.",
+                        moduleId, publisherModule?.ImageName ?? "<unknown>");
                     return publisher;
                 }
-                // use opc ua server as fallback
+                _logger.Debug("Publisher module {moduleId} method call uncuccessful." +
+                    " Fallback to UA server...", moduleId, error);
             }
 
             // Try shortcut of finding it on localhost
@@ -86,7 +99,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Publisher.Servers {
             if (localEndpoints.Any()) {
 #if !TEST_PNP_SCAN
                 var publisher = new PublisherServerClient(_client, uri, _logger);
-                if (await TestConnectivityAsync(publisher)) {
+                var error = await TestConnectivityAsync(publisher);
+                if (error == null) {
                     _logger.Information("Using publisher server on localhost.");
                     return publisher;
                 }
@@ -132,7 +146,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Publisher.Servers {
                     continue;
                 }
                 var publisher = new PublisherServerClient(_client, uri, _logger);
-                if (await TestConnectivityAsync(publisher)) {
+                var error = await TestConnectivityAsync(publisher);
+                if (error == null) {
                     _logger.Information("Using publisher server at address {remoteEp}.",
                         remoteEp);
                     return publisher;
@@ -148,17 +163,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Publisher.Servers {
         /// Test connectivity by listing and ensuring no exception happens.
         /// </summary>
         /// <returns></returns>
-        private async Task<bool> TestConnectivityAsync(IPublisherClient server) {
+        private async Task<ServiceResultModel> TestConnectivityAsync(IPublisherClient server) {
             try {
-                var test = Newtonsoft.Json.JsonConvertEx.SerializeObject(new GetNodesRequestModel {
+                var test = JsonConvertEx.SerializeObject(new GetNodesRequestModel {
                     EndpointUrl = "opc.tcp://test"
                 });
                 var (errorInfo, result) = await server.CallMethodAsync(
                     "GetConfiguredNodesOnEndpoint", test, null);
-                return errorInfo == null;
+                return errorInfo;
             }
             catch {
-                return false;
+                return null;
             }
         }
 
