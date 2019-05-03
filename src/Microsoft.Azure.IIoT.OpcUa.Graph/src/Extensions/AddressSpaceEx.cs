@@ -362,13 +362,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Graph.Models {
             decoded.UserWriteMask = (AttributeWriteMask)vertex.UserWriteMask;
             decoded.RolePermissions = rolePermissions?
                 .Select(r => new RolePermissionType {
-                    Permissions = (PermissionType)(r.Permissions ?? 0),
+                    Permissions = (uint)(PermissionType)(r.Permissions ?? 0),
                     RoleId = r.RoleId.ToNodeId(context)
                 })
                 .ToList();
             decoded.UserRolePermissions = userRolePermissions?
                 .Select(r => new RolePermissionType {
-                    Permissions = (PermissionType)(r.Permissions ?? 0),
+                    Permissions = (uint)(PermissionType)(r.Permissions ?? 0),
                     RoleId = r.RoleId.ToNodeId(context)
                 })
                 .ToList();
