@@ -242,7 +242,7 @@ namespace Reference {
                     // do interpolation.
                     var range = (lastBound.Value.SourceTimestamp - firstBound.Value.SourceTimestamp).TotalMilliseconds;
                     var s = (lastValue - firstValue) / range;
-                    var doubleValue = s * (timestamp - firstBound.Value.SourceTimestamp).TotalMilliseconds + firstValue;
+                    var doubleValue = (s * (timestamp - firstBound.Value.SourceTimestamp).TotalMilliseconds) + firstValue;
 
                     // convert back to original type.
                     var value = TypeInfo.Cast(doubleValue, TypeInfo.Scalars.Double, sourceType.BuiltInType);

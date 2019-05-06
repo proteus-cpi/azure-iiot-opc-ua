@@ -68,7 +68,7 @@ namespace HistoricalAccess {
         public ArchiveItem(string uniquePath, Assembly assembly, string resourcePath)
         {
             UniquePath = uniquePath;
-            ResourceInfo = new ResourceInfoType() { Assembly = assembly, ResourcePath = resourcePath };
+            ResourceInfo = new ResourceInfoType { Assembly = assembly, ResourcePath = resourcePath };
             Name = string.Empty;
 
             Name = ResourceInfo.ResourcePath;

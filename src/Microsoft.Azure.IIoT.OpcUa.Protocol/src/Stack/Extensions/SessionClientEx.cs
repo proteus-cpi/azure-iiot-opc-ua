@@ -120,9 +120,7 @@ namespace Opc.Ua.Client {
             return Task.Factory.FromAsync(
                 (callback, state) => client.BeginCloseSession(requestHeader,
                     deleteSubscriptions, callback, state),
-                result => {
-                    return client.EndCloseSession(result);
-                }, TaskCreationOptions.DenyChildAttach);
+                client.EndCloseSession, TaskCreationOptions.DenyChildAttach);
 #else
             return Task.Run(() => {
                 return client.CloseSession(requestHeader, deleteSubscriptions);

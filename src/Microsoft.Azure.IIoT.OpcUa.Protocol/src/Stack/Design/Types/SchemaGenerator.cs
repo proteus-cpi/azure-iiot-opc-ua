@@ -243,7 +243,7 @@ namespace Opc.Ua.Design.Schema {
                         continue;
                     }
 
-                    fields.Add(new Parameter() {
+                    fields.Add(new Parameter {
                         DataType = field.DataType,
                         DataTypeNode = field.DataTypeNode,
                         Description = field.Description,
@@ -276,7 +276,7 @@ namespace Opc.Ua.Design.Schema {
                         case "UInt64": { lengthInBits = 64; break; }
                     }
 
-                    fields.Insert(0, new Parameter() {
+                    fields.Insert(0, new Parameter {
                         Name = "None",
                         Identifier = 0,
                         IdentifierSpecified = true,

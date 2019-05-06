@@ -546,13 +546,11 @@ namespace Opc.Ua.Nodeset {
             // Decode references
             var references = new List<IReference>();
             if (node.References != null) {
-                var instance = decoded as InstanceNodeModel;
-                var type = decoded as TypeNodeModel;
                 foreach (var reference in node.References) {
                     var referenceTypeId = DecodeNodeId(reference.ReferenceType, context);
                     var isInverse = !reference.IsForward;
                     var targetId = DecodeExpandedNodeId(reference.Value, context);
-                    if (instance != null) {
+                    if (decoded is InstanceNodeModel instance) {
                         if (referenceTypeId == ReferenceTypeIds.HasModellingRule && !isInverse) {
                             instance.ModellingRuleId = ExpandedNodeId.ToNodeId(
                                 targetId, context.NamespaceUris);
@@ -564,7 +562,7 @@ namespace Opc.Ua.Nodeset {
                             continue;
                         }
                     }
-                    if (type != null) {
+                    if (decoded is TypeNodeModel type) {
                         if (referenceTypeId == ReferenceTypeIds.HasSubtype && isInverse) {
                             type.SuperTypeId = ExpandedNodeId.ToNodeId(targetId,
                                 context.NamespaceUris);

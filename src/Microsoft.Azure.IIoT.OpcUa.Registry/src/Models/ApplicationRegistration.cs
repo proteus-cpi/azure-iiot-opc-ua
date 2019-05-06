@@ -375,15 +375,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// <inheritdoc/>
         public override int GetHashCode() {
             var hashCode = base.GetHashCode();
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<ApplicationType?>.Default.GetHashCode(ApplicationType);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(ProductUri);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(DiscoveryProfileUri);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(ApplicationName);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(Locale);
             return hashCode;
         }
@@ -404,11 +404,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
             /// <inheritdoc />
             public int GetHashCode(ApplicationRegistration obj) {
                 var hashCode = 1200389859;
-                hashCode = hashCode * -1521134295 +
+                hashCode = (hashCode * -1521134295) +
                     EqualityComparer<ApplicationType?>.Default.GetHashCode(obj.ApplicationType);
-                hashCode = hashCode * -1521134295 +
+                hashCode = (hashCode * -1521134295) +
                     EqualityComparer<string>.Default.GetHashCode(obj.ApplicationUriLC);
-                hashCode = hashCode * -1521134295 +
+                hashCode = (hashCode * -1521134295) +
                     EqualityComparer<string>.Default.GetHashCode(obj.SiteOrSupervisorId);
                 return hashCode;
             }

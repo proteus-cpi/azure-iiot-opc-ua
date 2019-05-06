@@ -517,29 +517,29 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// <inheritdoc/>
         public override int GetHashCode() {
             var hashCode = base.GetHashCode();
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(ModuleId);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 Discovery.GetHashCode();
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<SupervisorLogLevel?>.Default.GetHashCode(LogLevel);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(AddressRangesToScan);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<TimeSpan?>.Default.GetHashCode(NetworkProbeTimeout);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<int?>.Default.GetHashCode(MaxNetworkProbes);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(PortRangesToScan);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<TimeSpan?>.Default.GetHashCode(PortProbeTimeout);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<int?>.Default.GetHashCode(MaxPortProbes);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<int?>.Default.GetHashCode(MinPortProbesPercent);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<SecurityMode?>.Default.GetHashCode(SecurityModeFilter);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<TimeSpan?>.Default.GetHashCode(IdleTimeBetweenScans);
             return hashCode;
         }

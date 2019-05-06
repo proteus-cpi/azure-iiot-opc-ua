@@ -132,7 +132,7 @@ namespace HistoricalEvents {
 
 
         private int GetRandom(int min, int max) {
-            return (int)(Math.Truncate(_random.NextDouble() * (max - min + 1) + min));
+            return (int)(Math.Truncate((_random.NextDouble() * (max - min + 1)) + min));
         }
 
         private string GetRandom(string[] values) {

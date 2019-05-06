@@ -49,11 +49,11 @@ namespace Opc.Ua.Design.Schema {
         /// <inheritdoc/>
         public override int GetHashCode() {
             var hashCode = 834833178;
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(Version);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(PublicationDate);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(Value);
             return hashCode;
         }

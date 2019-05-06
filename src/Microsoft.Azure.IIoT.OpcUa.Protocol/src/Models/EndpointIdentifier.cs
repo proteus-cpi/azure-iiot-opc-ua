@@ -44,17 +44,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Protocol.Models {
         /// <inheritdoc/>
         public override int GetHashCode() {
             var hashCode = -1971667340;
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(Endpoint.SecurityPolicy);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(Endpoint.Url);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<CredentialType?>.Default.GetHashCode(
                     Endpoint.User?.Type ?? CredentialType.None);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                EqualityComparer<SecurityMode?>.Default.GetHashCode(
                    Endpoint.SecurityMode ?? SecurityMode.Best);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 JToken.EqualityComparer.GetHashCode(Endpoint.User?.Value);
             return hashCode;
         }

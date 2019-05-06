@@ -206,21 +206,21 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// <inheritdoc/>
         public override int GetHashCode() {
             var hashCode = 479558466;
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(DeviceId);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(DeviceType);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(SupervisorId);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(SiteId);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(ApplicationId);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<bool>.Default.GetHashCode(IsDisabled ?? false);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<DateTime?>.Default.GetHashCode(NotSeenSince);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(Thumbprint);
             return hashCode;
         }

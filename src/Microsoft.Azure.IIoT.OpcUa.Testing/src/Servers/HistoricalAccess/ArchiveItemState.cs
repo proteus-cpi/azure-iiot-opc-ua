@@ -684,7 +684,7 @@ namespace HistoricalAccess {
                     return position;
                 }
 
-                position = min + (max - min)/2;
+                position = min + ((max - min)/2);
             }
 
             return -1;

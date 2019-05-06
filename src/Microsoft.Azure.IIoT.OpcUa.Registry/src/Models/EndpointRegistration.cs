@@ -555,28 +555,28 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// <inheritdoc/>
         public override int GetHashCode() {
             var hashCode = base.GetHashCode();
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(EndpointUrlLC);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(ApplicationId);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<bool>.Default.GetHashCode(Activated ?? false);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 JToken.EqualityComparer.GetHashCode(Credential);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<int?>.Default.GetHashCode(SecurityLevel);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<CredentialType?>.Default.GetHashCode(CredentialType);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<EndpointConnectivityState?>.Default.GetHashCode(State);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<SecurityMode?>.Default.GetHashCode(SecurityMode);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(SecurityPolicy);
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(
                     ClientCertificate.DecodeAsByteArray().ToSha1Hash());
-            hashCode = hashCode * -1521134295 +
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(
                     ServerThumbprint.DecodeAsByteArray().ToSha1Hash());
             return hashCode;
@@ -598,13 +598,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
             /// <inheritdoc />
             public int GetHashCode(EndpointRegistration obj) {
                 var hashCode = 1200389859;
-                hashCode = hashCode * -1521134295 +
+                hashCode = (hashCode * -1521134295) +
                     EqualityComparer<string>.Default.GetHashCode(obj.EndpointUrlLC);
-                hashCode = hashCode * -1521134295 +
+                hashCode = (hashCode * -1521134295) +
                     EqualityComparer<string>.Default.GetHashCode(obj.ApplicationId);
-                hashCode = hashCode * -1521134295 +
+                hashCode = (hashCode * -1521134295) +
                     EqualityComparer<SecurityMode?>.Default.GetHashCode(obj.SecurityMode);
-                hashCode = hashCode * -1521134295 +
+                hashCode = (hashCode * -1521134295) +
                     EqualityComparer<string>.Default.GetHashCode(obj.SecurityPolicy);
                 return hashCode;
             }

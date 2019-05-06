@@ -108,7 +108,7 @@ namespace Views {
                 var root = FindPredefinedNode(new NodeId(Model.Objects.Plant, NamespaceIndex), typeof(NodeState));
 
                 var boiler1 = new Model.BoilerState(null);
-                var pnd1 = new ParsedNodeId() { NamespaceIndex = NamespaceIndex, RootId = "Boiler #1" };
+                var pnd1 = new ParsedNodeId { NamespaceIndex = NamespaceIndex, RootId = "Boiler #1" };
 
                 boiler1.Create(
                     SystemContext,
@@ -123,7 +123,7 @@ namespace Views {
                 AddPredefinedNode(SystemContext, boiler1);
 
                 var boiler2 = new Model.BoilerState(null);
-                var pnd2 = new ParsedNodeId() { NamespaceIndex = NamespaceIndex, RootId = "Boiler #2" };
+                var pnd2 = new ParsedNodeId { NamespaceIndex = NamespaceIndex, RootId = "Boiler #2" };
 
                 boiler2.Create(
                     SystemContext,
