@@ -9,7 +9,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
     using Newtonsoft.Json.Linq;
     using System;
     using System.Collections.Generic;
-    using Serilog.Events;
 
     /// <summary>
     /// Endpoint persisted in twin and comparable

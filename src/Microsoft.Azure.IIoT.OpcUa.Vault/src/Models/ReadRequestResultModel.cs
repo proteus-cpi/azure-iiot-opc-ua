@@ -5,7 +5,6 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
 
     /// <summary>
     /// Read request result

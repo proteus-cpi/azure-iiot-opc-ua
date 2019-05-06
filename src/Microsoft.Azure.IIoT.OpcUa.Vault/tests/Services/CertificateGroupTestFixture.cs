@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 .AddFromDotEnvFile()
                 .AddEnvironmentVariables();
             var configuration = builder.Build();
-            _serviceConfig = new ServiceConfig(configuration);
+            _serviceConfig = new VaultConfig(configuration);
             _clientConfig = new ClientConfig(configuration);
             _logger = SerilogTestLogger.Create<CertificateGroupTestFixture>();
             if (!InvalidConfiguration()) {
@@ -61,7 +61,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             KeyVault?.PurgeAsync(ConfigId, GroupId).Wait();
         }
 
-        private readonly ServiceConfig _serviceConfig;
+        private readonly VaultConfig _serviceConfig;
         private readonly IClientConfig _clientConfig;
         private readonly ILogger _logger;
     }

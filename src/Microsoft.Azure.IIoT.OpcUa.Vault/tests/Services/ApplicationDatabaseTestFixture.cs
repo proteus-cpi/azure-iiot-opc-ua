@@ -6,7 +6,6 @@
 
 using Microsoft.Azure.IIoT.Auth.Clients;
 using Microsoft.Azure.IIoT.Auth.Runtime;
-using Microsoft.Azure.IIoT.OpcUa.Vault;
 using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB;
 using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services;
 using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
@@ -34,7 +33,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 .AddFromDotEnvFile()
                 .AddEnvironmentVariables();
             _configuration = builder.Build();
-            _serviceConfig = new ServiceConfig(_configuration);
+            _serviceConfig = new VaultConfig(_configuration);
             _clientConfig = new ClientConfig(_configuration);
             _logger = SerilogTestLogger.Create<ApplicationDatabaseTestFixture>();
             if (!InvalidConfiguration()) {
@@ -71,7 +70,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         private readonly IClientConfig _clientConfig;
         private readonly IDocumentDBRepository _documentDBRepository;
         private readonly ILogger _logger;
-        private readonly ServiceConfig _serviceConfig;
+        private readonly VaultConfig _serviceConfig;
         private readonly IConfigurationRoot _configuration;
         private const int kRandomStart = 3388;
         private const int kTestSetSize = 10;

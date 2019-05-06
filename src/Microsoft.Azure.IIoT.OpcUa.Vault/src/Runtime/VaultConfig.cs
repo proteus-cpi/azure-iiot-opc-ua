@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Runtime {
     using Microsoft.Extensions.Configuration;
 
     /// <inheritdoc/>
-    public class ServiceConfig : ConfigBase, IVaultConfig {
+    public class VaultConfig : ConfigBase, IVaultConfig {
 
         /// <summary>
         /// Vault configuration
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Runtime {
         /// Configuration constructor
         /// </summary>
         /// <param name="configuration"></param>
-        public ServiceConfig(IConfigurationRoot configuration) :
+        public VaultConfig(IConfigurationRoot configuration) :
             base(configuration) {
         }
     }

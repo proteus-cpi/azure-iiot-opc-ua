@@ -4,8 +4,6 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
-
     /// <summary>
     /// Fetch request result
     /// </summary>

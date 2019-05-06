@@ -8,7 +8,6 @@ using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models;
 using Opc.Ua;
 using Opc.Ua.Gds;
 using Opc.Ua.Test;
-using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
