@@ -4,18 +4,21 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using Newtonsoft.Json;
-    using System.Collections.Generic;
+    using Newtonsoft.Json.Linq;
 
     /// <summary>
-    /// Configuration collection model
+    /// A X509 certificate revocation list.
     /// </summary>
-    public sealed class CertificateGroupConfigurationCollectionModel {
+    public sealed class X509CrlModel {
 
         /// <summary>
-        /// Groups
+        /// The Issuer name of the revocation list.
         /// </summary>
-        [JsonProperty(PropertyName = "groups")]
-        public IList<CertificateGroupConfigurationModel> Groups { get; set; }
+        public string Issuer { get; set; }
+
+        /// <summary>
+        /// The X509 certificate revocation list.
+        /// </summary>
+        public JToken Crl { get; set; }
     }
 }

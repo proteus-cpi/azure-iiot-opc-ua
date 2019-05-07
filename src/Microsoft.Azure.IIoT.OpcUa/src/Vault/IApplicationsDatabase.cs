@@ -64,7 +64,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         Task<ApplicationRecordModel> UnregisterApplicationAsync(string id);
 
         /// <summary>
-        /// Physically remove the application form the database. Must be in deleted state.
+        /// Physically remove the application form the database.
+        /// Must be in deleted state.
         /// </summary>
         /// <param name="id">The applicationId</param>
         /// <param name="force">Force the application to be deleted,
@@ -84,54 +85,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// This query implements the search parameters required for the
         /// OPC UA GDS server QueryServers/QueryApplications API.
         /// </summary>
-        /// <param name="startingRecordId">the id of the first
-        /// record to return</param>
-        /// <param name="maxRecordsToReturn">max number of
-        /// records the query should return</param>
-        /// <param name="applicationName">Search string for
-        /// Application Name</param>
-        /// <param name="applicationUri">Search string for
-        /// Application Uri</param>
-        /// <param name="applicationType">Search flags for
-        /// Application Type</param>
-        /// <param name="productUri">Search string for Product Uri
-        /// </param>
-        /// <param name="serverCapabilities">Search array for
-        /// server caps</param>
-        /// <param name="applicationState">Filter for a application
-        /// state. Default: Approved</param>
-        Task<QueryApplicationsByIdResponseModel> QueryApplicationsByIdAsync(
-            uint startingRecordId, uint maxRecordsToReturn,
-            string applicationName, string applicationUri,
-            uint applicationType, string productUri,
-            IList<string> serverCapabilities,
-            QueryApplicationState? applicationState = null);
+        /// <param name="request">Query</param>
+        /// <returns></returns>
+        Task<QueryApplicationsByIdResultModel> QueryApplicationsByIdAsync(
+            QueryApplicationsByIdRequestModel request);
 
         /// <summary>
         /// Pageable query for applications with various search parameters.
         /// </summary>
-        /// <param name="applicationName">Search string for
-        /// Application Name</param>
-        /// <param name="applicationUri">Search string for
-        /// Application Uri</param>
-        /// <param name="applicationType">Search flags for
-        /// Application Type</param>
-        /// <param name="productUri">Search string for Product Uri
-        /// </param>
-        /// <param name="serverCapabilities">Search array for
-        /// server caps</param>
-        /// <param name="applicationState">Filter for a application
-        /// state. Default: Approved</param>
+        /// <param name="request">Query</param>
         /// <param name="nextPageLink">Next page link string
         /// </param>
         /// <param name="pageSize">Max number of applications
         /// to return</param>
         /// <returns></returns>
-        Task<QueryApplicationsResponseModel> QueryApplicationsAsync(
-            string applicationName, string applicationUri,
-            uint applicationType, string productUri,
-            IList<string> serverCapabilities,
-            QueryApplicationState? applicationState = null,
-            string nextPageLink = null, int? pageSize = null);
+        Task<QueryApplicationsResultModel> QueryApplicationsAsync(
+            QueryApplicationsRequestModel request, string nextPageLink = null,
+            int? pageSize = null);
     }
 }

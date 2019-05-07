@@ -184,7 +184,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 var response = await _applicationsDatabase.QueryApplicationsByIdAsync(
-                    0, 0, null, null, 0, null, null, QueryApplicationState.Any);
+                    new QueryApplicationsByIdRequestModel {
+                        ApplicationState = QueryApplicationState.Any
+                    });
                 Assert.NotNull(response);
             }
         }
@@ -194,7 +196,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 var response = await _applicationsDatabase.QueryApplicationsAsync(
-                    null, null, 0, null, null, QueryApplicationState.Any);
+                    new QueryApplicationsRequestModel {
+                        ApplicationState = QueryApplicationState.Any
+                    });
                 Assert.NotNull(response);
             }
         }

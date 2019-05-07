@@ -4,20 +4,16 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+    using System.Collections.Generic;
 
     /// <summary>
-    /// A X509 certificate revocation list.
+    /// Configuration collection model
     /// </summary>
-    public sealed class X509CrlModel {
+    public sealed class CertificateGroupConfigurationCollectionModel {
 
         /// <summary>
-        /// The Issuer name of the revocation list.
+        /// Groups
         /// </summary>
-        public string Issuer { get; set; }
-
-        /// <summary>
-        /// The X509 certificate revocation list.
-        /// </summary>
-        public byte[] RawData { get; set; }
+        public IList<CertificateGroupConfigurationModel> Groups { get; set; }
     }
 }

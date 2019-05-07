@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     /// <summary>
     /// Query applications
     /// </summary>
-    public sealed class QueryApplicationsModel {
+    public sealed class QueryApplicationsRequestModel {
 
         /// <summary>
         /// Application name

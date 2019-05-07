@@ -203,10 +203,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         public override async Task Init() {
             await _semaphoreSlim.WaitAsync();
             try {
-                Opc.Ua.Utils.Trace(Opc.Ua.Utils.TraceMasks.Information, "InitializeCertificateGroup: {0}", m_subjectName);
+                Utils.Trace(Utils.TraceMasks.Information, "InitializeCertificateGroup: {0}", m_subjectName);
                 var result = await _keyVaultServiceClient.GetCertificateAsync(Configuration.Id).ConfigureAwait(false);
                 Certificate = new X509Certificate2(result.Cer);
-                if (Opc.Ua.Utils.CompareDistinguishedName(Certificate.Subject, Configuration.SubjectName)) {
+                if (Utils.CompareDistinguishedName(Certificate.Subject, Configuration.SubjectName)) {
                     _caCertSecretIdentifier = result.SecretIdentifier.Identifier;
                     _caCertKeyIdentifier = result.KeyIdentifier.Identifier;
                     Crl = await _keyVaultServiceClient.LoadIssuerCACrl(Configuration.Id, Certificate);
@@ -300,7 +300,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
 
                 // update keys, ready back latest version
                 var result = await _keyVaultServiceClient.GetCertificateAsync(Configuration.Id).ConfigureAwait(false);
-                if (!Opc.Ua.Utils.IsEqual(result.Cer, Certificate.RawData)) {
+                if (!Utils.IsEqual(result.Cer, Certificate.RawData)) {
                     // something went utterly wrong...
                     return false;
                 }
@@ -336,7 +336,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             var now = DateTime.UtcNow;
             foreach (var caCertKeyInfo in caCertKeyInfoCollection) {
                 var subjectKeyId = FindSubjectKeyIdentifierExtension(caCertKeyInfo.Certificate);
-                if (Opc.Ua.Utils.CompareDistinguishedName(caCertKeyInfo.Certificate.Subject, certificate.Issuer) &&
+                if (Utils.CompareDistinguishedName(caCertKeyInfo.Certificate.Subject, certificate.Issuer) &&
                     string.Equals(authorityKeyIdentifier.SerialNumber, caCertKeyInfo.Certificate.SerialNumber, StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(authorityKeyIdentifier.KeyId, subjectKeyId.SubjectKeyIdentifier, StringComparison.OrdinalIgnoreCase)
                     ) {
@@ -374,7 +374,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                 foreach (var cert in remainingCertificates) {
                     var authorityKeyIdentifier = FindAuthorityKeyIdentifier(cert);
                     var subjectKeyId = FindSubjectKeyIdentifierExtension(caCertKeyInfo.Certificate);
-                    if (Opc.Ua.Utils.CompareDistinguishedName(caCertKeyInfo.Certificate.Subject, cert.Issuer) &&
+                    if (Utils.CompareDistinguishedName(caCertKeyInfo.Certificate.Subject, cert.Issuer) &&
                         string.Equals(authorityKeyIdentifier.SerialNumber, caCertKeyInfo.Certificate.SerialNumber, StringComparison.OrdinalIgnoreCase) &&
                         string.Equals(authorityKeyIdentifier.KeyId, subjectKeyId.SubjectKeyIdentifier, StringComparison.OrdinalIgnoreCase)) {
                         caRevokeCollection.Add(cert);
@@ -556,8 +556,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                 await LoadPublicAssets().ConfigureAwait(false);
                 var signingCert = Certificate;
                 {
-                    var publicKey = KeyVaultCertFactory.GetRSAPublicKey(info.SubjectPublicKeyInfo);
-                    return await KeyVaultCertFactory.CreateSignedCertificate(
+                    var publicKey = GetRSAPublicKey(info.SubjectPublicKeyInfo);
+                    return await CreateSignedCertificate(
                         application.ApplicationUri,
                         application.ApplicationNames.Count > 0 ? application.ApplicationNames[0].Text : "ApplicationName",
                         info.Subject.ToString(),
@@ -704,7 +704,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             }
 
             // verify subject
-            var subjectList = Opc.Ua.Utils.ParseDistinguishedName(update.SubjectName);
+            var subjectList = Utils.ParseDistinguishedName(update.SubjectName);
             if (subjectList == null ||
                 subjectList.Count == 0) {
                 throw new ArgumentException("Invalid Subject");

@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
             return new ApplicationRecordModel {
                 ApplicationId = application.ApplicationId != Guid.Empty ?
                 application.ApplicationId.ToString() : null,
-                Id = application.ID,
+                RecordId = application.Index,
                 State = application.ApplicationState,
                 ApplicationUri = application.ApplicationUri,
                 ApplicationName = application.ApplicationName,
@@ -32,7 +32,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
                 DiscoveryUrls = application.DiscoveryUrls,
                 ServerCapabilities = application.ServerCapabilities,
                 GatewayServerUri = application.GatewayServerUri,
-                DiscoveryProfileUri = application.DiscoveryProfileUri
+                DiscoveryProfileUri = application.DiscoveryProfileUri,
+                ApproveTime = application.ApproveTime,
+                AuthorityId = application.AuthorityId,
+                CreateTime = application.CreateTime,
+                DeleteTime = application.DeleteTime,
+                RegistryId = application.RegistryId,
+                UpdateTime = application.UpdateTime
             };
         }
 
@@ -53,6 +59,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
                 ServerCapabilities = model.ServerCapabilities,
                 GatewayServerUri = model.GatewayServerUri,
                 DiscoveryProfileUri = model.DiscoveryProfileUri,
+                UpdateTime = model.UpdateTime,
+                RegistryId = model.RegistryId,
+                DeleteTime = model.DeleteTime,
+                CreateTime = model.CreateTime,
+                AuthorityId = model.AuthorityId,
+                ApproveTime = model.ApproveTime,
+                ApplicationState = model.State,
+                Index = model.RecordId,
             };
         }
     }

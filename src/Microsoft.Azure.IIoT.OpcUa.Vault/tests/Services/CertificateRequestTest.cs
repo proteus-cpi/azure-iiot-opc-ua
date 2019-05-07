@@ -76,7 +76,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(190)]
         public async Task InitCertificateRequestAndGroup() {
             await _certificateRequest.InitializeAsync();
-            var groups = await _certificateGroup.GetCertificateGroupIdsAsync();
+            var groups = await _certificateGroup.GetGroupIdsAsync();
             foreach (var group in groups) {
                 await _certificateGroup.CreateIssuerCACertificateAsync(group);
                 var chain = await _certificateGroup.GetIssuerCACertificateChainAsync(group);
@@ -108,18 +108,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             var count = 0;
             foreach (var application in _applicationTestSet) {
-                var groups = await _certificateGroup.GetCertificateGroupIdsAsync();
+                var groups = await _certificateGroup.GetGroupIdsAsync();
                 foreach (var group in groups) {
                     var applicationId = application.Model.ApplicationId.ToString();
-                    var requestId = await _certificateRequest.StartNewKeyPairRequestAsync(
-                        applicationId,
-                        group,
-                        null,
-                        application.Subject,
-                        application.DomainNames.ToArray(),
-                        application.PrivateKeyFormat,
-                        application.PrivateKeyPassword,
-                        "unittest@opcvault.com");
+                    var requestId = await _certificateRequest.StartNewKeyPairRequestAsync(new CreateNewKeyPairRequestModel {
+                        ApplicationId = applicationId,
+                        CertificateGroupId = group,
+                        SubjectName = application.Subject,
+                        DomainNames = application.DomainNames.ToArray(),
+                        PrivateKeyFormat = application.PrivateKeyFormat,
+                        PrivateKeyPassword = application.PrivateKeyPassword,
+                        CertificateTypeId = null
+                    }, "unittest@opcvault.com");
                     Assert.NotNull(requestId);
                     // read request
                     var request = await _certificateRequest.ReadAsync(requestId);
@@ -149,10 +149,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             var count = 0;
             foreach (var application in _applicationTestSet) {
-                var groups = await _certificateGroup.GetCertificateGroupIdsAsync();
+                var groups = await _certificateGroup.GetGroupIdsAsync();
                 foreach (var group in groups) {
                     var applicationId = application.Model.ApplicationId.ToString();
-                    var certificateGroupConfiguration = await _certificateGroup.GetCertificateGroupConfigurationAsync(group);
+                    var certificateGroupConfiguration = await _certificateGroup.GetGroupConfigurationAsync(group);
                     var csrCertificate = CertificateFactory.CreateCertificate(
                         null, null, null,
                         application.ApplicationRecord.ApplicationUri,
@@ -167,12 +167,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     var csr = CertificateFactory.CreateSigningRequest(
                         csrCertificate,
                         application.DomainNames);
-                    var requestId = await _certificateRequest.StartSigningRequestAsync(
-                        applicationId,
-                        group,
-                        null,
-                        csr,
-                        "unittest@opcvault.com");
+                    var requestId = await _certificateRequest.StartSigningRequestAsync(new CreateSigningRequestModel {
+                            ApplicationId = applicationId,
+                            CertificateGroupId = group,
+                            CertificateRequest = csr,
+                            CertificateTypeId = null
+                        }, "unittest@opcvault.com");
                     Assert.NotNull(requestId);
                     // read request
                     var request = await _certificateRequest.ReadAsync(requestId);
@@ -372,7 +372,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(5600)]
         public async Task RevokeGroupRequestsAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
-            var groups = await _certificateGroup.GetCertificateGroupIdsAsync();
+            var groups = await _certificateGroup.GetGroupIdsAsync();
             foreach (var group in groups) {
                 await _certificateRequest.RevokeGroupAsync(group, true);
             }
@@ -495,8 +495,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         private readonly CertificateRequestTestFixture _fixture;
         private readonly ILogger _logger;
         private readonly IApplicationsDatabase _applicationsDatabase;
-        private readonly ICertificateGroup _certificateGroup;
-        private readonly ICertificateRequest _certificateRequest;
+        private readonly IVaultClient _certificateGroup;
+        private readonly ICertificateAuthority _certificateRequest;
         private readonly IList<ApplicationTestData> _applicationTestSet;
         private readonly RandomSource _randomSource;
     }

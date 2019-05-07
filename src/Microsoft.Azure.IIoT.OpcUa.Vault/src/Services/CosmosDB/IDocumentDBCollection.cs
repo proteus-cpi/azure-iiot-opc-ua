@@ -54,7 +54,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB {
         /// </summary>
         /// <param name="predicate"></param>
         /// <returns></returns>
-        Task<IEnumerable<T>> GetAsync(Expression<Func<T, bool>> predicate);
+        Task<IEnumerable<T>> GetAsync(
+            Expression<Func<T, bool>> predicate);
 
         /// <summary>
         /// Get page
@@ -65,9 +66,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB {
         /// <returns></returns>
         Task<(string, IEnumerable<T>)> GetPageAsync(
             Expression<Func<T, bool>> predicate,
-            string continuationToken,
-            int? maxItemCount
-            );
+            string continuationToken, int? maxItemCount);
 
         /// <summary>
         /// Get
@@ -85,9 +84,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB {
         /// <returns></returns>
         Task<(string, IEnumerable<T>)> GetPageAsync(
             SqlQuerySpec sqlQuerySpec,
-            string continuationToken,
-            int? maxItemCount
-            );
+            string continuationToken, int? maxItemCount);
 
         /// <summary>
         /// Update
@@ -96,6 +93,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB {
         /// <param name="item"></param>
         /// <param name="eTag"></param>
         /// <returns></returns>
-        Task<Document> UpdateAsync(Guid id, T item, string eTag);
+        Task<Document> UpdateAsync(Guid id, T item,
+            string eTag);
     }
 }

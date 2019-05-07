@@ -3,7 +3,6 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using Autofac;
     using Microsoft.Azure.Documents;
@@ -23,9 +22,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// The CosmosDB implementation of the application database.
+    /// The default cosmos db based implementation of the application database.
     /// </summary>
-    public sealed class CosmosDBApplicationsDatabase : IApplicationsDatabase {
+    public sealed class DefaultApplicationDatabase : IApplicationsDatabase {
 
         /// <summary>
         /// Create database
@@ -34,22 +33,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="config"></param>
         /// <param name="db"></param>
         /// <param name="logger"></param>
-        public CosmosDBApplicationsDatabase(ILifetimeScope scope,
+        public DefaultApplicationDatabase(ILifetimeScope scope,
             IVaultConfig config, IDocumentDBRepository db, ILogger logger) {
             _scope = scope;
             _autoApprove = config.ApplicationsAutoApprove;
             _logger = logger;
             _logger.Debug("Creating new instance of `CosmosDBApplicationsDatabase` service " +
-                config.CosmosDBCollection);
+                config.CollectionName);
             // set unique key in CosmosDB for application ID
             db.UniqueKeyPolicy.UniqueKeys.Add(new UniqueKey {
                 Paths = new Collection<string> {
                     "/" + nameof(ApplicationDocument.ClassType),
-                    "/" + nameof(ApplicationDocument.ID)
+                    "/" + nameof(ApplicationDocument.Index)
                 }
             });
             _applications = new DocumentDBCollection<ApplicationDocument>(
-                db, config.CosmosDBCollection);
+                db, config.CollectionName);
         }
 
         /// <inheritdoc/>
@@ -71,7 +70,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             // normalize Server Caps
             document.ServerCapabilities = ServerCapabilities(document);
             document.ApplicationId = Guid.NewGuid();
-            document.ID = _appIdCounter++;
+            document.Index = _appIdCounter++;
             document.ApplicationState = ApplicationState.New;
             document.CreateTime = DateTime.UtcNow;
 
@@ -89,11 +88,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     resourceId = result.Id;
                 }
                 catch (DocumentClientException dce) {
-                    if (dce.StatusCode == System.Net.HttpStatusCode.Conflict) {
+                    if (dce.StatusCode == HttpStatusCode.Conflict) {
                         // retry with new guid and keys
                         document.ApplicationId = Guid.NewGuid();
                         _appIdCounter = await GetMaxAppIDAsync();
-                        document.ID = _appIdCounter++;
+                        document.Index = _appIdCounter++;
                         retry = true;
                     }
                 }
@@ -133,8 +132,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         "A record with the specified application id does not exist.");
                 }
 
-                if (record.ID == 0) {
-                    record.ID = await GetMaxAppIDAsync();
+                if (record.Index == 0) {
+                    record.Index = await GetMaxAppIDAsync();
                 }
 
                 record.UpdateTime = DateTime.UtcNow;
@@ -202,33 +201,29 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             ApplicationDocument record;
             do {
                 retryUpdate = false;
-
                 var certificates = new List<byte[]>();
-
                 record = await _applications.GetAsync(appId);
                 if (record == null) {
                     throw new ResourceNotFoundException(
                         "A record with the specified application id does not exist.");
                 }
-
                 if (record.ApplicationState >= ApplicationState.Unregistered) {
                     throw new ResourceInvalidStateException(
                         "The record is not in a valid state for this operation.");
                 }
-
                 if (first && _scope != null) {
-                    var certificateRequestsService = _scope.Resolve<ICertificateRequest>();
+                    var certificateRequestsService = _scope.Resolve<ICertificateAuthority>();
                     // mark all requests as deleted
-                    ReadRequestResultModel[] certificateRequests;
                     string nextPageLink = null;
                     do {
-                        (nextPageLink, certificateRequests) = await certificateRequestsService.QueryPageAsync(
+                        var result = await certificateRequestsService.QueryPageAsync(
                             appId.ToString(), null, nextPageLink);
-                        foreach (var request in certificateRequests) {
+                        foreach (var request in result.Requests) {
                             if (request.State < CertificateRequestState.Deleted) {
                                 await certificateRequestsService.DeleteAsync(request.RequestId);
                             }
                         }
+                        nextPageLink = result.NextPageLink;
                     } while (nextPageLink != null);
                 }
                 first = false;
@@ -257,26 +252,26 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 throw new ResourceInvalidStateException(
                     "The record is not in a valid state for this operation.");
             }
-
             if (_scope != null) {
-                var certificateRequestsService = _scope.Resolve<ICertificateRequest>();
+                var certificateRequestsService = _scope.Resolve<ICertificateAuthority>();
                 // mark all requests as deleted
-                ReadRequestResultModel[] certificateRequests;
                 string nextPageLink = null;
                 do {
-                    (nextPageLink, certificateRequests) =
+                    var result =
                         await certificateRequestsService.QueryPageAsync(
                             appId.ToString(), null, nextPageLink);
-                    foreach (var request in certificateRequests) {
+                    foreach (var request in result.Requests) {
                         await certificateRequestsService.DeleteAsync(request.RequestId);
                     }
+                    nextPageLink = result.NextPageLink;
                 } while (nextPageLink != null);
             }
             await _applications.DeleteAsync(appId);
         }
 
         /// <inheritdoc/>
-        public async Task<IList<ApplicationRecordModel>> ListApplicationAsync(string applicationUri) {
+        public async Task<IList<ApplicationRecordModel>> ListApplicationAsync(
+            string applicationUri) {
             if (string.IsNullOrEmpty(applicationUri)) {
                 throw new ArgumentNullException(nameof(applicationUri),
                     "The applicationUri must be provided.");
@@ -304,66 +299,58 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<QueryApplicationsByIdResponseModel> QueryApplicationsByIdAsync(
-            uint startingRecordId,
-            uint maxRecordsToReturn,
-            string applicationName,
-            string applicationUri,
-            uint applicationType,
-            string productUri,
-            IList<string> serverCapabilities,
-            QueryApplicationState? applicationState
-            ) {
+        public async Task<QueryApplicationsByIdResultModel> QueryApplicationsByIdAsync(
+            QueryApplicationsByIdRequestModel request) {
             // TODO: implement last query time
             var lastCounterResetTime = DateTime.MinValue;
-            uint nextRecordId = 0;
-
             var records = new List<ApplicationDocument>();
-
             var matchQuery = false;
             var complexQuery =
-                !string.IsNullOrEmpty(applicationName) ||
-                !string.IsNullOrEmpty(applicationUri) ||
-                !string.IsNullOrEmpty(productUri) ||
-                (serverCapabilities != null && serverCapabilities.Count > 0);
-
+                !string.IsNullOrEmpty(request.ApplicationName) ||
+                !string.IsNullOrEmpty(request.ApplicationUri) ||
+                !string.IsNullOrEmpty(request.ProductUri) ||
+                (request.ServerCapabilities != null && request.ServerCapabilities.Count > 0);
             if (complexQuery) {
                 matchQuery =
-                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(applicationName) ||
-                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(applicationUri) ||
-                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(productUri);
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(
+                        request.ApplicationName) ||
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(
+                        request.ApplicationUri) ||
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(
+                        request.ProductUri);
             }
 
+            var nextRecordId = request.StartingRecordId ?? 0;
+            var maxRecordsToReturn = request.MaxRecordsToReturn ?? 0;
             var lastQuery = false;
             do {
                 var queryRecords = complexQuery ? _defaultRecordsPerQuery : maxRecordsToReturn;
-                var sqlQuerySpec = CreateServerQuery(startingRecordId, queryRecords, applicationState);
-                nextRecordId = startingRecordId + 1;
+                var sqlQuerySpec = CreateServerQuery(nextRecordId, queryRecords,
+                    request.ApplicationState);
+                nextRecordId++;
                 var applications = await _applications.GetAsync(sqlQuerySpec);
                 lastQuery = queryRecords == 0 ||
                     applications.Count() < queryRecords || !applications.Any();
 
                 foreach (var application in applications) {
-                    startingRecordId = (uint)application.ID + 1;
-                    nextRecordId = startingRecordId;
-
-                    if (!string.IsNullOrEmpty(applicationName)) {
+                    nextRecordId = (uint)application.Index + 1;
+                    if (!string.IsNullOrEmpty(request.ApplicationName)) {
                         if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
-                            application.ApplicationName, applicationName)) {
+                            application.ApplicationName, request.ApplicationName)) {
                             continue;
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(applicationUri)) {
+                    if (!string.IsNullOrEmpty(request.ApplicationUri)) {
                         if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
-                            application.ApplicationUri, applicationUri)) {
+                            application.ApplicationUri, request.ApplicationUri)) {
                             continue;
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(productUri)) {
+                    if (!string.IsNullOrEmpty(request.ProductUri)) {
                         if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
-                            application.ProductUri, productUri)) {
+                            application.ProductUri, request.ProductUri)) {
                             continue;
                         }
                     }
@@ -373,32 +360,28 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         capabilities = application.ServerCapabilities.Split(',');
                     }
 
-                    if (serverCapabilities != null && serverCapabilities.Count > 0) {
+                    if (request.ServerCapabilities != null && request.ServerCapabilities.Count > 0) {
                         var match = true;
-                        for (var ii = 0; ii < serverCapabilities.Count; ii++) {
-                            if (capabilities == null || !capabilities.Contains(serverCapabilities[ii])) {
+                        for (var ii = 0; ii < request.ServerCapabilities.Count; ii++) {
+                            if (capabilities == null || !capabilities.Contains(request.ServerCapabilities[ii])) {
                                 match = false;
                                 break;
                             }
                         }
-
                         if (!match) {
                             continue;
                         }
                     }
-
                     records.Add(application);
-
                     if (maxRecordsToReturn > 0 && --maxRecordsToReturn == 0) {
                         break;
                     }
                 }
             } while (maxRecordsToReturn > 0 && !lastQuery);
-
             if (lastQuery) {
                 nextRecordId = 0;
             }
-            return new QueryApplicationsByIdResponseModel {
+            return new QueryApplicationsByIdResultModel {
                 Applications = records.Select(a => a.ToServiceModel()).ToList(),
                 LastCounterResetTime = lastCounterResetTime,
                 NextRecordId = nextRecordId
@@ -406,53 +389,54 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<QueryApplicationsResponseModel> QueryApplicationsAsync(
-            string applicationName, string applicationUri, uint applicationType,
-            string productUri, IList<string> serverCapabilities,
-            QueryApplicationState? applicationState, string nextPageLink,
+        public async Task<QueryApplicationsResultModel> QueryApplicationsAsync(
+            QueryApplicationsRequestModel request, string nextPageLink,
             int? maxRecordsToReturn) {
             var records = new List<ApplicationDocument>();
             var matchQuery = false;
             var complexQuery =
-                !string.IsNullOrEmpty(applicationName) ||
-                !string.IsNullOrEmpty(applicationUri) ||
-                !string.IsNullOrEmpty(productUri) ||
-                (serverCapabilities != null && serverCapabilities.Count > 0);
+                !string.IsNullOrEmpty(request.ApplicationName) ||
+                !string.IsNullOrEmpty(request.ApplicationUri) ||
+                !string.IsNullOrEmpty(request.ProductUri) ||
+                (request.ServerCapabilities != null && request.ServerCapabilities.Count > 0);
 
             if (complexQuery) {
                 matchQuery =
-                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(applicationName) ||
-                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(applicationUri) ||
-                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(productUri);
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(
+                        request.ApplicationName) ||
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(
+                        request.ApplicationUri) ||
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(
+                        request.ProductUri);
             }
 
-            if (maxRecordsToReturn < 0) {
+            if (maxRecordsToReturn == null || maxRecordsToReturn < 0) {
                 maxRecordsToReturn = _defaultRecordsPerQuery;
             }
-            var sqlQuerySpec = CreateServerQuery(0, 0, applicationState);
+            var sqlQuerySpec = CreateServerQuery(0, 0, request.ApplicationState);
             do {
                 IEnumerable<ApplicationDocument> applications;
                 (nextPageLink, applications) = await _applications.GetPageAsync(
                     sqlQuerySpec, nextPageLink, maxRecordsToReturn - records.Count);
 
                 foreach (var application in applications) {
-                    if (!string.IsNullOrEmpty(applicationName)) {
+                    if (!string.IsNullOrEmpty(request.ApplicationName)) {
                         if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
-                            application.ApplicationName, applicationName)) {
+                            application.ApplicationName, request.ApplicationName)) {
                             continue;
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(applicationUri)) {
+                    if (!string.IsNullOrEmpty(request.ApplicationUri)) {
                         if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
-                            application.ApplicationUri, applicationUri)) {
+                            application.ApplicationUri, request.ApplicationUri)) {
                             continue;
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(productUri)) {
+                    if (!string.IsNullOrEmpty(request.ProductUri)) {
                         if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
-                            application.ProductUri, productUri)) {
+                            application.ProductUri, request.ProductUri)) {
                             continue;
                         }
                     }
@@ -462,10 +446,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         capabilities = application.ServerCapabilities.Split(',');
                     }
 
-                    if (serverCapabilities != null && serverCapabilities.Count > 0) {
+                    if (request.ServerCapabilities != null && request.ServerCapabilities.Count > 0) {
                         var match = true;
-                        for (var ii = 0; ii < serverCapabilities.Count; ii++) {
-                            if (capabilities == null || !capabilities.Contains(serverCapabilities[ii])) {
+                        for (var ii = 0; ii < request.ServerCapabilities.Count; ii++) {
+                            if (capabilities == null || !capabilities.Contains(request.ServerCapabilities[ii])) {
                                 match = false;
                                 break;
                             }
@@ -480,7 +464,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     }
                 }
             } while (nextPageLink != null);
-            return new QueryApplicationsResponseModel {
+            return new QueryApplicationsResultModel {
                 Applications = records.Select(a => a.ToServiceModel()).ToList(),
                 NextPageLink = nextPageLink
             };
@@ -695,7 +679,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 };
                 var maxIDEnum = await _applications.GetAsync(sqlQuerySpec);
                 var maxID = maxIDEnum.SingleOrDefault();
-                return (maxID != null) ? maxID.ID + 1 : 1;
+                return (maxID != null) ? maxID.Index + 1 : 1;
             }
             catch {
                 return 1;

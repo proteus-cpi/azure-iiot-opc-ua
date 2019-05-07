@@ -21,8 +21,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
     public class CertificateRequestTestFixture : IDisposable {
         public IApplicationsDatabase ApplicationsDatabase { get; set; }
-        public ICertificateGroup CertificateGroup { get; set; }
-        public ICertificateRequest CertificateRequest { get; set; }
+        public IVaultClient CertificateGroup { get; set; }
+        public ICertificateAuthority CertificateRequest { get; set; }
         public IList<ApplicationTestData> ApplicationTestSet { get; set; }
         public ApplicationTestDataGenerator RandomGenerator { get; set; }
         public bool RegistrationOk { get; set; }
@@ -41,18 +41,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             _logger = SerilogTestLogger.Create<CertificateRequestTestFixture>();
             if (!InvalidConfiguration()) {
                 _documentDBRepository = new DocumentDBRepository(_serviceConfig);
-                ApplicationsDatabase = CosmosDBApplicationsDatabaseFactory.Create(null, _serviceConfig, _documentDBRepository, _logger);
+                ApplicationsDatabase = new DefaultApplicationDatabase(null, _serviceConfig, _documentDBRepository, _logger);
 
                 var timeid = DateTime.UtcNow.ToFileTimeUtc() / 1000 % 10000;
                 _groupId = "CertReqIssuerCA" + timeid.ToString();
                 _configId = "CertReqConfig" + timeid.ToString();
                 var keyVaultServiceClient = KeyVaultTestServiceClient.Get(_configId, _serviceConfig, _clientConfig, _logger);
-                _keyVaultCertificateGroup = new KeyVaultCertificateGroup(keyVaultServiceClient, _serviceConfig, _clientConfig, _logger);
+                _keyVaultCertificateGroup = new KeyVaultCertificateStore(keyVaultServiceClient, _serviceConfig, _clientConfig, _logger);
                 _keyVaultCertificateGroup.PurgeAsync(_configId, _groupId).Wait();
                 CertificateGroup = _keyVaultCertificateGroup;
-                CertificateGroup = new KeyVaultCertificateGroup(keyVaultServiceClient, _serviceConfig, _clientConfig, _logger);
-                CertificateGroup.CreateCertificateGroupConfigurationAsync(_groupId, "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT", null).Wait();
-                CertificateRequest = CosmosDBCertificateRequestFactory.Create(ApplicationsDatabase, CertificateGroup, _serviceConfig, _documentDBRepository, _logger);
+                CertificateGroup = new KeyVaultCertificateStore(keyVaultServiceClient, _serviceConfig, _clientConfig, _logger);
+                CertificateGroup.CreateGroupConfigurationAsync(_groupId, "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT", null).Wait();
+                CertificateRequest = new DefaultCertificateAuthority(ApplicationsDatabase, CertificateGroup, _keyVaultCertificateGroup, _serviceConfig, _documentDBRepository, _logger);
 
                 // create test set
                 ApplicationTestSet = new List<ApplicationTestData>();
@@ -80,7 +80,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 string.IsNullOrEmpty(_serviceConfig.KeyVaultResourceId) ||
                 string.IsNullOrEmpty(_clientConfig.AppId) ||
                 string.IsNullOrEmpty(_clientConfig.AppSecret) ||
-                string.IsNullOrEmpty(_serviceConfig.CosmosDBCollection) ||
+                string.IsNullOrEmpty(_serviceConfig.CollectionName) ||
                 string.IsNullOrEmpty(_serviceConfig.CosmosDBDatabase) ||
                 string.IsNullOrEmpty(_serviceConfig.CosmosDBConnectionString)
                 ;
@@ -91,7 +91,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         private readonly VaultConfig _serviceConfig;
         private readonly string _configId;
         private readonly string _groupId;
-        private readonly KeyVaultCertificateGroup _keyVaultCertificateGroup;
+        private readonly KeyVaultCertificateStore _keyVaultCertificateGroup;
         private readonly ILogger _logger;
         private const int kRandomStart = 1234;
         private const int kTestSetSize = 10;

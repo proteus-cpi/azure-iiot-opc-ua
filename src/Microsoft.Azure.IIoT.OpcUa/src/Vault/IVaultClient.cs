@@ -5,36 +5,31 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
-    using Microsoft.AspNetCore.Http;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Certificate Group interface.
+    /// Certificate vault client
     /// </summary>
-    public interface ICertificateGroup {
+    public interface IVaultClient {
+
         /// <TODO/>
         Task InitializeAsync();
 
-        /// <summary>
-        /// Returns a shallow copy of the certificate group which uses
-        /// a token on behalf of a user.
-        /// </summary>
-        /// <param name="request">The http request with the user token</param>
-        Task<ICertificateGroup> SendOnBehalfOfRequestAsync(HttpRequest request);
+        // Configuration
 
         /// <summary>
-        /// Return the names of the certificate groups.
+        /// Return the names of the certificate groups in
+        /// the store.
         /// </summary>
         /// <returns>The certificate group ids</returns>
-        Task<string[]> GetCertificateGroupIdsAsync();
+        Task<string[]> GetGroupIdsAsync();
 
         /// <summary>
         /// Get the configuration for a group Id.
         /// </summary>
         /// <param name="id">The group Id</param>
         /// <returns>The configuration</returns>
-        Task<CertificateGroupConfigurationModel> GetCertificateGroupConfigurationAsync(
+        Task<CertificateGroupConfigurationModel> GetGroupConfigurationAsync(
             string id);
 
         /// <summary>
@@ -44,7 +39,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="id">The group Id</param>
         /// <param name="config">The updated configuration</param>
         /// <returns>The updated group</returns>
-        Task<CertificateGroupConfigurationModel> UpdateCertificateGroupConfigurationAsync(
+        Task<CertificateGroupConfigurationModel> UpdateGroupConfigurationAsync(
             string id, CertificateGroupConfigurationModel config);
 
         /// <summary>
@@ -54,14 +49,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="id">The new group Id</param>
         /// <param name="subject">The subject of the new Issuer CA certificate</param>
         /// <param name="certType">The certificate type for the new group</param>
-        Task<CertificateGroupConfigurationModel> CreateCertificateGroupConfigurationAsync(
+        Task<CertificateGroupConfigurationModel> CreateGroupConfigurationAsync(
             string id, string subject, string certType);
 
         /// <summary>
         /// Get the configuration of all certificate groups.
         /// </summary>
         /// <returns>The configurations</returns>
-        Task<CertificateGroupConfigurationCollectionModel> GetCertificateGroupConfigurationCollectionAsync();
+        Task<CertificateGroupConfigurationCollectionModel> GetGroupConfigurationsAsync();
+
+
+        // Group interface
 
         /// <summary>
         /// Get all Issuer certificate versions in a pageable call.
@@ -105,7 +103,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// Get the default trustlist of a certificate group.
         /// Pageable.
         /// A trustlist contains an Issuer list and a Trusted list.
-        /// Issuer and Trusted list each contain a list of certificates and CRLs.
+        /// Issuer and Trusted list each contain a list of certificates
+        /// and CRLs.
         /// </summary>
         /// <param name="id"></param>
         /// <param name="nextPageLink"></param>
@@ -158,15 +157,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// </summary>
         /// <param name="id">The group Id</param>
         /// <param name="requestId">The request Id</param>
-        /// <param name="applicationUri">The application Uri for the certificate</param>
-        /// <param name="subjectName">The subject for the certificate</param>
-        /// <param name="domainNames">The domain names in the certificate</param>
-        /// <param name="privateKeyFormat">The private key format, PFX or PEM</param>
-        /// <param name="privateKeyPassword">The password for the private key</param>
+        /// <param name="applicationUri">The application Uri for the
+        /// certificate</param>
+        /// <param name="subjectName">The subject for the certificate
+        /// </param>
+        /// <param name="domainNames">The domain names in the
+        /// certificate</param>
+        /// <param name="privateKeyFormat">The private key format,
+        /// PFX or PEM</param>
+        /// <param name="password">The password for the private key</param>
         /// <returns>The new key pair</returns>
         Task<X509CertificatePrivateKeyPairModel> NewKeyPairRequestAsync(
             string id, string requestId, string applicationUri, string subjectName,
-            string[] domainNames, string privateKeyFormat, string privateKeyPassword);
+            string[] domainNames, string privateKeyFormat, string password);
 
         /// <summary>
         /// Load the private key of a request from secure storage.

@@ -10,54 +10,46 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     /// <summary>
     /// Query by id
     /// </summary>
-    public sealed class QueryApplicationsByIdModel {
-
-        /// <summary>
-        /// Starting record id
-        /// </summary>
-        [JsonProperty(PropertyName = "startingRecordId")]
-        public uint StartingRecordId { get; set; }
-
-        /// <summary>
-        /// Max records to return
-        /// </summary>
-        [JsonProperty(PropertyName = "maxRecordsToReturn")]
-        public uint MaxRecordsToReturn { get; set; }
+    public sealed class QueryApplicationsByIdRequestModel {
 
         /// <summary>
         /// Application name
         /// </summary>
-        [JsonProperty(PropertyName = "applicationName")]
         public string ApplicationName { get; set; }
 
         /// <summary>
         /// Application uri
         /// </summary>
-        [JsonProperty(PropertyName = "applicationUri")]
         public string ApplicationUri { get; set; }
 
         /// <summary>
         /// Application type
         /// </summary>
-        [JsonProperty(PropertyName = "applicationType")]
         public QueryApplicationType? ApplicationType { get; set; }
 
         /// <summary>
         /// Product uri
         /// </summary>
-        [JsonProperty(PropertyName = "productUri")]
         public string ProductUri { get; set; }
 
         /// <summary>
         /// Server capabilities
         /// </summary>
-        [JsonProperty(PropertyName = "serverCapabilities")]
         public IList<string> ServerCapabilities { get; set; }
 
         /// <summary>
         /// Application state
         /// </summary>
-        [JsonProperty(PropertyName = "applicationState")]
         public QueryApplicationState? ApplicationState { get; set; }
+
+        /// <summary>
+        /// Optional starting record id
+        /// </summary>
+        public uint? StartingRecordId { get; set; }
+
+        /// <summary>
+        /// Optional max records to return
+        /// </summary>
+        public uint? MaxRecordsToReturn { get; set; }
     }
 }

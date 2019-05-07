@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             if (!InvalidConfiguration()) {
                 RandomGenerator = new ApplicationTestDataGenerator(kRandomStart);
                 _documentDBRepository = new DocumentDBRepository(_serviceConfig);
-                ApplicationsDatabase = CosmosDBApplicationsDatabaseFactory.Create(null, _serviceConfig, _documentDBRepository, _logger);
+                ApplicationsDatabase = new DefaultApplicationDatabase(null, _serviceConfig, _documentDBRepository, _logger);
                 // create test set
                 ApplicationTestSet = new List<ApplicationTestData>();
                 for (var i = 0; i < kTestSetSize; i++) {
@@ -62,7 +62,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
         private bool InvalidConfiguration() {
             return
-            string.IsNullOrEmpty(_serviceConfig.CosmosDBCollection) ||
+            string.IsNullOrEmpty(_serviceConfig.CollectionName) ||
             string.IsNullOrEmpty(_serviceConfig.CosmosDBDatabase) ||
             string.IsNullOrEmpty(_serviceConfig.CosmosDBConnectionString)
             ;

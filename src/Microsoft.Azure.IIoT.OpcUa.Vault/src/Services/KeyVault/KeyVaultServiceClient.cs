@@ -732,9 +732,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// ii) Then walk all CA cert versions and load all certs tagged with id==Issuer or id==Trusted.
         ///     Crl is loaded too if CA cert is tagged.
         /// </summary>
-        public async Task<Models.KeyVaultTrustListModel> GetTrustListAsync(
+        public async Task<KeyVaultTrustListModel> GetTrustListAsync(
             string id, int? maxResults, string nextPageLink, CancellationToken ct = default) {
-            var trustList = new Models.KeyVaultTrustListModel(id);
+            var trustList = new KeyVaultTrustListModel(id);
             if (maxResults == null) {
                 maxResults = MaxResults;
             }

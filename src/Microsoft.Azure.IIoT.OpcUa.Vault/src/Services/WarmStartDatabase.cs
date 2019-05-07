@@ -23,7 +23,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="applicationDatabase"></param>
         /// <param name="logger"></param>
         public WarmStartDatabase(IDocumentDBRepository repository,
-            ICertificateRequest certificateRequest,
+            ICertificateAuthority certificateRequest,
             IApplicationsDatabase applicationDatabase, ILogger logger) {
             _repository = repository;
             _certificateRequest = certificateRequest;
@@ -47,7 +47,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         private readonly IDocumentDBRepository _repository;
-        private readonly ICertificateRequest _certificateRequest;
+        private readonly ICertificateAuthority _certificateRequest;
         private readonly IApplicationsDatabase _applicationDatabase;
         private readonly ILogger _logger;
     }

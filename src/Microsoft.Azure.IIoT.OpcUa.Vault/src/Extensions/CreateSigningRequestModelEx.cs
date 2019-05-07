@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+    using Newtonsoft.Json.Linq;
     using System;
 
     /// <summary>
@@ -12,24 +13,33 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     public static class CreateSigningRequestModelEx {
 
         /// <summary>
-        /// Convert back to service model
+        /// Convert to raw request
         /// </summary>
         /// <returns></returns>
-        public static byte[] ToBuffer(this CreateSigningRequestModel model) {
+        public static byte[] ToRawData(this CreateSigningRequestModel model) {
             const string certRequestPemHeader = "-----BEGIN CERTIFICATE REQUEST-----";
             const string certRequestPemFooter = "-----END CERTIFICATE REQUEST-----";
-            if (model.CertificateRequest != null) {
-                if (model.CertificateRequest.Contains(certRequestPemHeader,
-                    StringComparison.OrdinalIgnoreCase)) {
-                    var strippedCertificateRequest = model.CertificateRequest.Replace(
-                        certRequestPemHeader, "", StringComparison.OrdinalIgnoreCase);
-                    strippedCertificateRequest = strippedCertificateRequest.Replace(
-                        certRequestPemFooter, "", StringComparison.OrdinalIgnoreCase);
-                    return Convert.FromBase64String(strippedCertificateRequest);
-                }
-                return Convert.FromBase64String(model.CertificateRequest);
+            if (model.CertificateRequest == null) {
+                throw new ArgumentNullException(nameof(model.CertificateRequest));
             }
-            return null;
+            switch (model.CertificateRequest.Type) {
+                case JTokenType.Bytes:
+                    return (byte[])model.CertificateRequest;
+                case JTokenType.String:
+                    var request = (string)model.CertificateRequest;
+                    if (request.Contains(certRequestPemHeader,
+                        StringComparison.OrdinalIgnoreCase)) {
+                        var strippedCertificateRequest = request.Replace(
+                            certRequestPemHeader, "", StringComparison.OrdinalIgnoreCase);
+                        strippedCertificateRequest = strippedCertificateRequest.Replace(
+                            certRequestPemFooter, "", StringComparison.OrdinalIgnoreCase);
+                        return Convert.FromBase64String(strippedCertificateRequest);
+                    }
+                    return Convert.FromBase64String(request);
+                default:
+                    throw new ArgumentException("Bad certificate request",
+                nameof(model.CertificateRequest));
+            }
         }
     }
 }

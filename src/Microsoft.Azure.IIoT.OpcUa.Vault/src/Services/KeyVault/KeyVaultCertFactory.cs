@@ -1,4 +1,4 @@
-// ------------------------------------------------------------
+﻿// ------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
@@ -7,7 +7,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     using Opc.Ua;
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using System.Net;
     using System.Security.Cryptography;
@@ -347,7 +346,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             List<string> subjectNameEntries = null;
 
             if (!string.IsNullOrEmpty(subjectName)) {
-                subjectNameEntries = Opc.Ua.Utils.ParseDistinguishedName(subjectName);
+                subjectNameEntries = Utils.ParseDistinguishedName(subjectName);
                 // enforce proper formatting for the subject name string
                 subjectName = string.Join(", ", subjectNameEntries);
             }
@@ -390,7 +389,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             if (domainNames == null || domainNames.Count == 0) {
                 domainNames = new List<string>
                 {
-                    Opc.Ua.Utils.GetHostName()
+                    Utils.GetHostName()
                 };
             }
 
@@ -406,7 +405,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                 applicationUri = builder.ToString();
             }
 
-            var uri = Opc.Ua.Utils.ParseUri(applicationUri);
+            var uri = Utils.ParseUri(applicationUri);
 
             if (uri == null) {
                 throw new ArgumentNullException(nameof(applicationUri), "Must specify a valid URL.");
@@ -414,19 +413,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
 
             // create the subject name,
             if (string.IsNullOrEmpty(subjectName)) {
-                subjectName = Opc.Ua.Utils.Format("CN={0}", applicationName);
+                subjectName = Utils.Format("CN={0}", applicationName);
             }
 
             if (!subjectName.Contains("CN=")) {
-                subjectName = Opc.Ua.Utils.Format("CN={0}", subjectName);
+                subjectName = Utils.Format("CN={0}", subjectName);
             }
 
             if (domainNames != null && domainNames.Count > 0) {
                 if (!subjectName.Contains("DC=") && !subjectName.Contains("=")) {
-                    subjectName += Opc.Ua.Utils.Format(", DC={0}", domainNames[0]);
+                    subjectName += Utils.Format(", DC={0}", domainNames[0]);
                 }
                 else {
-                    subjectName = Opc.Ua.Utils.ReplaceDCLocalhost(subjectName, domainNames[0]);
+                    subjectName = Utils.ReplaceDCLocalhost(subjectName, domainNames[0]);
                 }
             }
 
@@ -608,212 +607,5 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             return extensionUrl.Replace("%serial%", serial.ToLower());
         }
 
-    }
-    /// <summary>
-    /// The X509 signature generator to sign a digest with a KeyVault key.
-    /// </summary>
-    public class KeyVaultSignatureGenerator : X509SignatureGenerator {
-        private readonly X509Certificate2 _issuerCert;
-        private readonly KeyVaultServiceClient _keyVaultServiceClient;
-        private readonly string _signingKey;
-
-        /// <summary>
-        /// Create the KeyVault signature generator.
-        /// </summary>
-        /// <param name="keyVaultServiceClient">The KeyVault service client to use</param>
-        /// <param name="signingKey">The KeyVault signing key</param>
-        /// <param name="issuerCertificate">The issuer certificate used for signing</param>
-        public KeyVaultSignatureGenerator(
-            KeyVaultServiceClient keyVaultServiceClient,
-            string signingKey,
-            X509Certificate2 issuerCertificate) {
-            _issuerCert = issuerCertificate;
-            _keyVaultServiceClient = keyVaultServiceClient;
-            _signingKey = signingKey;
-        }
-
-        /// <summary>
-        /// Callback to sign a digest with KeyVault key.
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="hashAlgorithm"></param>
-        /// <returns></returns>
-        public override byte[] SignData(byte[] data, HashAlgorithmName hashAlgorithm) {
-            HashAlgorithm hash;
-            if (hashAlgorithm == HashAlgorithmName.SHA256) {
-                hash = SHA256.Create();
-            }
-            else if (hashAlgorithm == HashAlgorithmName.SHA384) {
-                hash = SHA384.Create();
-            }
-            else if (hashAlgorithm == HashAlgorithmName.SHA512) {
-                hash = SHA512.Create();
-            }
-            else {
-                throw new ArgumentOutOfRangeException(nameof(hashAlgorithm), "The hash algorithm " + hashAlgorithm.Name + " is not supported.");
-            }
-            var digest = hash.ComputeHash(data);
-            var resultKeyVaultPkcs = _keyVaultServiceClient.SignDigestAsync(_signingKey, digest, hashAlgorithm, RSASignaturePadding.Pkcs1).GetAwaiter().GetResult();
-#if TESTANDVERIFYTHEKEYVAULTSIGNER
-                // for test and dev only, verify the KeyVault signer acts identical to the internal signer
-                if (_issuerCert.HasPrivateKey)
-                {
-                    var resultKeyVaultPss = _keyVaultServiceClient.SignDigestAsync(_signingKey, digest, hashAlgorithm, RSASignaturePadding.Pss).GetAwaiter().GetResult();
-                    var resultLocalPkcs = _issuerCert.GetRSAPrivateKey().SignData(data, hashAlgorithm, RSASignaturePadding.Pkcs1);
-                    var resultLocalPss = _issuerCert.GetRSAPrivateKey().SignData(data, hashAlgorithm, RSASignaturePadding.Pss);
-                    for (int i = 0; i < resultKeyVaultPkcs.Length; i++)
-                    {
-                        if (resultKeyVaultPkcs[i] != resultLocalPkcs[i])
-                        {
-                            Debug.WriteLine("{0} != {1}", resultKeyVaultPkcs[i], resultLocalPkcs[i]);
-                        }
-                    }
-                    for (int i = 0; i < resultKeyVaultPss.Length; i++)
-                    {
-                        if (resultKeyVaultPss[i] != resultLocalPss[i])
-                        {
-                            Debug.WriteLine("{0} != {1}", resultKeyVaultPss[i], resultLocalPss[i]);
-                        }
-                    }
-                }
-#endif
-            return resultKeyVaultPkcs;
-        }
-
-        /// <inheritdoc/>
-        protected override PublicKey BuildPublicKey() {
-            return _issuerCert.PublicKey;
-        }
-
-        /// <summary>
-        /// Build public key
-        /// </summary>
-        /// <param name="rsa"></param>
-        /// <returns></returns>
-        internal static PublicKey BuildPublicKey(RSA rsa) {
-            if (rsa == null) {
-                throw new ArgumentNullException(nameof(rsa));
-            }
-            // function is never called
-            return null;
-        }
-
-        /// <inheritdoc/>
-        public override byte[] GetSignatureAlgorithmIdentifier(HashAlgorithmName hashAlgorithm) {
-            byte[] oidSequence;
-
-            if (hashAlgorithm == HashAlgorithmName.SHA256) {
-                //const string RsaPkcs1Sha256 = "1.2.840.113549.1.1.11";
-                oidSequence = new byte[] { 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 11, 5, 0 };
-            }
-            else if (hashAlgorithm == HashAlgorithmName.SHA384) {
-                //const string RsaPkcs1Sha384 = "1.2.840.113549.1.1.12";
-                oidSequence = new byte[] { 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 12, 5, 0 };
-            }
-            else if (hashAlgorithm == HashAlgorithmName.SHA512) {
-                //const string RsaPkcs1Sha512 = "1.2.840.113549.1.1.13";
-                oidSequence = new byte[] { 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 13, 5, 0 };
-            }
-            else {
-                throw new ArgumentOutOfRangeException(nameof(hashAlgorithm), "The hash algorithm " + hashAlgorithm.Name + " is not supported.");
-            }
-            return oidSequence;
-        }
-    }
-
-    /// <summary>
-    /// The signature factory for Bouncy Castle to sign a digest with a KeyVault key.
-    /// </summary>
-    public class KeyVaultSignatureFactory : Org.BouncyCastle.Crypto.ISignatureFactory {
-        private readonly Org.BouncyCastle.Asn1.X509.AlgorithmIdentifier _algID;
-        private readonly HashAlgorithmName _hashAlgorithm;
-        private readonly X509SignatureGenerator _generator;
-
-        /// <summary>
-        /// Constructor which also specifies a source of randomness to be used if one is required.
-        /// </summary>
-        /// <param name="hashAlgorithm">The name of the signature algorithm to use.</param>
-        /// <param name="generator">The signature generator.</param>
-        public KeyVaultSignatureFactory(HashAlgorithmName hashAlgorithm, X509SignatureGenerator generator) {
-            Org.BouncyCastle.Asn1.DerObjectIdentifier sigOid;
-            if (hashAlgorithm == HashAlgorithmName.SHA256) {
-                sigOid = Org.BouncyCastle.Asn1.Pkcs.PkcsObjectIdentifiers.Sha256WithRsaEncryption;
-            }
-            else if (hashAlgorithm == HashAlgorithmName.SHA384) {
-                sigOid = Org.BouncyCastle.Asn1.Pkcs.PkcsObjectIdentifiers.Sha384WithRsaEncryption;
-            }
-            else if (hashAlgorithm == HashAlgorithmName.SHA512) {
-                sigOid = Org.BouncyCastle.Asn1.Pkcs.PkcsObjectIdentifiers.Sha512WithRsaEncryption;
-            }
-            else {
-                throw new ArgumentOutOfRangeException(nameof(hashAlgorithm));
-            }
-            _hashAlgorithm = hashAlgorithm;
-            _generator = generator;
-            _algID = new Org.BouncyCastle.Asn1.X509.AlgorithmIdentifier(sigOid);
-        }
-
-        /// <inheritdoc/>
-        public object AlgorithmDetails => _algID;
-
-        /// <inheritdoc/>
-        public Org.BouncyCastle.Crypto.IStreamCalculator CreateCalculator() {
-            return new KeyVaultStreamCalculator(_generator, _hashAlgorithm);
-        }
-    }
-
-    /// <summary>
-    /// Signs a Bouncy Castle digest stream with the .Net X509SignatureGenerator.
-    /// </summary>
-    public class KeyVaultStreamCalculator : Org.BouncyCastle.Crypto.IStreamCalculator {
-        private readonly X509SignatureGenerator _generator;
-        private readonly HashAlgorithmName _hashAlgorithm;
-
-        /// <summary>
-        /// Ctor for the stream calculator.
-        /// </summary>
-        /// <param name="generator">The X509SignatureGenerator to sign the digest.</param>
-        /// <param name="hashAlgorithm">The hash algorithm to use for the signature.</param>
-        public KeyVaultStreamCalculator(
-            X509SignatureGenerator generator,
-            HashAlgorithmName hashAlgorithm) {
-            Stream = new MemoryStream();
-            _generator = generator;
-            _hashAlgorithm = hashAlgorithm;
-        }
-
-        /// <summary>
-        /// The digest stream (MemoryStream).
-        /// </summary>
-        public Stream Stream { get; }
-
-        /// <summary>
-        /// Callback signs the digest with X509SignatureGenerator.
-        /// </summary>
-        public object GetResult() {
-            var memStream = Stream as MemoryStream;
-            var digest = memStream.ToArray();
-            var signature = _generator.SignData(digest, _hashAlgorithm);
-            return new MemoryBlockResult(signature);
-        }
-    }
-
-    /// <summary>
-    /// Helper for Bouncy Castle signing operation to store the result in a memory block.
-    /// </summary>
-    public class MemoryBlockResult : Org.BouncyCastle.Crypto.IBlockResult {
-        private readonly byte[] _data;
-        /// <inheritdoc/>
-        public MemoryBlockResult(byte[] data) {
-            _data = data;
-        }
-        /// <inheritdoc/>
-        public byte[] Collect() {
-            return _data;
-        }
-        /// <inheritdoc/>
-        public int Collect(byte[] destination, int offset) {
-            throw new NotImplementedException();
-        }
     }
 }

@@ -4,24 +4,16 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using Newtonsoft.Json;
     using System.Collections.Generic;
 
     /// <summary>
-    /// Response model
+    /// Create group list model
     /// </summary>
-    public sealed class CertificateRequestQueryResponseModel {
+    public sealed class CertificateGroupListModel {
 
         /// <summary>
-        /// The query result.
+        /// Groups
         /// </summary>
-        [JsonProperty(PropertyName = "requests")]
-        public IList<CertificateRequestRecordModel> Requests { get; set; }
-
-        /// <summary>
-        /// Link to the next page of results.
-        /// </summary>
-        [JsonProperty(PropertyName = "nextPageLink")]
-        public string NextPageLink { get; set; }
+        public IList<string> Groups { get; set; }
     }
 }

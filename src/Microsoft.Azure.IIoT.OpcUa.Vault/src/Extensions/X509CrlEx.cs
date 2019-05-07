@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+    using Newtonsoft.Json.Linq;
     using Opc.Ua;
     using System;
 
@@ -18,7 +19,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <param name="crl"></param>
         public static X509CrlModel ToServiceModel(this X509CRL crl) {
             return new X509CrlModel {
-                RawData = crl.RawData,
+                Crl = crl.RawData,
                 Issuer = crl.Issuer
             };
         }
@@ -28,7 +29,36 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// </summary>
         /// <returns></returns>
         public static X509CRL ToStackModel(this X509CrlModel model) {
-            return new X509CRL(model.RawData);
+            return new X509CRL(model.ToRawData());
+        }
+
+        /// <summary>
+        /// Get Raw data
+        /// </summary>
+        /// <returns></returns>
+        public static byte[] ToRawData(this X509CrlModel model) {
+            const string certPemHeader = "-----BEGIN X509 CRL-----";
+            const string certPemFooter = "-----END X509 CRL-----";
+            if (model.Crl == null) {
+                throw new ArgumentNullException(nameof(model.Crl));
+            }
+            switch (model.Crl.Type) {
+                case JTokenType.Bytes:
+                    return (byte[])model.Crl;
+                case JTokenType.String:
+                    var request = (string)model.Crl;
+                    if (request.Contains(certPemHeader,
+                        StringComparison.OrdinalIgnoreCase)) {
+                        var strippedCertificateRequest = request.Replace(
+                            certPemHeader, "", StringComparison.OrdinalIgnoreCase);
+                        strippedCertificateRequest = strippedCertificateRequest.Replace(
+                            certPemFooter, "", StringComparison.OrdinalIgnoreCase);
+                        return Convert.FromBase64String(strippedCertificateRequest);
+                    }
+                    return Convert.FromBase64String(request);
+                default:
+                    throw new ArgumentException("Bad crl data.", nameof(model.Crl));
+            }
         }
     }
 }

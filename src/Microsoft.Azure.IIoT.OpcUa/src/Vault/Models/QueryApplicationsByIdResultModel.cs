@@ -5,23 +5,33 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using Newtonsoft.Json;
+    using System;
     using System.Collections.Generic;
+    using System.ComponentModel.DataAnnotations;
 
     /// <summary>
-    /// Application query response
+    /// Create response
     /// </summary>
-    public sealed class QueryApplicationsResponseModel {
+    public sealed class QueryApplicationsByIdResultModel {
 
         /// <summary>
-        /// Found applications
+        /// Applications found
         /// </summary>
         [JsonProperty(PropertyName = "applications")]
         public IList<ApplicationRecordModel> Applications { get; set; }
 
         /// <summary>
-        /// Next page
+        /// Last counter reset
         /// </summary>
-        [JsonProperty(PropertyName = "nextPageLink")]
-        public string NextPageLink { get; set; }
+        [JsonProperty(PropertyName = "lastCounterResetTime")]
+        [Required]
+        public DateTime LastCounterResetTime { get; set; }
+
+        /// <summary>
+        /// Next record id
+        /// </summary>
+        [JsonProperty(PropertyName = "nextRecordId")]
+        [Required]
+        public uint NextRecordId { get; set; }
     }
 }

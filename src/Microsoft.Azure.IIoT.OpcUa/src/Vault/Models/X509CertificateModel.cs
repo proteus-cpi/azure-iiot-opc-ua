@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+    using Newtonsoft.Json.Linq;
     using System;
 
     /// <summary>
@@ -39,6 +40,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Raw data
         /// </summary>
-        public byte[] Certificate { get; set; }
+        public JToken Certificate { get; set; }
     }
 }

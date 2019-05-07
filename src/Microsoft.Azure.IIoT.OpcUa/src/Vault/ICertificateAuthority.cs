@@ -5,67 +5,38 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
-    using Microsoft.AspNetCore.Http;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     /// <summary>
     /// An abstract interface to the certificate request database
     /// </summary>
-    public interface ICertificateRequest {
+    public interface ICertificateAuthority {
+
         /// <TODO/>
         Task InitializeAsync();
-
-        /// <summary>
-        /// Returns a shallow copy of the certificate group which uses
-        /// a token on behalf of a user.
-        /// </summary>
-        /// <param name="request">The http request with the user
-        /// token</param>
-        Task<ICertificateRequest> SendOnBehalfOfRequestAsync(
-            HttpRequest request);
 
         /// <summary>
         /// Create a new certificate request with CSR.
         /// The CSR is validated and added to the database as new
         /// request.
         /// </summary>
-        /// <param name="applicationId">The applicationId</param>
-        /// <param name="certificateGroupId">The certificate Group Id
-        /// </param>
-        /// <param name="certificateTypeId">The certificate Type Id
-        /// </param>
-        /// <param name="certificateRequest">The CSR</param>
-        /// <param name="authorityId">The authority Id adding the request
+        /// <param name="request">The request</param>
+        /// <param name="authorityId">The authority Id adding the
+        /// request
         /// </param>
         /// <returns></returns>
-        Task<string> StartSigningRequestAsync(string applicationId,
-            string certificateGroupId, string certificateTypeId,
-            byte[] certificateRequest, string authorityId);
+        Task<string> StartSigningRequestAsync(CreateSigningRequestModel request,
+            string authorityId);
 
         /// <summary>
-        /// Create a new certificate request with a public/private key pair.
+        /// Create a new certificate request with a public/private
+        /// key pair.
         /// </summary>
-        /// <param name="applicationId">The application Id</param>
-        /// <param name="certificateGroupId">The certificate group Id
-        /// </param>
-        /// <param name="certificateTypeId">The certificate Type Id
-        /// </param>
-        /// <param name="subjectName">The subject of the certificate
-        /// </param>
-        /// <param name="domainNames">The domain names for the certificate
-        /// </param>
-        /// <param name="privateKeyFormat">The private key format:
-        /// PFX or PEM</param>
-        /// <param name="privateKeyPassword">The password for the
-        /// private key </param>
+        /// <param name="request">The request</param>
         /// <param name="authorityId">The authority Id adding the
         /// request</param>
         /// <returns>The request Id</returns>
-        Task<string> StartNewKeyPairRequestAsync(string applicationId,
-            string certificateGroupId, string certificateTypeId,
-            string subjectName, IList<string> domainNames,
-            string privateKeyFormat, string privateKeyPassword,
+        Task<string> StartNewKeyPairRequestAsync(CreateNewKeyPairRequestModel request,
             string authorityId);
 
         /// <summary>
@@ -128,7 +99,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// </summary>
         /// <param name="requestId"></param>
         /// <returns>The request</returns>
-        Task<ReadRequestResultModel> ReadAsync(string requestId);
+        Task<CertificateRequestRecordModel> ReadAsync(string requestId);
 
         /// <summary>
         /// Query the certificate request database.
@@ -140,7 +111,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// </param>
         /// <returns>Array of certificate requests, next page link
         /// </returns>
-        Task<(string, ReadRequestResultModel[])> QueryPageAsync(
+        Task<CertificateRequestQueryResultModel> QueryPageAsync(
             string appId, CertificateRequestState? state,
             string nextPageLink, int? maxResults = null);
     }

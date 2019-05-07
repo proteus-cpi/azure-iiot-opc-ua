@@ -5,6 +5,7 @@
 
 namespace System.Security.Cryptography.X509Certificates {
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
+    using Newtonsoft.Json.Linq;
     using Opc.Ua;
     using System.Linq;
 
@@ -55,7 +56,37 @@ namespace System.Security.Cryptography.X509Certificates {
         /// </summary>
         /// <returns></returns>
         public static X509Certificate2 ToStackModel(this X509CertificateModel model) {
-            return new X509Certificate2(model.Certificate);
+            return new X509Certificate2(model.ToRawData());
+        }
+
+        /// <summary>
+        /// Get Raw data
+        /// </summary>
+        /// <returns></returns>
+        public static byte[] ToRawData(this X509CertificateModel model) {
+            const string certPemHeader = "-----BEGIN CERTIFICATE-----";
+            const string certPemFooter = "-----END CERTIFICATE-----";
+            if (model.Certificate == null) {
+                throw new ArgumentNullException(nameof(model.Certificate));
+            }
+            switch (model.Certificate.Type) {
+                case JTokenType.Bytes:
+                    return (byte[])model.Certificate;
+                case JTokenType.String:
+                    var request = (string)model.Certificate;
+                    if (request.Contains(certPemHeader,
+                        StringComparison.OrdinalIgnoreCase)) {
+                        var strippedCertificateRequest = request.Replace(
+                            certPemHeader, "", StringComparison.OrdinalIgnoreCase);
+                        strippedCertificateRequest = strippedCertificateRequest.Replace(
+                            certPemFooter, "", StringComparison.OrdinalIgnoreCase);
+                        return Convert.FromBase64String(strippedCertificateRequest);
+                    }
+                    return Convert.FromBase64String(request);
+                default:
+                    throw new ArgumentException(
+                        "Bad certificate data", nameof(model.Certificate));
+            }
         }
     }
 }

@@ -43,7 +43,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Runtime {
         public string CosmosDBDatabase => GetStringOrDefault(kOpcVault_CosmosDBDatabaseKey,
             GetStringOrDefault("OPC_VAULT_COSMOSDB_DBNAME", "OpcVault")).Trim();
         /// <inheritdoc/>
-        public string CosmosDBCollection => GetStringOrDefault(kOpcVault_CosmosDBCollectionKey,
+        public string CollectionName => GetStringOrDefault(kOpcVault_CosmosDBCollectionKey,
             GetStringOrDefault("OPC_VAULT_COSMOSDB_COLLNAME", "AppsAndCertRequests")).Trim();
 
         /// <inheritdoc/>

@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         /// <summary>
         /// Numeric id
         /// </summary>
-        public int ID { get; set; }
+        public int Index { get; set; }
 
         /// <summary>
         /// Application state

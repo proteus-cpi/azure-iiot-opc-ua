@@ -43,6 +43,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <summary>
         /// Optional collection name
         /// </summary>
-        string CosmosDBCollection { get; }
+        string CollectionName { get; }
     }
 }

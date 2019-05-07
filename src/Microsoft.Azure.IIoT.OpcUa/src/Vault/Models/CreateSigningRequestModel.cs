@@ -5,6 +5,7 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
 
     /// <summary>
     /// Signing request
@@ -30,9 +31,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         public string CertificateTypeId { get; set; }
 
         /// <summary>
-        /// Request string
+        /// Request buffer or PEM formated signing request
         /// </summary>
         [JsonProperty(PropertyName = "certificateRequest")]
-        public string CertificateRequest { get; set; }
+        public JToken CertificateRequest { get; set; }
     }
 }

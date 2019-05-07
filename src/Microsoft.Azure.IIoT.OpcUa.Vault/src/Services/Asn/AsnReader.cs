@@ -1067,7 +1067,7 @@ namespace System.Security.Cryptography.Asn1
                 out int? contentsLength,
                 out int headerLength,
                 out unusedBitCount,
-                out ReadOnlyMemory<byte> value,
+                out var value,
                 out byte normalizedLastByte))
             {
                 if (value.Length > destination.Length)
@@ -1585,7 +1585,7 @@ namespace System.Security.Cryptography.Asn1
                 out var actualTag,
                 out int? contentLength,
                 out int headerLength,
-                out ReadOnlyMemory<byte> contents))
+                out var contents))
             {
                 if (contents.Length > destination.Length)
                 {
@@ -1894,7 +1894,7 @@ namespace System.Security.Cryptography.Asn1
                 out var actualTag,
                 out int? contentLength,
                 out int headerLength,
-                out ReadOnlyMemory<byte> contents,
+                out var contents,
                 universalTagNumber))
             {
                 bytesWritten = contents.Length;
@@ -2841,7 +2841,7 @@ namespace System.Security.Cryptography.Asn1
                 out var actualTag,
                 out int? contentLength,
                 out int headerLength,
-                out ReadOnlyMemory<byte> contentsOctets,
+                out var contentsOctets,
                 universalTagNumber))
             {
                 bytesRead = headerLength + contentsOctets.Length;

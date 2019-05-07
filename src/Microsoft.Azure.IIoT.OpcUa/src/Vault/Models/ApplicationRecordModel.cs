@@ -19,16 +19,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         public string ApplicationId { get; set; }
 
         /// <summary>
-        /// Record id
-        /// </summary>
-        public int Id { get; set; }
-
-        /// <summary>
-        /// State
-        /// </summary>
-        public ApplicationState State { get; set; }
-
-        /// <summary>
         /// Application uri
         /// </summary>
         public string ApplicationUri { get; set; }
@@ -72,6 +62,20 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// Discovery profile uri
         /// </summary>
         public string DiscoveryProfileUri { get; set; }
+
+
+
+
+
+        /// <summary>
+        /// State
+        /// </summary>
+        public ApplicationState State { get; set; }
+
+        /// <summary>
+        /// Record id
+        /// </summary>
+        public int RecordId { get; set; }
 
         /// <summary>
         /// Authority
