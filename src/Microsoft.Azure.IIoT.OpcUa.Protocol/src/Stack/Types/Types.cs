@@ -30,6 +30,7 @@
 namespace Opc.Ua.Types {
     using System.IO;
     using System;
+    using System.Reflection;
     using Opc.Ua.Types.Resolver;
 
     /// <summary>

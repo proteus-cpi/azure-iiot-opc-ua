@@ -7,13 +7,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Microsoft.AspNetCore.Http;
     using System.Collections.Generic;
-    using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
 
     /// <summary>
     /// Certificate Group interface.
     /// </summary>
     public interface ICertificateGroup {
+        /// <TODO/>
+        Task InitializeAsync();
 
         /// <summary>
         /// Returns a shallow copy of the certificate group which uses
@@ -60,7 +61,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// Get the configuration of all certificate groups.
         /// </summary>
         /// <returns>The configurations</returns>
-        Task<IList<CertificateGroupConfigurationModel>> GetCertificateGroupConfigurationCollectionAsync();
+        Task<CertificateGroupConfigurationCollectionModel> GetCertificateGroupConfigurationCollectionAsync();
 
         /// <summary>
         /// Get all Issuer certificate versions in a pageable call.
@@ -71,7 +72,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="nextPageLink">The next page</param>
         /// <param name="pageSize">max number of versions per call</param>
         /// <returns></returns>
-        Task<(X509Certificate2Collection, string)> GetIssuerCACertificateVersionsAsync(
+        Task<X509CertificateCollectionModel> GetIssuerCACertificateVersionsAsync(
             string id, bool? withCertificates, string nextPageLink = null,
             int? pageSize = null);
 
@@ -84,7 +85,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="nextPageLink">The next page</param>
         /// <param name="pageSize">max number of certificates per call</param>
         /// <returns></returns>
-        Task<X509Certificate2Collection> GetIssuerCACertificateChainAsync(
+        Task<X509CertificateCollectionModel> GetIssuerCACertificateChainAsync(
             string id, string thumbPrint = null, string nextPageLink = null,
             int? pageSize = null);
 
@@ -97,7 +98,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="nextPageLink">The next page</param>
         /// <param name="pageSize">max number of CRL per call</param>
         /// <returns></returns>
-        Task<IList<Opc.Ua.X509CRL>> GetIssuerCACrlChainAsync(string id,
+        Task<X509CrlCollectionModel> GetIssuerCACrlChainAsync(string id,
             string thumbPrint, string nextPageLink = null, int? pageSize = null);
 
         /// <summary>
@@ -110,7 +111,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="nextPageLink"></param>
         /// <param name="pageSize"></param>
         /// <returns>The trust list page</returns>
-        Task<KeyVaultTrustListModel> GetTrustListAsync(string id,
+        Task<TrustListModel> GetTrustListAsync(string id,
             string nextPageLink = null, int? pageSize = null);
 
         /// <summary>
@@ -120,7 +121,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="applicationUri">The application Uri</param>
         /// <param name="certificateRequest">The binary CSR</param>
         /// <returns></returns>
-        Task<X509Certificate2> SigningRequestAsync(string id,
+        Task<X509CertificateModel> SigningRequestAsync(string id,
             string applicationUri, byte[] certificateRequest);
 
         /// <summary>
@@ -130,8 +131,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="id">The group Id</param>
         /// <param name="certificate">The certificate to revoke</param>
         /// <returns>The new CRL version</returns>
-        Task<Opc.Ua.X509CRL> RevokeCertificateAsync(string id,
-            X509Certificate2 certificate);
+        Task<X509CrlModel> RevokeCertificateAsync(string id,
+            X509CertificateModel certificate);
 
         /// <summary>
         /// Revoke a group of certificates.
@@ -141,8 +142,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="id">The group Id</param>
         /// <param name="certificates">The certificates to revoke</param>
         /// <returns>Returns certificates which could not be revoked</returns>
-        Task<X509Certificate2Collection> RevokeCertificatesAsync(string id,
-            X509Certificate2Collection certificates);
+        Task<X509CertificateCollectionModel> RevokeCertificatesAsync(string id,
+            X509CertificateCollectionModel certificates);
 
         /// <summary>
         /// Creates a new self signed Issuer CA certificate and an empty CRL.
@@ -150,7 +151,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// </summary>
         /// <param name="id">The group id</param>
         /// <returns>The new Issuer CA cert</returns>
-        Task<X509Certificate2> CreateIssuerCACertificateAsync(string id);
+        Task<X509CertificateModel> CreateIssuerCACertificateAsync(string id);
 
         /// <summary>
         /// Create a new Issuer CA signed certificate and private key.
@@ -163,7 +164,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="privateKeyFormat">The private key format, PFX or PEM</param>
         /// <param name="privateKeyPassword">The password for the private key</param>
         /// <returns>The new key pair</returns>
-        Task<Opc.Ua.Gds.Server.X509Certificate2KeyPair> NewKeyPairRequestAsync(
+        Task<X509CertificatePrivateKeyPairModel> NewKeyPairRequestAsync(
             string id, string requestId, string applicationUri, string subjectName,
             string[] domainNames, string privateKeyFormat, string privateKeyPassword);
 

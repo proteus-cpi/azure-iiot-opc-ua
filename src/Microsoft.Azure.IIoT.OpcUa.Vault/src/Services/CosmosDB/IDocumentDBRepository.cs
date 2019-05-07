@@ -13,9 +13,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB {
     /// </summary>
     public interface IDocumentDBRepository {
 
-        /// <summary>
-        /// Creates the DocumentDB repository if it doesn't exist.
-        /// </summary>
+        /// <TODO/>
         Task CreateRepositoryIfNotExistsAsync();
 
         /// <summary>

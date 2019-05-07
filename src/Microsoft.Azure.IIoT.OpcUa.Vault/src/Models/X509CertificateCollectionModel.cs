@@ -4,24 +4,21 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using Newtonsoft.Json;
     using System.Collections.Generic;
 
     /// <summary>
-    /// Application query response
+    /// Certificate collection
     /// </summary>
-    public sealed class QueryApplicationsResponseModel {
+    public sealed class X509CertificateCollectionModel {
 
         /// <summary>
-        /// Found applications
+        /// Chain
         /// </summary>
-        [JsonProperty(PropertyName = "applications")]
-        public IList<ApplicationRecordModel> Applications { get; set; }
+        public IList<X509CertificateModel> Chain { get; set; }
 
         /// <summary>
-        /// Next page
+        /// Next link
         /// </summary>
-        [JsonProperty(PropertyName = "nextPageLink")]
         public string NextPageLink { get; set; }
     }
 }

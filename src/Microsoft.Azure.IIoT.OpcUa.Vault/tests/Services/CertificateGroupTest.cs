@@ -32,9 +32,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         /// Initialize the cert group once and for all tests.
         /// </summary>
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(1)]
-        public async Task KeyVaultInit() {
+        public async Task KeyVaultInitAsync() {
             _logger.Information("Initializing KeyVault");
-            await _keyVault.Init();
+            await _keyVault.InitializeAsync();
             _fixture.KeyVaultInitOk = true;
         }
 
@@ -57,15 +57,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var group in groups) {
                 var result = await _keyVault.CreateIssuerCACertificateAsync(group);
                 Assert.NotNull(result);
-                Assert.False(result.HasPrivateKey);
-                Assert.True(Opc.Ua.Utils.CompareDistinguishedName(result.Issuer, result.Subject));
-                var basicConstraints = X509TestUtils.FindBasicConstraintsExtension(result);
+                Assert.False(result.ToStackModel().HasPrivateKey);
+                Assert.True(Opc.Ua.Utils.CompareDistinguishedName(result.ToStackModel().Issuer, result.Subject));
+                var basicConstraints = X509TestUtils.FindBasicConstraintsExtension(result.ToStackModel());
                 Assert.NotNull(basicConstraints);
                 Assert.True(basicConstraints.CertificateAuthority);
                 Assert.True(basicConstraints.Critical);
-                var subjectKeyId = result.Extensions.OfType<X509SubjectKeyIdentifierExtension>().Single();
+                var subjectKeyId = result.ToStackModel().Extensions.OfType<X509SubjectKeyIdentifierExtension>().Single();
                 Assert.False(subjectKeyId.Critical);
-                var authorityKeyIdentifier = X509TestUtils.FindAuthorityKeyIdentifier(result);
+                var authorityKeyIdentifier = X509TestUtils.FindAuthorityKeyIdentifier(result.ToStackModel());
                 Assert.NotNull(authorityKeyIdentifier);
                 Assert.False(authorityKeyIdentifier.Critical);
                 Assert.Equal(authorityKeyIdentifier.SerialNumber, result.SerialNumber, true);
@@ -92,8 +92,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.KeyVaultInitOk);
             var groupCollection = await _keyVault.GetCertificateGroupConfigurationCollectionAsync();
             Assert.NotNull(groupCollection);
-            Assert.NotEmpty(groupCollection);
-            foreach (var groupConfig in groupCollection) {
+            Assert.NotEmpty(groupCollection.Groups);
+            foreach (var groupConfig in groupCollection.Groups) {
                 Assert.NotNull(groupConfig.Id);
                 Assert.NotEmpty(groupConfig.Id);
                 Assert.NotNull(groupConfig.SubjectName);
@@ -112,16 +112,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var group in groups) {
                 var caChain = await _keyVault.GetIssuerCACertificateChainAsync(group);
                 Assert.NotNull(caChain);
-                Assert.True(caChain.Count >= 1);
-                foreach (var caCert in caChain) {
-                    Assert.False(caCert.HasPrivateKey);
+                Assert.NotNull(caChain.Chain);
+                Assert.True(caChain.Chain.Count >= 1);
+                foreach (var caCert in caChain.Chain) {
+                    Assert.False(caCert.ToStackModel().HasPrivateKey);
                 }
                 var crlChain = await _keyVault.GetIssuerCACrlChainAsync(group);
                 Assert.NotNull(crlChain);
-                Assert.True(crlChain.Count >= 1);
-                for (var i = 0; i < caChain.Count; i++) {
-                    crlChain[i].VerifySignature(caChain[i], true);
-                    Assert.True(Opc.Ua.Utils.CompareDistinguishedName(crlChain[i].Issuer, caChain[i].Issuer));
+                Assert.True(crlChain.Chain.Count >= 1);
+                for (var i = 0; i < caChain.Chain.Count; i++) {
+                    crlChain.Chain[i].ToStackModel().VerifySignature(caChain.Chain[i].ToStackModel(), true);
+                    Assert.True(Opc.Ua.Utils.CompareDistinguishedName(
+                        crlChain.Chain[i].Issuer, caChain.Chain[i].ToStackModel().Issuer));
                 }
             }
         }
@@ -146,21 +148,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     randomApp.PrivateKeyFormat,
                     randomApp.PrivateKeyPassword);
                 Assert.NotNull(newKeyPair);
-                Assert.False(newKeyPair.Certificate.HasPrivateKey);
+                Assert.False(newKeyPair.Certificate.ToStackModel().HasPrivateKey);
                 Assert.True(Opc.Ua.Utils.CompareDistinguishedName(randomApp.Subject, newKeyPair.Certificate.Subject));
-                Assert.False(Opc.Ua.Utils.CompareDistinguishedName(newKeyPair.Certificate.Issuer, newKeyPair.Certificate.Subject));
+                Assert.False(Opc.Ua.Utils.CompareDistinguishedName(
+                    newKeyPair.Certificate.ToStackModel().Issuer, newKeyPair.Certificate.Subject));
                 var issuerCerts = await _keyVault.GetIssuerCACertificateChainAsync(group);
                 Assert.NotNull(issuerCerts);
-                Assert.True(issuerCerts.Count >= 1);
+                Assert.True(issuerCerts.Chain.Count >= 1);
 
                 X509TestUtils.VerifyApplicationCertIntegrity(
-                    newKeyPair.Certificate,
+                    newKeyPair.Certificate.ToStackModel(),
                     newKeyPair.PrivateKey,
                     randomApp.PrivateKeyPassword,
                     randomApp.PrivateKeyFormat,
-                    issuerCerts
+                    issuerCerts.ToStackModel()
                     );
-                certCollection.Add(newKeyPair.Certificate);
+                certCollection.Add(newKeyPair.Certificate.ToStackModel());
 
                 // disable and delete private key from KeyVault (requires set/delete rights)
                 await _keyVault.AcceptPrivateKeyAsync(group, requestId.ToString());
@@ -202,18 +205,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 var issuerCerts = await _keyVault.GetIssuerCACertificateChainAsync(group);
 #if WRITECERT
                 // save cert for debugging
-                using (ICertificateStore store = CertificateStoreIdentifier.CreateStore(CertificateStoreType.Directory))
+                using (var store = Opc.Ua.CertificateStoreIdentifier.CreateStore(Opc.Ua.CertificateStoreType.Directory))
                 {
                     Assert.NotNull(store);
                     store.Open("d:\\unittest");
-                    await store.Add(newCert);
-                    foreach (var cert in issuerCerts) await store.Add(cert);
+                    await store.Add(newCert.ToStackModel());
+                    foreach (var cert in issuerCerts.ToStackModel()) await store.Add(cert);
                 }
 #endif
                 Assert.NotNull(issuerCerts);
-                Assert.True(issuerCerts.Count >= 1);
-                X509TestUtils.VerifySignedApplicationCert(randomApp, newCert, issuerCerts);
-                certCollection.Add(newCert);
+                Assert.True(issuerCerts.Chain.Count >= 1);
+                X509TestUtils.VerifySignedApplicationCert(randomApp, newCert.ToStackModel(), issuerCerts.ToStackModel());
+                certCollection.Add(newCert.ToStackModel());
             }
             return certCollection;
         }
@@ -239,18 +242,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     randomApp.PrivateKeyPassword
                     );
                 Assert.NotNull(newCert);
-                Assert.False(newCert.Certificate.HasPrivateKey);
+                Assert.False(newCert.Certificate.ToStackModel().HasPrivateKey);
                 Assert.True(Opc.Ua.Utils.CompareDistinguishedName(randomApp.Subject, newCert.Certificate.Subject));
-                Assert.False(Opc.Ua.Utils.CompareDistinguishedName(newCert.Certificate.Issuer, newCert.Certificate.Subject));
-                var cert = new X509Certificate2(newCert.Certificate.RawData);
-                var crl = await _keyVault.RevokeCertificateAsync(group, cert);
+                Assert.False(Opc.Ua.Utils.CompareDistinguishedName(newCert.Certificate.ToStackModel().Issuer, newCert.Certificate.Subject));
+                var cert = new X509Certificate2(newCert.Certificate.Certificate);
+                var crl = await _keyVault.RevokeCertificateAsync(group, cert.ToServiceModel());
                 Assert.NotNull(crl);
                 var caChain = await _keyVault.GetIssuerCACertificateChainAsync(group);
                 Assert.NotNull(caChain);
-                var caCert = caChain[0];
-                Assert.False(caCert.HasPrivateKey);
-                crl.VerifySignature(caCert, true);
-                Assert.True(Opc.Ua.Utils.CompareDistinguishedName(crl.Issuer, caCert.Issuer));
+                var caCert = caChain.Chain[0];
+                Assert.False(caCert.ToStackModel().HasPrivateKey);
+                crl.ToStackModel().VerifySignature(caCert.ToStackModel(), true);
+                Assert.True(Opc.Ua.Utils.CompareDistinguishedName(crl.Issuer, caCert.ToStackModel().Issuer));
                 // disable and delete private key from KeyVault (requires set/delete rights)
                 await _keyVault.AcceptPrivateKeyAsync(group, requestId.ToString());
                 await _keyVault.DeletePrivateKeyAsync(group, requestId.ToString());
@@ -280,20 +283,21 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     randomApp.PrivateKeyPassword
                     );
                 Assert.NotNull(newKeyPair);
-                Assert.False(newKeyPair.Certificate.HasPrivateKey);
+                Assert.False(newKeyPair.Certificate.ToStackModel().HasPrivateKey);
                 Assert.True(Opc.Ua.Utils.CompareDistinguishedName(randomApp.Subject, newKeyPair.Certificate.Subject));
-                Assert.False(Opc.Ua.Utils.CompareDistinguishedName(newKeyPair.Certificate.Issuer, newKeyPair.Certificate.Subject));
+                Assert.False(Opc.Ua.Utils.CompareDistinguishedName(
+                    newKeyPair.Certificate.ToStackModel().Issuer, newKeyPair.Certificate.Subject));
 
                 var issuerCerts = await _keyVault.GetIssuerCACertificateChainAsync(group);
                 Assert.NotNull(issuerCerts);
-                Assert.True(issuerCerts.Count >= 1);
+                Assert.True(issuerCerts.Chain.Count >= 1);
 
                 X509TestUtils.VerifyApplicationCertIntegrity(
-                    newKeyPair.Certificate,
+                    newKeyPair.Certificate.ToStackModel(),
                     newKeyPair.PrivateKey,
                     randomApp.PrivateKeyPassword,
                     randomApp.PrivateKeyFormat,
-                    issuerCerts
+                    issuerCerts.ToStackModel()
                     );
 
                 // test to load the key from KeyVault
@@ -303,24 +307,27 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     privateKeyX509 = CertificateFactory.CreateCertificateFromPKCS12(privateKey, randomApp.PrivateKeyPassword);
                 }
                 else {
-                    privateKeyX509 = CertificateFactory.CreateCertificateWithPEMPrivateKey(newKeyPair.Certificate, privateKey, randomApp.PrivateKeyPassword);
+                    privateKeyX509 = CertificateFactory.CreateCertificateWithPEMPrivateKey(
+                        newKeyPair.Certificate.ToStackModel(), privateKey, randomApp.PrivateKeyPassword);
                 }
                 Assert.True(privateKeyX509.HasPrivateKey);
 
                 X509TestUtils.VerifyApplicationCertIntegrity(
-                    newKeyPair.Certificate,
+                    newKeyPair.Certificate.ToStackModel(),
                     privateKey,
                     randomApp.PrivateKeyPassword,
                     randomApp.PrivateKeyFormat,
-                    issuerCerts
+                    issuerCerts.ToStackModel()
                     );
 
                 await _keyVault.AcceptPrivateKeyAsync(group, requestId.ToString());
-                await Assert.ThrowsAsync<KeyVaultErrorException>(async () => privateKey = await _keyVault.LoadPrivateKeyAsync(group, requestId.ToString(), randomApp.PrivateKeyFormat));
+                await Assert.ThrowsAsync<KeyVaultErrorException>(async () => privateKey =
+                await _keyVault.LoadPrivateKeyAsync(group, requestId.ToString(), randomApp.PrivateKeyFormat));
                 await _keyVault.AcceptPrivateKeyAsync(group, requestId.ToString());
                 await _keyVault.DeletePrivateKeyAsync(group, requestId.ToString());
                 await Assert.ThrowsAsync<KeyVaultErrorException>(() => _keyVault.DeletePrivateKeyAsync(group, requestId.ToString()));
-                await Assert.ThrowsAsync<KeyVaultErrorException>(async () => privateKey = await _keyVault.LoadPrivateKeyAsync(group, requestId.ToString(), randomApp.PrivateKeyFormat));
+                await Assert.ThrowsAsync<KeyVaultErrorException>(async () => privateKey =
+                await _keyVault.LoadPrivateKeyAsync(group, requestId.ToString(), randomApp.PrivateKeyFormat));
             }
         }
 
@@ -333,33 +340,31 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             var groups = await _keyVault.GetCertificateGroupIdsAsync();
             foreach (var group in groups) {
                 // read all certs
-                X509Certificate2Collection certCollection;
-                string nextPageLink;
-                (certCollection, nextPageLink) = await _keyVault.GetIssuerCACertificateVersionsAsync(group, true, null, 2);
-                while (nextPageLink != null) {
-                    X509Certificate2Collection result;
-                    (result, nextPageLink) = await _keyVault.GetIssuerCACertificateVersionsAsync(group, true, nextPageLink, 2);
-                    certCollection.AddRange(result);
+                var certCollection = await _keyVault.GetIssuerCACertificateVersionsAsync(group, true, null, 2);
+                while (certCollection.NextPageLink != null) {
+                    var next = await _keyVault.GetIssuerCACertificateVersionsAsync(group, true, certCollection.NextPageLink, 2);
+                    certCollection.AddRange(next);
+                    certCollection.NextPageLink = next.NextPageLink;
                 }
 
                 // read all matching cert and crl by thumbprint
                 var chainId = await _keyVault.GetIssuerCACertificateChainAsync(group);
                 Assert.NotNull(chainId);
-                Assert.True(chainId.Count >= 1);
+                Assert.True(chainId.Chain.Count >= 1);
                 var crlId = await _keyVault.GetIssuerCACrlChainAsync(group);
                 Assert.NotNull(chainId);
-                Assert.True(chainId.Count >= 1);
-                foreach (var cert in certCollection) {
+                Assert.True(chainId.Chain.Count >= 1);
+                foreach (var cert in certCollection.Chain) {
                     var certChain = await _keyVault.GetIssuerCACertificateChainAsync(group, cert.Thumbprint);
                     Assert.NotNull(certChain);
-                    Assert.True(certChain.Count >= 1);
-                    Assert.Equal(cert.Thumbprint, certChain[0].Thumbprint);
+                    Assert.True(certChain.Chain.Count >= 1);
+                    Assert.Equal(cert.Thumbprint, certChain.Chain[0].Thumbprint);
 
                     var crlChain = await _keyVault.GetIssuerCACrlChainAsync(group, cert.Thumbprint);
                     Assert.NotNull(crlChain);
-                    Assert.True(crlChain.Count >= 1);
-                    crlChain[0].VerifySignature(cert, true);
-                    crlChain[0].VerifySignature(certChain[0], true);
+                    Assert.True(crlChain.Chain.Count >= 1);
+                    crlChain.Chain[0].ToStackModel().VerifySignature(cert.ToStackModel(), true);
+                    crlChain.Chain[0].ToStackModel().VerifySignature(certChain.Chain[0].ToStackModel(), true);
 
                     // invalid parameter test
                     // invalid parameter test
@@ -427,16 +432,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             }
 
             // now revoke all certifcates
-            var revokeCertificates = new X509Certificate2Collection(certCollection);
+            var revokeCertificates = new X509Certificate2Collection(certCollection).ToServiceModel(null);
             foreach (var group in groups) {
                 var unrevokedCertificates = await _keyVault.RevokeCertificatesAsync(group, revokeCertificates);
-                Assert.True(unrevokedCertificates.Count <= revokeCertificates.Count);
+                Assert.True(unrevokedCertificates.Chain.Count <= revokeCertificates.Chain.Count);
                 revokeCertificates = unrevokedCertificates;
             }
-            Assert.Empty(revokeCertificates);
+            Assert.Empty(revokeCertificates.Chain);
 
             // reload updated trust list from KeyVault
-            var trustListAllGroups = new KeyVaultTrustListModel("all");
+            var trustListAllGroups = new TrustListModel {
+                GroupId = "all"
+            };
             foreach (var group in groups) {
                 var trustList = await _keyVault.GetTrustListAsync(group);
                 var nextPageLink = trustList.NextPageLink;

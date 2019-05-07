@@ -3,45 +3,30 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
-    using Newtonsoft.Json;
     using System;
+    using System.Collections.Generic;
 
     /// <summary>
-    /// Application document in cosmos db database
+    /// Record service model
     /// </summary>
-    [Serializable]
-    public class ApplicationDocument {
+    public sealed class ApplicationRecordModel {
 
         /// <summary>
-        /// Document id
+        /// Application id
         /// </summary>
-        [JsonProperty(PropertyName = "id")]
-        public Guid ApplicationId { get; set; }
+        public string ApplicationId { get; set; }
 
         /// <summary>
-        /// Etag
+        /// Record id
         /// </summary>
-        [JsonProperty(PropertyName = "_etag")]
-        public string ETag { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
-        /// Document Type
+        /// State
         /// </summary>
-        public string ClassType { get; set; } = ClassTypeName;
-
-        /// <summary>
-        /// Numeric id
-        /// </summary>
-        public int ID { get; set; }
-
-        /// <summary>
-        /// Application state
-        /// </summary>
-        public ApplicationState ApplicationState { get; set; }
+        public ApplicationState State { get; set; }
 
         /// <summary>
         /// Application uri
@@ -49,7 +34,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         public string ApplicationUri { get; set; }
 
         /// <summary>
-        /// Non-localized Application name
+        /// Application name
         /// </summary>
         public string ApplicationName { get; set; }
 
@@ -59,32 +44,32 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         public ApplicationType ApplicationType { get; set; }
 
         /// <summary>
+        /// Application names
+        /// </summary>
+        public IList<ApplicationNameModel> ApplicationNames { get; set; }
+
+        /// <summary>
         /// Product uri
         /// </summary>
         public string ProductUri { get; set; }
 
         /// <summary>
-        /// Capabilities
+        /// Service caps
         /// </summary>
         public string ServerCapabilities { get; set; }
 
         /// <summary>
-        /// Alternative Names
-        /// </summary>
-        public ApplicationNameModel[] ApplicationNames { get; set; }
-
-        /// <summary>
-        /// Discovery url
-        /// </summary>
-        public string[] DiscoveryUrls { get; set; }
-
-        /// <summary>
-        /// Gateway server
+        /// Gateway server uri
         /// </summary>
         public string GatewayServerUri { get; set; }
 
         /// <summary>
-        /// Discovery Profile
+        /// Discovery urls
+        /// </summary>
+        public IList<string> DiscoveryUrls { get; set; }
+
+        /// <summary>
+        /// Discovery profile uri
         /// </summary>
         public string DiscoveryProfileUri { get; set; }
 
@@ -117,8 +102,5 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         /// Delete time
         /// </summary>
         public DateTime? DeleteTime { get; set; }
-
-        /// <inheritdoc/>
-        public static readonly string ClassTypeName = "Application";
     }
 }

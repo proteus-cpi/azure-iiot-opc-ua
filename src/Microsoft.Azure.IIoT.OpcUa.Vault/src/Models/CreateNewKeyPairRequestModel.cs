@@ -4,56 +4,54 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+    using Newtonsoft.Json;
+    using System.Collections.Generic;
 
     /// <summary>
-    /// Fetch request result
+    /// New key pair request
     /// </summary>
-    public sealed class FetchRequestResultModel {
-
-        /// <summary>
-        /// Request state
-        /// </summary>
-        public CertificateRequestState State { get; set; }
+    public sealed class CreateNewKeyPairRequestModel {
 
         /// <summary>
         /// Application id
         /// </summary>
+        [JsonProperty(PropertyName = "applicationId")]
         public string ApplicationId { get; set; }
-
-        /// <summary>
-        /// Request id
-        /// </summary>
-        public string RequestId { get; set; }
 
         /// <summary>
         /// Certificate group
         /// </summary>
+        [JsonProperty(PropertyName = "certificateGroupId")]
         public string CertificateGroupId { get; set; }
 
         /// <summary>
-        /// Certificate type
+        /// Type
         /// </summary>
+        [JsonProperty(PropertyName = "certificateTypeId")]
         public string CertificateTypeId { get; set; }
 
         /// <summary>
-        /// Signed cert
+        /// Subject name
         /// </summary>
-        public byte[] SignedCertificate { get; set; }
+        [JsonProperty(PropertyName = "subjectName")]
+        public string SubjectName { get; set; }
+
+        /// <summary>
+        /// Domain names
+        /// </summary>
+        [JsonProperty(PropertyName = "domainNames")]
+        public IList<string> DomainNames { get; set; }
 
         /// <summary>
         /// Format
         /// </summary>
+        [JsonProperty(PropertyName = "privateKeyFormat")]
         public string PrivateKeyFormat { get; set; }
 
         /// <summary>
-        /// Private key
+        /// Password
         /// </summary>
-        public byte[] PrivateKey { get; set; }
-
-        /// <summary>
-        /// Authority
-        /// </summary>
-        public string AuthorityId { get; set; }
+        [JsonProperty(PropertyName = "privateKeyPassword")]
+        public string PrivateKeyPassword { get; set; }
     }
 }
-

@@ -21,7 +21,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using System.Net;
     using System.Text;
     using System.Threading.Tasks;
-    using ApplicationsDatabaseBase = Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase;
 
     /// <summary>
     /// The CosmosDB implementation of the application database.
@@ -60,63 +59,69 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<ApplicationDocument> RegisterApplicationAsync(ApplicationDocument application) {
-            var applicationId = VerifyRegisterApplication(application);
+        public async Task<ApplicationRecordModel> RegisterApplicationAsync(
+            ApplicationRecordModel application) {
+            var document = application.ToDocumentModel();
+            var applicationId = VerifyRegisterApplication(document);
             if (Guid.Empty != applicationId) {
-                return await UpdateApplicationAsync(application.ApplicationId.ToString(), application);
+                return await UpdateApplicationAsync(
+                    application.ApplicationId.ToString(), application);
             }
 
             // normalize Server Caps
-            application.ServerCapabilities = ServerCapabilities(application);
-            application.ApplicationId = Guid.NewGuid();
-            application.ID = _appIdCounter++;
-            application.ApplicationState = ApplicationState.New;
-            application.CreateTime = DateTime.UtcNow;
+            document.ServerCapabilities = ServerCapabilities(document);
+            document.ApplicationId = Guid.NewGuid();
+            document.ID = _appIdCounter++;
+            document.ApplicationState = ApplicationState.New;
+            document.CreateTime = DateTime.UtcNow;
 
             // depending on use case, new applications can be auto approved.
             if (_autoApprove) {
-                application.ApplicationState = ApplicationState.Approved;
-                application.ApproveTime = application.CreateTime;
+                document.ApplicationState = ApplicationState.Approved;
+                document.ApproveTime = document.CreateTime;
             }
             bool retry;
             string resourceId = null;
             do {
                 retry = false;
                 try {
-                    var result = await _applications.CreateAsync(application);
+                    var result = await _applications.CreateAsync(document);
                     resourceId = result.Id;
                 }
                 catch (DocumentClientException dce) {
                     if (dce.StatusCode == System.Net.HttpStatusCode.Conflict) {
                         // retry with new guid and keys
-                        application.ApplicationId = Guid.NewGuid();
+                        document.ApplicationId = Guid.NewGuid();
                         _appIdCounter = await GetMaxAppIDAsync();
-                        application.ID = _appIdCounter++;
+                        document.ID = _appIdCounter++;
                         retry = true;
                     }
                 }
             } while (retry);
-            applicationId = ToGuidAndVerify(resourceId);
-            return await _applications.GetAsync(applicationId);
+            return await GetApplicationAsync(applicationId.ToString());
         }
 
         /// <inheritdoc/>
-        public Task<ApplicationDocument> GetApplicationAsync(string applicationId) {
+        public async Task<ApplicationRecordModel> GetApplicationAsync(
+            string applicationId) {
             var appId = ToGuidAndVerify(applicationId);
-            return _applications.GetAsync(appId);
+            var application = await _applications.GetAsync(appId);
+            return application.ToServiceModel();
         }
 
         /// <inheritdoc/>
-        public async Task<ApplicationDocument> UpdateApplicationAsync(string applicationId,
-            ApplicationDocument application) {
+        public async Task<ApplicationRecordModel> UpdateApplicationAsync(
+            string applicationId, ApplicationRecordModel application) {
             if (application == null) {
-                throw new ArgumentNullException(nameof(application), "The application must be provided");
+                throw new ArgumentNullException(nameof(application),
+                    "The application must be provided");
             }
 
+            var document = application.ToDocumentModel();
             var appGuid = ToGuidAndVerify(applicationId);
-            var recordId = VerifyRegisterApplication(application);
+            var recordId = VerifyRegisterApplication(document);
 
-            var capabilities = ServerCapabilities(application);
+            var capabilities = ServerCapabilities(document);
 
             bool retryUpdate;
             do {
@@ -133,13 +138,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 }
 
                 record.UpdateTime = DateTime.UtcNow;
-                record.ApplicationUri = application.ApplicationUri;
-                record.ApplicationName = application.ApplicationName;
-                record.ApplicationType = application.ApplicationType;
-                record.ProductUri = application.ProductUri;
+                record.ApplicationUri = document.ApplicationUri;
+                record.ApplicationName = document.ApplicationName;
+                record.ApplicationType = document.ApplicationType;
+                record.ProductUri = document.ProductUri;
                 record.ServerCapabilities = capabilities;
-                record.ApplicationNames = application.ApplicationNames;
-                record.DiscoveryUrls = application.DiscoveryUrls;
+                record.ApplicationNames = document.ApplicationNames;
+                record.DiscoveryUrls = document.DiscoveryUrls;
                 try {
                     await _applications.UpdateAsync(appGuid, record, record.ETag);
                 }
@@ -149,28 +154,31 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     }
                 }
             } while (retryUpdate);
-            return await _applications.GetAsync(appGuid);
+            document = await _applications.GetAsync(appGuid);
+            return document.ToServiceModel();
         }
 
         /// <inheritdoc/>
-        public async Task<ApplicationDocument> ApproveApplicationAsync(string applicationId, bool approved, bool force) {
+        public async Task<ApplicationRecordModel> ApproveApplicationAsync(
+            string applicationId, bool approved, bool force) {
             var appId = ToGuidAndVerify(applicationId);
             bool retryUpdate;
             ApplicationDocument record;
             do {
                 retryUpdate = false;
-
                 record = await _applications.GetAsync(appId);
                 if (record == null) {
-                    throw new ResourceNotFoundException("A record with the specified application id does not exist.");
+                    throw new ResourceNotFoundException(
+                        "A record with the specified application id does not exist.");
                 }
-
                 if (!force &&
                     record.ApplicationState != ApplicationState.New) {
-                    throw new ResourceInvalidStateException("The record is not in a valid state for this operation.");
+                    throw new ResourceInvalidStateException(
+                        "The record is not in a valid state for this operation.");
                 }
 
-                record.ApplicationState = approved ? ApplicationState.Approved : ApplicationState.Rejected;
+                record.ApplicationState = approved ?
+                    ApplicationState.Approved : ApplicationState.Rejected;
                 record.ApproveTime = DateTime.UtcNow;
 
                 try {
@@ -182,12 +190,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     }
                 }
             } while (retryUpdate);
-
-            return record;
+            return record.ToServiceModel();
         }
 
         /// <inheritdoc/>
-        public async Task<ApplicationDocument> UnregisterApplicationAsync(string applicationId) {
+        public async Task<ApplicationRecordModel> UnregisterApplicationAsync(
+            string applicationId) {
             var appId = ToGuidAndVerify(applicationId);
             bool retryUpdate;
             var first = true;
@@ -237,8 +245,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     }
                 }
             } while (retryUpdate);
-
-            return record;
+            return record.ToServiceModel();
         }
 
         /// <inheritdoc/>
@@ -257,8 +264,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 ReadRequestResultModel[] certificateRequests;
                 string nextPageLink = null;
                 do {
-                    (nextPageLink, certificateRequests) = await certificateRequestsService.QueryPageAsync(
-                        appId.ToString(), null, nextPageLink);
+                    (nextPageLink, certificateRequests) =
+                        await certificateRequestsService.QueryPageAsync(
+                            appId.ToString(), null, nextPageLink);
                     foreach (var request in certificateRequests) {
                         await certificateRequestsService.DeleteAsync(request.RequestId);
                     }
@@ -268,7 +276,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<IList<ApplicationDocument>> ListApplicationAsync(string applicationUri) {
+        public async Task<IList<ApplicationRecordModel>> ListApplicationAsync(string applicationUri) {
             if (string.IsNullOrEmpty(applicationUri)) {
                 throw new ArgumentNullException(nameof(applicationUri),
                     "The applicationUri must be provided.");
@@ -292,7 +300,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 Parameters = queryParameters
             };
             var sqlResults = await _applications.GetAsync(sqlQuerySpec);
-            return sqlResults.ToList();
+            return sqlResults.Select(r => r.ToServiceModel()).ToList();
         }
 
         /// <inheritdoc/>
@@ -321,9 +329,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
             if (complexQuery) {
                 matchQuery =
-                    ApplicationsDatabaseBase.IsMatchPattern(applicationName) ||
-                    ApplicationsDatabaseBase.IsMatchPattern(applicationUri) ||
-                    ApplicationsDatabaseBase.IsMatchPattern(productUri);
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(applicationName) ||
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(applicationUri) ||
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(productUri);
             }
 
             var lastQuery = false;
@@ -340,19 +348,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     nextRecordId = startingRecordId;
 
                     if (!string.IsNullOrEmpty(applicationName)) {
-                        if (!ApplicationsDatabaseBase.Match(application.ApplicationName, applicationName)) {
+                        if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
+                            application.ApplicationName, applicationName)) {
                             continue;
                         }
                     }
 
                     if (!string.IsNullOrEmpty(applicationUri)) {
-                        if (!ApplicationsDatabaseBase.Match(application.ApplicationUri, applicationUri)) {
+                        if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
+                            application.ApplicationUri, applicationUri)) {
                             continue;
                         }
                     }
 
                     if (!string.IsNullOrEmpty(productUri)) {
-                        if (!ApplicationsDatabaseBase.Match(application.ProductUri, productUri)) {
+                        if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
+                            application.ProductUri, productUri)) {
                             continue;
                         }
                     }
@@ -387,8 +398,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             if (lastQuery) {
                 nextRecordId = 0;
             }
-            return new QueryApplicationsByIdResponseModel(records.ToArray(),
-                lastCounterResetTime, nextRecordId);
+            return new QueryApplicationsByIdResponseModel {
+                Applications = records.Select(a => a.ToServiceModel()).ToList(),
+                LastCounterResetTime = lastCounterResetTime,
+                NextRecordId = nextRecordId
+            };
         }
 
         /// <inheritdoc/>
@@ -407,9 +421,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
             if (complexQuery) {
                 matchQuery =
-                    ApplicationsDatabaseBase.IsMatchPattern(applicationName) ||
-                    ApplicationsDatabaseBase.IsMatchPattern(applicationUri) ||
-                    ApplicationsDatabaseBase.IsMatchPattern(productUri);
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(applicationName) ||
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(applicationUri) ||
+                    Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.IsMatchPattern(productUri);
             }
 
             if (maxRecordsToReturn < 0) {
@@ -423,19 +437,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
                 foreach (var application in applications) {
                     if (!string.IsNullOrEmpty(applicationName)) {
-                        if (!ApplicationsDatabaseBase.Match(application.ApplicationName, applicationName)) {
+                        if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
+                            application.ApplicationName, applicationName)) {
                             continue;
                         }
                     }
 
                     if (!string.IsNullOrEmpty(applicationUri)) {
-                        if (!ApplicationsDatabaseBase.Match(application.ApplicationUri, applicationUri)) {
+                        if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
+                            application.ApplicationUri, applicationUri)) {
                             continue;
                         }
                     }
 
                     if (!string.IsNullOrEmpty(productUri)) {
-                        if (!ApplicationsDatabaseBase.Match(application.ProductUri, productUri)) {
+                        if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
+                            application.ProductUri, productUri)) {
                             continue;
                         }
                     }
@@ -457,14 +474,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                             continue;
                         }
                     }
-
                     records.Add(application);
                     if (maxRecordsToReturn > 0 && records.Count >= maxRecordsToReturn) {
                         break;
                     }
                 }
             } while (nextPageLink != null);
-            return new QueryApplicationsResponseModel(records.ToArray(), nextPageLink);
+            return new QueryApplicationsResponseModel {
+                Applications = records.Select(a => a.ToServiceModel()).ToList(),
+                NextPageLink = nextPageLink
+            };
         }
 
         /// <summary>
@@ -474,7 +493,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="maxRecordsToQuery">The max number of records</param>
         /// <param name="applicationState">The application state query filter</param>
         /// <returns></returns>
-        private SqlQuerySpec CreateServerQuery(uint startingRecordId, uint maxRecordsToQuery, QueryApplicationState? applicationState) {
+        private SqlQuerySpec CreateServerQuery(uint startingRecordId,
+            uint maxRecordsToQuery, QueryApplicationState? applicationState) {
             string query;
             var queryParameters = new SqlParameterCollection();
             if (maxRecordsToQuery != 0) {
@@ -489,7 +509,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             var queryState = applicationState ?? QueryApplicationState.Approved;
             if (queryState != 0) {
                 var first = true;
-                foreach (QueryApplicationState state in Enum.GetValues(typeof(QueryApplicationState))) {
+                foreach (QueryApplicationState state in Enum.GetValues(
+                    typeof(QueryApplicationState))) {
                     if (state == 0) {
                         continue;
                     }
@@ -522,7 +543,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <summary>
-        /// Validates all fields in an application record to be consistent with the OPC UA specification.
+        /// Validates all fields in an application record to be consistent with
+        /// the OPC UA specification.
         /// </summary>
         /// <param name="application">The application</param>
         /// <returns>The application Guid.</returns>
@@ -536,24 +558,32 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             }
 
             if (!Uri.IsWellFormedUriString(application.ApplicationUri, UriKind.Absolute)) {
-                throw new ArgumentException(application.ApplicationUri + " is not a valid URI.", nameof(application.ApplicationUri));
+                throw new ArgumentException(application.ApplicationUri +
+                    " is not a valid URI.", nameof(application.ApplicationUri));
             }
 
             if ((application.ApplicationType < ApplicationType.Server) ||
                 (application.ApplicationType > ApplicationType.DiscoveryServer)) {
-                throw new ArgumentException(application.ApplicationType.ToString() + " is not a valid ApplicationType.", nameof(application.ApplicationType));
+                throw new ArgumentException(application.ApplicationType.ToString() +
+                    " is not a valid ApplicationType.", nameof(application.ApplicationType));
             }
 
-            if (application.ApplicationNames == null || application.ApplicationNames.Length == 0 || string.IsNullOrEmpty(application.ApplicationNames[0].Text)) {
-                throw new ArgumentException("At least one ApplicationName must be provided.", nameof(application.ApplicationNames));
+            if (application.ApplicationNames == null ||
+                application.ApplicationNames.Length == 0 ||
+                string.IsNullOrEmpty(application.ApplicationNames[0].Text)) {
+                throw new ArgumentException(
+                    "At least one ApplicationName must be provided.",
+                    nameof(application.ApplicationNames));
             }
 
             if (string.IsNullOrEmpty(application.ProductUri)) {
-                throw new ArgumentException("A ProductUri must be provided.", nameof(application.ProductUri));
+                throw new ArgumentException(
+                    "A ProductUri must be provided.", nameof(application.ProductUri));
             }
 
             if (!Uri.IsWellFormedUriString(application.ProductUri, UriKind.Absolute)) {
-                throw new ArgumentException(application.ProductUri + " is not a valid URI.", nameof(application.ProductUri));
+                throw new ArgumentException(application.ProductUri +
+                    " is not a valid URI.", nameof(application.ProductUri));
             }
 
             if (application.DiscoveryUrls != null) {
@@ -563,7 +593,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     }
 
                     if (!Uri.IsWellFormedUriString(discoveryUrl, UriKind.Absolute)) {
-                        throw new ArgumentException(discoveryUrl + " is not a valid URL.", nameof(application.DiscoveryUrls));
+                        throw new ArgumentException(discoveryUrl + " is not a valid URL.",
+                            nameof(application.DiscoveryUrls));
                     }
 
                     // TODO: check for https:/hostname:62541, typo is not detected here
@@ -572,18 +603,24 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
             if ((int)application.ApplicationType != (int)Opc.Ua.ApplicationType.Client) {
                 if (application.DiscoveryUrls == null || application.DiscoveryUrls.Length == 0) {
-                    throw new ArgumentException("At least one DiscoveryUrl must be provided.", nameof(application.DiscoveryUrls));
+                    throw new ArgumentException(
+                        "At least one DiscoveryUrl must be provided.",
+                        nameof(application.DiscoveryUrls));
                 }
 
                 if (string.IsNullOrEmpty(application.ServerCapabilities)) {
-                    throw new ArgumentException("At least one Server Capability must be provided.", nameof(application.ServerCapabilities));
+                    throw new ArgumentException(
+                        "At least one Server Capability must be provided.",
+                        nameof(application.ServerCapabilities));
                 }
 
                 // TODO: check for valid servercapabilities
             }
             else {
                 if (application.DiscoveryUrls != null && application.DiscoveryUrls.Length > 0) {
-                    throw new ArgumentException("DiscoveryUrls must not be specified for clients.", nameof(application.DiscoveryUrls));
+                    throw new ArgumentException(
+                        "DiscoveryUrls must not be specified for clients.",
+                        nameof(application.DiscoveryUrls));
                 }
             }
 
@@ -597,7 +634,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         public static string ServerCapabilities(ApplicationDocument application) {
             if ((int)application.ApplicationType != (int)ApplicationType.Client) {
                 if (string.IsNullOrEmpty(application.ServerCapabilities)) {
-                    throw new ArgumentException("At least one Server Capability must be provided.", nameof(application.ServerCapabilities));
+                    throw new ArgumentException(
+                        "At least one Server Capability must be provided.",
+                        nameof(application.ServerCapabilities));
                 }
             }
 
@@ -629,7 +668,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         private Guid ToGuidAndVerify(string applicationId) {
             try {
                 if (string.IsNullOrEmpty(applicationId)) {
-                    throw new ArgumentNullException(nameof(applicationId), "The application id must be provided");
+                    throw new ArgumentNullException(nameof(applicationId),
+                        "The application id must be provided");
                 }
                 var guid = new Guid(applicationId);
                 if (guid == Guid.Empty) {

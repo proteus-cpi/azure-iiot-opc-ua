@@ -8,18 +8,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using System.Collections.Generic;
 
     /// <summary>
-    /// Application query response
+    /// Registry application status response
     /// </summary>
-    public sealed class QueryApplicationsResponseModel {
+    public sealed class RegistryApplicationStatusResponseModel {
 
         /// <summary>
-        /// Found applications
+        /// Applications
         /// </summary>
         [JsonProperty(PropertyName = "applications")]
-        public IList<ApplicationRecordModel> Applications { get; set; }
+        public IList<RegistryApplicationStatusModel> Applications { get; set; }
 
         /// <summary>
-        /// Next page
+        /// Next link
         /// </summary>
         [JsonProperty(PropertyName = "nextPageLink")]
         public string NextPageLink { get; set; }

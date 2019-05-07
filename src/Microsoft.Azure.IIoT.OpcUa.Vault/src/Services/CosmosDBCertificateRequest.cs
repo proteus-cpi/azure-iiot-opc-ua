@@ -243,7 +243,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 else {
                     request.CertificateRequestState = CertificateRequestState.Approved;
 
-                    X509Certificate2 certificate;
+                    X509CertificateModel certificate;
                     if (request.SigningRequest != null) {
                         try {
                             certificate = await _certificateGroup.SigningRequestAsync(
@@ -251,7 +251,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                                 application.ApplicationUri,
                                 request.SigningRequest
                                 );
-                            request.Certificate = certificate.RawData;
+                            request.Certificate = certificate.Certificate;
                         }
                         catch (Exception e) {
                             var error = new StringBuilder();
@@ -263,7 +263,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         }
                     }
                     else {
-                        Opc.Ua.Gds.Server.X509Certificate2KeyPair newKeyPair = null;
+                        X509CertificatePrivateKeyPairModel newKeyPair;
                         try {
                             newKeyPair = await _certificateGroup.NewKeyPairRequestAsync(
                                 request.CertificateGroupId,
@@ -281,7 +281,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                             error.Append("\r\nApplicationUri=" + application.ApplicationUri);
                             throw new ResourceInvalidStateException(error.ToString());
                         }
-                        request.Certificate = newKeyPair.Certificate.RawData;
+                        request.Certificate = newKeyPair.Certificate.Certificate;
                         // ignore private key, it is stored in KeyVault
                     }
                 }
@@ -421,7 +421,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 request.PrivateKeyPassword = null;
 
                 try {
-                    var cert = new X509Certificate2(request.Certificate);
+                    var cert = new X509Certificate2(request.Certificate).ToServiceModel();
                     var crl = await _certificateGroup.RevokeCertificateAsync(
                         request.CertificateGroupId, cert);
                 }
@@ -499,7 +499,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             }
 
             var remainingCertificates = await _certificateGroup.RevokeCertificatesAsync(
-                groupId, certCollection);
+                groupId, certCollection.ToServiceModel(null));
             foreach (var reqId in deletedRequests) {
                 bool retryUpdate;
                 do {
@@ -549,7 +549,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 case CertificateRequestState.Revoked:
                 case CertificateRequestState.Deleted:
                 case CertificateRequestState.Removed:
-                    return new FetchRequestResultModel(request.CertificateRequestState) {
+                    return new FetchRequestResultModel {
+                        State = request.CertificateRequestState,
                         ApplicationId = applicationId,
                         RequestId = requestId
                     };
@@ -576,10 +577,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 }
             }
 
-            return new FetchRequestResultModel(request.CertificateRequestState,
-                applicationId, requestId, request.CertificateGroupId,
-                request.CertificateTypeId, request.Certificate,
-                request.PrivateKeyFormat, privateKey, request.AuthorityId);
+            return new FetchRequestResultModel {
+                State = request.CertificateRequestState,
+                ApplicationId = applicationId,
+                RequestId = requestId,
+                CertificateGroupId = request.CertificateGroupId,
+                CertificateTypeId = request.CertificateTypeId,
+                SignedCertificate = request.Certificate,
+                PrivateKeyFormat = request.PrivateKeyFormat,
+                PrivateKey = privateKey,
+                AuthorityId = request.AuthorityId
+            };
         }
 
         /// <inheritdoc/>

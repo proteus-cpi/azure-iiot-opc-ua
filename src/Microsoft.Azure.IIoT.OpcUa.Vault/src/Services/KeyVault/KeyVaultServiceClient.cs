@@ -6,6 +6,7 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     using Microsoft.Azure.IIoT.Exceptions;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
     using Microsoft.Azure.KeyVault;
     using Microsoft.Azure.KeyVault.Models;
     using Microsoft.Azure.KeyVault.WebKey;

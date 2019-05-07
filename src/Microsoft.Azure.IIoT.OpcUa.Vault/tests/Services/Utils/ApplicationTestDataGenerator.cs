@@ -5,9 +5,11 @@
 
 
 using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models;
+using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
 using Opc.Ua;
 using Opc.Ua.Gds;
 using Opc.Ua.Test;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -49,17 +51,24 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     break;
             }
             var testData = new ApplicationTestData {
-                Model = new ApplicationDocument {
+                Model = new ApplicationRecordModel {
                     ApplicationUri = appUri,
                     ApplicationName = appName,
                     ApplicationType = (Registry.Models.ApplicationType)appType,
                     ProductUri = prodUri,
                     ServerCapabilities = ApplicationTestData.ServerCapabilities(serverCapabilities.ToArray()),
-                    ApplicationNames = new ApplicationName[] { new ApplicationName { Locale = "en-us", Text = appName } },
+                    ApplicationNames = new ApplicationNameModel[] {
+                        new ApplicationNameModel {
+                            Locale = "en-us",
+                            Text = appName
+                        }
+                    },
                     DiscoveryUrls = discoveryUrls.ToArray()
                 },
                 ApplicationRecord = new ApplicationRecordDataType {
-                    ApplicationNames = new LocalizedTextCollection { new LocalizedText("en-us", appName) },
+                    ApplicationNames = new LocalizedTextCollection {
+                        new LocalizedText("en-us", appName)
+                    },
                     ApplicationUri = appUri,
                     ApplicationType = appType,
                     ProductUri = prodUri,

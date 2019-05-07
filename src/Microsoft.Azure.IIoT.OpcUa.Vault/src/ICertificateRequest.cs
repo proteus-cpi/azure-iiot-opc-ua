@@ -13,11 +13,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     /// An abstract interface to the certificate request database
     /// </summary>
     public interface ICertificateRequest {
-
-        /// <summary>
-        /// Performs setup tasks. Used to create the database if it
-        /// doesn't exist.
-        /// </summary>
+        /// <TODO/>
         Task InitializeAsync();
 
         /// <summary>

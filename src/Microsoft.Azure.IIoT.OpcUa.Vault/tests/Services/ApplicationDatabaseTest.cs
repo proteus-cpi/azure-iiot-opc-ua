@@ -5,6 +5,7 @@
 
 
 using Microsoft.Azure.IIoT.Exceptions;
+using Microsoft.Azure.IIoT.OpcUa.Vault;
 using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
 using Microsoft.Azure.IIoT.OpcUa.Vault.Tests.Helpers;
 using Serilog;
@@ -41,7 +42,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 Assert.Null(application.Model.DeleteTime);
                 var applicationModel = await _applicationsDatabase.RegisterApplicationAsync(application.Model);
                 Assert.NotNull(applicationModel);
-                Assert.NotEqual(applicationModel.ApplicationId, Guid.Empty);
+                Assert.NotNull(applicationModel.ApplicationId);
                 ApplicationTestData.AssertEqualApplicationModelData(applicationModel, application.Model);
                 application.Model = applicationModel;
                 Assert.NotNull(applicationModel);
@@ -78,7 +79,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.RegisterApplicationAsync(null));
             await Assert.ThrowsAsync<ResourceNotFoundException>(async () => {
                 var testModelCopy = ApplicationTestData.ApplicationDeepCopy(_applicationTestSet[0].Model);
-                testModelCopy.ApplicationId = Guid.NewGuid();
+                testModelCopy.ApplicationId = Guid.NewGuid().ToString();
                 await _applicationsDatabase.RegisterApplicationAsync(testModelCopy);
             });
         }
@@ -98,15 +99,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 // read model to get state
                 var applicationModel = await _applicationsDatabase.GetApplicationAsync(application.Model.ApplicationId.ToString());
-                if (applicationModel.ApplicationState == ApplicationState.New) {
+                if (applicationModel.State == ApplicationState.New) {
                     // approve app
                     applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId.ToString(), true, false);
                     Assert.NotNull(applicationModel);
-                    Assert.Equal(ApplicationState.Approved, applicationModel.ApplicationState);
+                    Assert.Equal(ApplicationState.Approved, applicationModel.State);
                 }
 
                 // verify start condition
-                if (applicationModel.ApplicationState != ApplicationState.Approved) {
+                if (applicationModel.State != ApplicationState.Approved) {
                     continue;
                 }
 
@@ -116,8 +117,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 // force approved app to rejected state
                 applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId.ToString(), false, true);
                 Assert.NotNull(applicationModel);
-                Assert.NotEqual(applicationModel.ApplicationId, Guid.Empty);
-                Assert.Equal(ApplicationState.Rejected, applicationModel.ApplicationState);
+                Assert.NotNull(applicationModel.ApplicationId);
+                Assert.Equal(ApplicationState.Rejected, applicationModel.State);
                 ApplicationTestData.AssertEqualApplicationModelData(applicationModel, application.Model);
 
                 // approve rejected app should fail
@@ -126,8 +127,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 // force approve of rejected app
                 applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId.ToString(), true, true);
                 Assert.NotNull(applicationModel);
-                Assert.NotEqual(applicationModel.ApplicationId, Guid.Empty);
-                Assert.Equal(ApplicationState.Approved, applicationModel.ApplicationState);
+                Assert.NotNull(applicationModel.ApplicationId);
+                Assert.Equal(ApplicationState.Approved, applicationModel.State);
                 ApplicationTestData.AssertEqualApplicationModelData(applicationModel, application.Model);
                 fullPasses++;
             }
@@ -145,7 +146,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 var applicationModel = await _applicationsDatabase.GetApplicationAsync(application.Model.ApplicationId.ToString());
                 Assert.NotNull(applicationModel);
-                Assert.NotEqual(applicationModel.ApplicationId, Guid.Empty);
+                Assert.NotNull(applicationModel.ApplicationId);
                 Assert.Equal(applicationModel.ApplicationId, applicationModel.ApplicationId);
                 ApplicationTestData.AssertEqualApplicationModelData(applicationModel, application.Model);
             }
@@ -155,11 +156,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task ListAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                var applicationModelList = await _applicationsDatabase.ListApplicationAsync(application.Model.ApplicationUri);
+                var applicationModelList = await _applicationsDatabase.ListApplicationAsync(
+                    application.Model.ApplicationUri);
                 Assert.NotNull(applicationModelList);
                 Assert.True(applicationModelList.Count >= 1, "At least one record should be found.");
                 foreach (var response in applicationModelList) {
-                    Assert.NotEqual(response.ApplicationId, Guid.Empty);
+                    Assert.NotNull(response.ApplicationId);
                     Assert.Equal(application.Model.ApplicationUri, response.ApplicationUri);
                 }
             }
@@ -169,9 +171,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task UpdateAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                var applicationModel = await _applicationsDatabase.UpdateApplicationAsync(application.Model.ApplicationId.ToString(), application.Model);
+                var applicationModel = await _applicationsDatabase.UpdateApplicationAsync(
+                    application.Model.ApplicationId.ToString(), application.Model);
                 Assert.NotNull(applicationModel);
-                Assert.NotEqual(applicationModel.ApplicationId, Guid.Empty);
+                Assert.NotNull(applicationModel.ApplicationId);
                 Assert.Equal(applicationModel.ApplicationId, applicationModel.ApplicationId);
             }
         }
@@ -180,7 +183,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task QueryApplicationsByIdAsync() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                var response = await _applicationsDatabase.QueryApplicationsByIdAsync(0, 0, null, null, 0, null, null, QueryApplicationState.Any);
+                var response = await _applicationsDatabase.QueryApplicationsByIdAsync(
+                    0, 0, null, null, 0, null, null, QueryApplicationState.Any);
                 Assert.NotNull(response);
             }
         }
@@ -189,7 +193,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task QueryApplicationsAsync() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                var response = await _applicationsDatabase.QueryApplicationsAsync(null, null, 0, null, null, QueryApplicationState.Any);
+                var response = await _applicationsDatabase.QueryApplicationsAsync(
+                    null, null, 0, null, null, QueryApplicationState.Any);
                 Assert.NotNull(response);
             }
         }
@@ -198,9 +203,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task UnregisterAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                var applicationModel = await _applicationsDatabase.UnregisterApplicationAsync(application.Model.ApplicationId.ToString());
+                var applicationModel = await _applicationsDatabase.UnregisterApplicationAsync(
+                    application.Model.ApplicationId.ToString());
                 Assert.NotNull(applicationModel);
-                Assert.NotEqual(applicationModel.ApplicationId, Guid.Empty);
+                Assert.NotNull(applicationModel.ApplicationId);
             }
         }
 
@@ -208,7 +214,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task UnregisteredListAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                var applicationModelList = await _applicationsDatabase.ListApplicationAsync(application.Model.ApplicationUri);
+                var applicationModelList = await _applicationsDatabase.ListApplicationAsync(
+                    application.Model.ApplicationUri);
                 Assert.NotNull(applicationModelList);
                 foreach (var response in applicationModelList) {
                     Assert.Equal(application.Model.ApplicationUri, response.ApplicationUri);
@@ -221,11 +228,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task UnregisteredGetAllApplicationsNot() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                var applicationModel = await _applicationsDatabase.GetApplicationAsync(application.Model.ApplicationId.ToString());
+                var applicationModel = await _applicationsDatabase.GetApplicationAsync(
+                    application.Model.ApplicationId.ToString());
                 Assert.NotNull(applicationModel);
-                Assert.NotEqual(applicationModel.ApplicationId, Guid.Empty);
+                Assert.NotNull(applicationModel.ApplicationId);
                 Assert.Equal(applicationModel.ApplicationId, applicationModel.ApplicationId);
-                Assert.Equal(ApplicationState.Unregistered, applicationModel.ApplicationState);
+                Assert.Equal(ApplicationState.Unregistered, applicationModel.State);
                 Assert.NotNull(applicationModel.DeleteTime);
                 ApplicationTestData.AssertEqualApplicationModelData(applicationModel, application.Model);
             }
@@ -235,7 +243,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task DeleteAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                await _applicationsDatabase.DeleteApplicationAsync(application.Model.ApplicationId.ToString(), false);
+                await _applicationsDatabase.DeleteApplicationAsync(
+                    application.Model.ApplicationId.ToString(), false);
             }
         }
 
@@ -244,7 +253,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 await Assert.ThrowsAsync<ResourceNotFoundException>(async () => {
-                    var applicationModel = await _applicationsDatabase.GetApplicationAsync(application.Model.ApplicationId.ToString());
+                    var applicationModel = await _applicationsDatabase.GetApplicationAsync(
+                        application.Model.ApplicationId.ToString());
                 });
             }
         }

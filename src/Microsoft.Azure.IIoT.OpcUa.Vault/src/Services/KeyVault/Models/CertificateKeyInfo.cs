@@ -3,23 +3,23 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
-    using System;
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
+    using System.Security.Cryptography.X509Certificates;
 
     /// <summary>
-    /// Application name
+    /// Certificate key info
     /// </summary>
-    [Serializable]
-    public class ApplicationName {
+    public struct CertificateKeyInfo {
 
         /// <summary>
-        /// Locale
+        /// Certificate
         /// </summary>
-        public string Locale { get; set; }
+        public X509Certificate2 Certificate { get; set; }
 
         /// <summary>
-        /// Text
+        /// Key
         /// </summary>
-        public string Text { get; set; }
+        public string KeyIdentifier { get; set; }
     }
 }
+

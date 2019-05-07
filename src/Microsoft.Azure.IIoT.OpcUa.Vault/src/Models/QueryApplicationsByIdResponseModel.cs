@@ -1,48 +1,37 @@
 // ------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
-//  Licensed under the MIT License (MIT).
-//  See License.txt in the repo root for license information.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models;
+    using Newtonsoft.Json;
     using System;
+    using System.Collections.Generic;
+    using System.ComponentModel.DataAnnotations;
 
     /// <summary>
-    /// Query applications by id
+    /// Create response
     /// </summary>
     public sealed class QueryApplicationsByIdResponseModel {
 
         /// <summary>
-        /// Applications
+        /// Applications found
         /// </summary>
-        public ApplicationDocument[] Applications { get; set; }
+        [JsonProperty(PropertyName = "applications")]
+        public IList<ApplicationRecordModel> Applications { get; set; }
 
         /// <summary>
         /// Last counter reset
         /// </summary>
+        [JsonProperty(PropertyName = "lastCounterResetTime")]
+        [Required]
         public DateTime LastCounterResetTime { get; set; }
 
         /// <summary>
         /// Next record id
         /// </summary>
-        public int NextRecordId { get; set; }
-
-        /// <summary>
-        /// Create model
-        /// </summary>
-        /// <param name="applications"></param>
-        /// <param name="lastCounterResetTime"></param>
-        /// <param name="nextRecordId"></param>
-        public QueryApplicationsByIdResponseModel(
-            ApplicationDocument[] applications,
-            DateTime lastCounterResetTime,
-            uint nextRecordId
-            ) {
-            Applications = applications;
-            LastCounterResetTime = lastCounterResetTime;
-            NextRecordId = (int)nextRecordId;
-        }
+        [JsonProperty(PropertyName = "nextRecordId")]
+        [Required]
+        public uint NextRecordId { get; set; }
     }
 }
-

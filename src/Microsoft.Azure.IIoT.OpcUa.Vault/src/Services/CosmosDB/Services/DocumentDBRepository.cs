@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
+    using Autofac;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.IIoT.Utils;
@@ -11,7 +12,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
     using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Cosmos db document repository
@@ -42,18 +42,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
         }
 
         /// <inheritdoc/>
-        public async Task CreateRepositoryIfNotExistsAsync() {
-            try {
-                await Client.ReadDatabaseAsync(UriFactory.CreateDatabaseUri(DatabaseId));
-            }
-            catch (DocumentClientException e) {
-                if (e.StatusCode == System.Net.HttpStatusCode.NotFound) {
-                    await Client.CreateDatabaseAsync(new Database { Id = DatabaseId });
-                }
-                else {
-                    throw;
-                }
-            }
+        public System.Threading.Tasks.Task CreateRepositoryIfNotExistsAsync() {
+            return Client.CreateDatabaseIfNotExistsAsync(new Database {
+                Id = DatabaseId
+            });
         }
 
         /// <summary>

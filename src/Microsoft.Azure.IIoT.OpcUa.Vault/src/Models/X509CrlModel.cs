@@ -4,24 +4,20 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using Newtonsoft.Json;
-    using System.Collections.Generic;
 
     /// <summary>
-    /// Application query response
+    /// A X509 certificate revocation list.
     /// </summary>
-    public sealed class QueryApplicationsResponseModel {
+    public sealed class X509CrlModel {
 
         /// <summary>
-        /// Found applications
+        /// The Issuer name of the revocation list.
         /// </summary>
-        [JsonProperty(PropertyName = "applications")]
-        public IList<ApplicationRecordModel> Applications { get; set; }
+        public string Issuer { get; set; }
 
         /// <summary>
-        /// Next page
+        /// The X509 certificate revocation list.
         /// </summary>
-        [JsonProperty(PropertyName = "nextPageLink")]
-        public string NextPageLink { get; set; }
+        public byte[] RawData { get; set; }
     }
 }

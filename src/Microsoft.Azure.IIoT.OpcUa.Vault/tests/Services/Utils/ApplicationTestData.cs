@@ -5,6 +5,7 @@
 
 
 using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models;
+using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
 using Newtonsoft.Json;
 using Opc.Ua;
 using Opc.Ua.Gds;
@@ -34,7 +35,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             IssuerCertificates = null;
         }
 
-        public ApplicationDocument Model { get; set; }
+        public ApplicationRecordModel Model { get; set; }
         public ApplicationRecordDataType ApplicationRecord { get; set; }
         public NodeId CertificateGroupId { get; set; }
         public NodeId CertificateTypeId { get; set; }
@@ -73,7 +74,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         /// </summary>
         /// <param name="expected">The expected Application model data</param>
         /// <param name="actual">The actualy Application model data</param>
-        public static void AssertEqualApplicationModelData(ApplicationDocument expected, ApplicationDocument actual) {
+        public static void AssertEqualApplicationModelData(ApplicationRecordModel expected, ApplicationRecordModel actual) {
             Assert.Equal(expected.ApplicationName, actual.ApplicationName);
             Assert.Equal(expected.ApplicationType, actual.ApplicationType);
             Assert.Equal(expected.ApplicationUri, actual.ApplicationUri);
@@ -89,7 +90,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         /// </summary>
         /// <param name="application">The application with server capabilities.</param>
         /// <returns></returns>
-        public static string ServerCapabilities(ApplicationDocument application) {
+        public static string ServerCapabilities(ApplicationRecordModel application) {
             if (application.ApplicationType != Registry.Models.ApplicationType.Client) {
                 if (string.IsNullOrEmpty(application.ServerCapabilities)) {
                     throw new ArgumentException("At least one Server Capability must be provided.", nameof(application.ServerCapabilities));
@@ -118,9 +119,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             return capabilities.ToString();
         }
 
-        public static ApplicationDocument ApplicationDeepCopy(ApplicationDocument app) {
+        public static ApplicationRecordModel ApplicationDeepCopy(ApplicationRecordModel app) {
             // serialize/deserialize to avoid using MemberwiseClone
-            return (ApplicationDocument)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(app), typeof(ApplicationDocument));
+            return (ApplicationRecordModel)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(app), typeof(ApplicationRecordModel));
         }
 
     }

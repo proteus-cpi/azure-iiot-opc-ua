@@ -4,7 +4,7 @@
 // ------------------------------------------------------------
 
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
     using Opc.Ua;
     using System.Collections.Generic;
     using System.Security.Cryptography.X509Certificates;

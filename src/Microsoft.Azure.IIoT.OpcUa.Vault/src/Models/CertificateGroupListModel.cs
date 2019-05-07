@@ -8,20 +8,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using System.Collections.Generic;
 
     /// <summary>
-    /// Application query response
+    /// Create group list model
     /// </summary>
-    public sealed class QueryApplicationsResponseModel {
+    public sealed class CertificateGroupListModel {
 
         /// <summary>
-        /// Found applications
+        /// Groups
         /// </summary>
-        [JsonProperty(PropertyName = "applications")]
-        public IList<ApplicationRecordModel> Applications { get; set; }
-
-        /// <summary>
-        /// Next page
-        /// </summary>
-        [JsonProperty(PropertyName = "nextPageLink")]
-        public string NextPageLink { get; set; }
+        [JsonProperty(PropertyName = "groups")]
+        public IList<string> Groups { get; set; }
     }
 }

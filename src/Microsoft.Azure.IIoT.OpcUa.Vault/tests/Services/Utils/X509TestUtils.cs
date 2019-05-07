@@ -132,7 +132,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
         }
 
-        internal static async Task<CertificateValidator> CreateValidatorAsync(KeyVaultTrustListModel trustList) {
+        internal static async Task<CertificateValidator> CreateValidatorAsync(TrustListModel trustList) {
             var storePath = "%LocalApplicationData%/OPCVaultTest/pki/";
             DeleteDirectory(storePath);
 
@@ -140,13 +140,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             var certValidator = new CertificateValidator();
             var issuerTrustList = await CreateTrustListAsync(
                 storePath + "issuer",
-                trustList.IssuerCertificates,
-                trustList.IssuerCrls
+                trustList.IssuerCertificates.ToStackModel(),
+                trustList.IssuerCrls.ToStackModel()
                 );
             var trustedTrustList = await CreateTrustListAsync(
                 storePath + "trusted",
-                trustList.TrustedCertificates,
-                trustList.TrustedCrls
+                trustList.TrustedCertificates.ToStackModel(),
+                trustList.TrustedCrls.ToStackModel()
                 );
 
             certValidator.Update(issuerTrustList, trustedTrustList, null);

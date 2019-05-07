@@ -7,6 +7,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Graph.Models {
     using Gremlin.Net.CosmosDb.Structure;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+    using Opc.Ua;
     using Opc.Ua.Nodeset.Schema;
 
     /// <summary>

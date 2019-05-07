@@ -3,24 +3,23 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
-    using System.Security.Cryptography.X509Certificates;
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+    using System;
 
     /// <summary>
-    /// Certificate key info
+    /// Application name
     /// </summary>
-    public struct CertificateKeyInfo {
+    [Serializable]
+    public class ApplicationNameModel {
 
         /// <summary>
-        /// Certificate
+        /// Locale
         /// </summary>
-        public X509Certificate2 Certificate { get; set; }
+        public string Locale { get; set; }
 
         /// <summary>
-        /// Key
+        /// Text
         /// </summary>
-        public string KeyIdentifier { get; set; }
+        public string Text { get; set; }
     }
 }
-

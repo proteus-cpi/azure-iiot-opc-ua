@@ -62,7 +62,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 var applicationModel = await _applicationsDatabase.RegisterApplicationAsync(application.Model);
                 Assert.NotNull(applicationModel);
-                Assert.NotEqual(applicationModel.ApplicationId, Guid.Empty);
+                Assert.NotNull(applicationModel.ApplicationId);
                 ApplicationTestData.AssertEqualApplicationModelData(applicationModel, application.Model);
                 application.Model = applicationModel;
                 Assert.NotNull(applicationModel);
@@ -81,7 +81,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 await _certificateGroup.CreateIssuerCACertificateAsync(group);
                 var chain = await _certificateGroup.GetIssuerCACertificateChainAsync(group);
                 Assert.NotNull(chain);
-                Assert.True(chain.Count > 0);
+                Assert.True(chain.Chain.Count > 0);
             }
         }
 
@@ -96,7 +96,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 // approve app
                 var applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId.ToString(), true, true);
                 Assert.NotNull(applicationModel);
-                Assert.Equal(ApplicationState.Approved, applicationModel.ApplicationState);
+                Assert.Equal(ApplicationState.Approved, applicationModel.State);
             }
         }
 
@@ -427,7 +427,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 var applicationModel = await _applicationsDatabase.UnregisterApplicationAsync(application.Model.ApplicationId.ToString());
                 Assert.NotNull(applicationModel);
-                Assert.NotEqual(applicationModel.ApplicationId, Guid.Empty);
+                Assert.NotNull(applicationModel.ApplicationId);
             }
         }
 

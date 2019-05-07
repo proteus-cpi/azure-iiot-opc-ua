@@ -6,6 +6,7 @@
 
 using Microsoft.Azure.IIoT.Auth.Clients;
 using Microsoft.Azure.IIoT.Auth.Runtime;
+using Microsoft.Azure.IIoT.OpcUa.Vault;
 using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB;
 using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services;
 using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
