@@ -5,8 +5,7 @@
 
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
-    using System;
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using System.Linq;
 
     /// <summary>
@@ -17,27 +16,27 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         /// <summary>
         /// Create model
         /// </summary>
-        /// <param name="application"></param>
-        public static ApplicationRecordModel ToServiceModel(this ApplicationDocument application) {
-            return new ApplicationRecordModel {
-                ApplicationId = application.ApplicationId,
-                RecordId = application.ID,
-                State = application.ApplicationState,
-                ApplicationUri = application.ApplicationUri,
-                ApplicationName = application.ApplicationName,
-                ApplicationType = application.ApplicationType,
-                LocalizedNames = application.ApplicationNames?.ToList(),
-                ProductUri = application.ProductUri,
-                DiscoveryUrls = application.DiscoveryUrls,
-                Capabilities = application.ServerCapabilities,
-                GatewayServerUri = application.GatewayServerUri,
-                DiscoveryProfileUri = application.DiscoveryProfileUri,
-                ApproveTime = application.ApproveTime,
-                AuthorityId = application.AuthorityId,
-                CreateTime = application.CreateTime,
-                DeleteTime = application.DeleteTime,
-                RegistryId = application.RegistryId,
-                UpdateTime = application.UpdateTime
+        /// <param name="document"></param>
+        public static ApplicationInfoModel ToServiceModel(this ApplicationDocument document) {
+            return new ApplicationInfoModel {
+                ApplicationId = document.ApplicationId,
+                RecordId = document.ID,
+                State = document.ApplicationState,
+                ApplicationUri = document.ApplicationUri,
+                ApplicationName = document.ApplicationName,
+                ApplicationType = document.ApplicationType,
+                LocalizedNames = document.ApplicationNames?
+                    .ToDictionary(n => n.Locale, n => n.Name),
+                ProductUri = document.ProductUri,
+                DiscoveryUrls = document.DiscoveryUrls.ToHashSetSafe(),
+                Capabilities = document.ServerCapabilities,
+                GatewayServerUri = document.GatewayServerUri,
+                DiscoveryProfileUri = document.DiscoveryProfileUri,
+                ApproveTime = document.ApproveTime,
+                AuthorityId = document.AuthorityId,
+                CreateTime = document.CreateTime,
+                DeleteTime = document.DeleteTime,
+                UpdateTime = document.UpdateTime
             };
         }
 
@@ -45,27 +44,30 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         /// Convert to service model
         /// </summary>
         /// <returns></returns>
-        public static ApplicationDocument ToDocumentModel(this ApplicationRecordModel model) {
+        public static ApplicationDocument ToDocumentModel(this ApplicationInfoModel model) {
             return new ApplicationDocument {
-                // ID and State are ignored, readonly
                 ApplicationId = model.ApplicationId,
                 ApplicationUri = model.ApplicationUri,
                 ApplicationName = model.ApplicationName,
                 ApplicationType = model.ApplicationType,
-                ApplicationNames = model.LocalizedNames?.ToArray(),
+                ApplicationNames = model.LocalizedNames?
+                    .Select(kv => new ApplicationDocument.LocalizedText {
+                        Locale = kv.Key,
+                        Name = kv.Value
+                    })
+                    .ToArray(),
                 ProductUri = model.ProductUri,
                 DiscoveryUrls = model.DiscoveryUrls?.ToArray(),
-                ServerCapabilities = model.Capabilities,
+                ServerCapabilities = model.Capabilities.Aggregate((x, y) => $"{x},{y}"),
                 GatewayServerUri = model.GatewayServerUri,
                 DiscoveryProfileUri = model.DiscoveryProfileUri,
                 UpdateTime = model.UpdateTime,
-                RegistryId = model.RegistryId,
                 DeleteTime = model.DeleteTime,
                 CreateTime = model.CreateTime,
                 AuthorityId = model.AuthorityId,
                 ApproveTime = model.ApproveTime,
                 ApplicationState = model.State,
-                ID = model.RecordId,
+                ID = model.RecordId ?? 0,
             };
         }
     }

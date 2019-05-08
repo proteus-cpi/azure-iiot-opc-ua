@@ -35,7 +35,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             IssuerCertificates = null;
         }
 
-        public ApplicationRecordModel Model { get; set; }
+        public ApplicationInfoModel2 Model { get; set; }
         public ApplicationRecordDataType ApplicationRecord { get; set; }
         public NodeId CertificateGroupId { get; set; }
         public NodeId CertificateTypeId { get; set; }
@@ -74,7 +74,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         /// </summary>
         /// <param name="expected">The expected Application model data</param>
         /// <param name="actual">The actualy Application model data</param>
-        public static void AssertEqualApplicationModelData(ApplicationRecordModel expected, ApplicationRecordModel actual) {
+        public static void AssertEqualApplicationModelData(ApplicationInfoModel2 expected, ApplicationInfoModel2 actual) {
             Assert.Equal(expected.ApplicationName, actual.ApplicationName);
             Assert.Equal(expected.ApplicationType, actual.ApplicationType);
             Assert.Equal(expected.ApplicationUri, actual.ApplicationUri);
@@ -90,7 +90,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         /// </summary>
         /// <param name="application">The application with server capabilities.</param>
         /// <returns></returns>
-        public static string ServerCapabilities(ApplicationRecordModel application) {
+        public static string ServerCapabilities(ApplicationInfoModel2 application) {
             if (application.ApplicationType != Registry.Models.ApplicationType.Client) {
                 if (string.IsNullOrEmpty(application.Capabilities)) {
                     throw new ArgumentException("At least one Server Capability must be provided.", nameof(application.Capabilities));
@@ -119,9 +119,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             return capabilities.ToString();
         }
 
-        public static ApplicationRecordModel ApplicationDeepCopy(ApplicationRecordModel app) {
+        public static ApplicationInfoModel2 ApplicationDeepCopy(ApplicationInfoModel2 app) {
             // serialize/deserialize to avoid using MemberwiseClone
-            return (ApplicationRecordModel)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(app), typeof(ApplicationRecordModel));
+            return (ApplicationInfoModel2)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(app), typeof(ApplicationInfoModel2));
         }
 
     }

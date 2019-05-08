@@ -71,7 +71,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         /// <summary>
         /// Alternative Names
         /// </summary>
-        public ApplicationNameModel[] ApplicationNames { get; set; }
+        public LocalizedText[] ApplicationNames { get; set; }
 
         /// <summary>
         /// Discovery url
@@ -120,5 +120,21 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
 
         /// <inheritdoc/>
         public static readonly string ClassTypeName = "Application";
+
+        /// <summary>
+        /// Application name
+        /// </summary>
+        public class LocalizedText {
+
+            /// <summary>
+            /// Text
+            /// </summary>
+            public string Name { get; set; }
+
+            /// <summary>
+            /// Locale
+            /// </summary>
+            public string Locale { get; set; }
+        }
     }
 }

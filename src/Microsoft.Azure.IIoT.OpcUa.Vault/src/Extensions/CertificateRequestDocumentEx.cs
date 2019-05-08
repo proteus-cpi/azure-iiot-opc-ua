@@ -17,18 +17,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         /// <summary>
         /// Create model
         /// </summary>
-        /// <param name="application"></param>
+        /// <param name="document"></param>
         public static CertificateRequestRecordModel ToServiceModel(
-            this CertificateRequestDocument application) {
+            this CertificateRequestDocument document) {
             return new CertificateRequestRecordModel {
-                RequestId = application.RequestId,
-                ApplicationId = application.ApplicationId,
-                CertificateGroupId = application.CertificateGroupId,
-                CertificateTypeId = application.CertificateTypeId,
-                DomainNames = application.DomainNames?.ToList(),
-                PrivateKeyFormat = application.PrivateKeyFormat,
-                SigningRequest = application.SigningRequest != null,
-                SubjectName = application.SubjectName,
+                RequestId = document.RequestId,
+                ApplicationId = document.ApplicationId,
+                CertificateGroupId = document.CertificateGroupId,
+                CertificateTypeId = document.CertificateTypeId,
+                DomainNames = document.DomainNames?.ToList(),
+                PrivateKeyFormat = document.PrivateKeyFormat,
+                SigningRequest = document.SigningRequest != null,
+                SubjectName = document.SubjectName,
+                State = document.CertificateRequestState
             };
         }
     }

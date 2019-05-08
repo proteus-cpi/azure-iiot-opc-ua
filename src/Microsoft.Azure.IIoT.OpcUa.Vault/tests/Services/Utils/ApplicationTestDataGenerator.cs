@@ -51,7 +51,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     break;
             }
             var testData = new ApplicationTestData {
-                Model = new ApplicationRecordModel {
+                Model = new ApplicationInfoModel2 {
                     ApplicationUri = appUri,
                     ApplicationName = appName,
                     ApplicationType = (Registry.Models.ApplicationType)appType,

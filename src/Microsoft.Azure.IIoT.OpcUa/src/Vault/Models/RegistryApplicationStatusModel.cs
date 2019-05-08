@@ -25,6 +25,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// The application information in the security database.
         /// </summary>
-        public ApplicationRecordModel Application { get; set; }
+        public ApplicationInfoModel Application { get; set; }
     }
 }

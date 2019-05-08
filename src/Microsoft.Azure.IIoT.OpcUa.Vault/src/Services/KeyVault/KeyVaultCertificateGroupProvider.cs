@@ -678,7 +678,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                 IssuerCAAuthorityInformationAccess = "http://%servicehost%/certs/issuer/%serial%/%group%.cer"
             };
             if (certType != null) {
-                var checkedCertType = CertTypeMap().Where(c => c.Value.ToLower() == certType.ToLower()).Single();
+                var checkedCertType = CertTypeMap().Single(c => c.Value.ToLower() == certType.ToLower());
                 config.CertificateType = checkedCertType.Value;
             }
             ValidateConfiguration(config);
@@ -719,7 +719,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
 
             try {
                 // only allow specific cert types for now
-                var certType = CertTypeMap().Where(c => c.Value.ToLower() == update.CertificateType.ToLower()).Single();
+                var certType = CertTypeMap().Single(c => c.Value.ToLower() == update.CertificateType.ToLower());
                 update.CertificateType = certType.Value;
             }
             catch (Exception) {

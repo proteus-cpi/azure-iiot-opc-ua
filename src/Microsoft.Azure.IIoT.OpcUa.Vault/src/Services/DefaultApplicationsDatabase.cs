@@ -58,8 +58,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<ApplicationRecordModel> RegisterApplicationAsync(
-            ApplicationRecordModel application) {
+        public async Task<ApplicationInfoModel> RegisterApplicationAsync(
+            ApplicationInfoModel application) {
             if (application == null) {
                 throw new ArgumentNullException(nameof(application));
             }
@@ -104,7 +104,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<ApplicationRecordModel> GetApplicationAsync(
+        public async Task<ApplicationInfoModel> GetApplicationAsync(
             string applicationId) {
             if (string.IsNullOrEmpty(applicationId)) {
                 throw new ArgumentNullException(nameof(applicationId),
@@ -115,8 +115,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<ApplicationRecordModel> UpdateApplicationAsync(
-            string applicationId, ApplicationRecordModel application) {
+        public async Task<ApplicationInfoModel> UpdateApplicationAsync(
+            string applicationId, ApplicationInfoModel application) {
             if (application == null) {
                 throw new ArgumentNullException(nameof(application),
                     "The application must be provided");
@@ -166,7 +166,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<ApplicationRecordModel> ApproveApplicationAsync(
+        public async Task<ApplicationInfoModel> ApproveApplicationAsync(
             string applicationId, bool approved, bool force) {
             if (string.IsNullOrEmpty(applicationId)) {
                 throw new ArgumentNullException(nameof(applicationId),
@@ -204,7 +204,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<ApplicationRecordModel> UnregisterApplicationAsync(
+        public async Task<ApplicationInfoModel> UnregisterApplicationAsync(
             string applicationId) {
             if (string.IsNullOrEmpty(applicationId)) {
                 throw new ArgumentNullException(nameof(applicationId),
@@ -287,7 +287,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<IList<ApplicationRecordModel>> ListApplicationAsync(
+        public async Task<IList<ApplicationInfoModel>> ListApplicationAsync(
             string applicationUri) {
             if (string.IsNullOrEmpty(applicationUri)) {
                 throw new ArgumentNullException(nameof(applicationUri),

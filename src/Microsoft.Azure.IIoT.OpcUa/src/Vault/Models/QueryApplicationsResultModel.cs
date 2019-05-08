@@ -15,7 +15,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Found applications
         /// </summary>
-        public IList<ApplicationRecordModel> Applications { get; set; }
+        public IList<ApplicationInfoModel2> Applications { get; set; }
 
         /// <summary>
         /// Next page
