@@ -17,21 +17,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Applications found
         /// </summary>
-        [JsonProperty(PropertyName = "applications")]
         public IList<ApplicationRecordModel> Applications { get; set; }
 
         /// <summary>
         /// Last counter reset
         /// </summary>
-        [JsonProperty(PropertyName = "lastCounterResetTime")]
-        [Required]
         public DateTime LastCounterResetTime { get; set; }
 
         /// <summary>
         /// Next record id
         /// </summary>
-        [JsonProperty(PropertyName = "nextRecordId")]
-        [Required]
         public uint NextRecordId { get; set; }
     }
 }

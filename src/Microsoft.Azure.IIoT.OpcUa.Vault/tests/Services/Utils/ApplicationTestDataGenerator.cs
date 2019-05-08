@@ -56,11 +56,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     ApplicationName = appName,
                     ApplicationType = (Registry.Models.ApplicationType)appType,
                     ProductUri = prodUri,
-                    ServerCapabilities = ApplicationTestData.ServerCapabilities(serverCapabilities.ToArray()),
-                    ApplicationNames = new ApplicationNameModel[] {
+                    Capabilities = ApplicationTestData.ServerCapabilities(serverCapabilities.ToArray()),
+                    LocalizedNames = new ApplicationNameModel[] {
                         new ApplicationNameModel {
                             Locale = "en-us",
-                            Text = appName
+                            Name = appName
                         }
                     },
                     DiscoveryUrls = discoveryUrls.ToArray()

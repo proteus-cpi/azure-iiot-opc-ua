@@ -40,13 +40,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
             string authorityId);
 
         /// <summary>
-        /// Approve or reject a certificate request.
-        /// The request is in approved or rejected state after the call.
+        /// Approve a certificate request.
+        /// The request is in approved state after the call.
         /// </summary>
         /// <param name="requestId">The request Id</param>
-        /// <param name="isRejected">true if rejected, false if
-        /// approved</param>
-        Task ApproveAsync(string requestId, bool isRejected);
+        Task ApproveAsync(string requestId);
+
+        /// <summary>
+        /// Reject a certificate request.
+        /// The request is in rejected state after the call.
+        /// </summary>
+        /// <param name="requestId">The request Id</param>
+        Task RejectAsync(string requestId);
 
         /// <summary>
         /// Accept a certificate request.
@@ -90,7 +95,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="requestId">The request Id</param>
         /// <param name="applicationId">The application Id</param>
         /// <returns>The request</returns>
-        Task<FetchRequestResultModel> FetchRequestAsync(
+        Task<FetchCertificateRequestResultModel> FetchRequestAsync(
             string requestId, string applicationId);
 
         /// <summary>

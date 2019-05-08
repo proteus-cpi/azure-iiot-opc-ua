@@ -15,37 +15,31 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Application name
         /// </summary>
-        [JsonProperty(PropertyName = "applicationName")]
         public string ApplicationName { get; set; }
 
         /// <summary>
         /// Application uri
         /// </summary>
-        [JsonProperty(PropertyName = "applicationUri")]
         public string ApplicationUri { get; set; }
 
         /// <summary>
         /// Application type
         /// </summary>
-        [JsonProperty(PropertyName = "applicationType")]
         public QueryApplicationType ApplicationType { get; set; }
 
         /// <summary>
         /// Product uri
         /// </summary>
-        [JsonProperty(PropertyName = "productUri")]
         public string ProductUri { get; set; }
 
         /// <summary>
         /// Server capabilities
         /// </summary>
-        [JsonProperty(PropertyName = "serverCapabilities")]
         public IList<string> ServerCapabilities { get; set; }
 
         /// <summary>
         /// Application state
         /// </summary>
-        [JsonProperty(PropertyName = "applicationState")]
         public QueryApplicationState? ApplicationState { get; set; }
     }
 }

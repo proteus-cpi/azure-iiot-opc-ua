@@ -34,11 +34,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         public ApplicationType ApplicationType { get; set; }
 
         /// <summary>
-        /// Application names
-        /// </summary>
-        public IList<ApplicationNameModel> ApplicationNames { get; set; }
-
-        /// <summary>
         /// Product uri
         /// </summary>
         public string ProductUri { get; set; }
@@ -46,7 +41,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Service caps
         /// </summary>
-        public string ServerCapabilities { get; set; }
+        public string Capabilities { get; set; }
 
         /// <summary>
         /// Gateway server uri
@@ -68,6 +63,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
 
 
         /// <summary>
+        /// Application names
+        /// </summary>
+        public IList<ApplicationNameModel> LocalizedNames { get; set; }
+
+        /// <summary>
+        /// Device Registry id - reflects id of what was discovered.
+        /// </summary>
+        public string RegistryId { get; set; }
+
+        /// <summary>
         /// State
         /// </summary>
         public ApplicationState State { get; set; }
@@ -75,17 +80,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Record id
         /// </summary>
-        public int RecordId { get; set; }
+        public uint RecordId { get; set; }
 
         /// <summary>
         /// Authority
         /// </summary>
         public string AuthorityId { get; set; }
-
-        /// <summary>
-        /// Device Registry id - reflects id of what was discovered.
-        /// </summary>
-        public string RegistryId { get; set; }
 
         /// <summary>
         /// Create time

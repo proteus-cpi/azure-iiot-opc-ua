@@ -20,17 +20,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         /// <param name="application"></param>
         public static ApplicationRecordModel ToServiceModel(this ApplicationDocument application) {
             return new ApplicationRecordModel {
-                ApplicationId = application.ApplicationId != Guid.Empty ?
-                application.ApplicationId.ToString() : null,
-                RecordId = application.Index,
+                ApplicationId = application.ApplicationId,
+                RecordId = application.ID,
                 State = application.ApplicationState,
                 ApplicationUri = application.ApplicationUri,
                 ApplicationName = application.ApplicationName,
                 ApplicationType = application.ApplicationType,
-                ApplicationNames = application.ApplicationNames.ToList(),
+                LocalizedNames = application.ApplicationNames?.ToList(),
                 ProductUri = application.ProductUri,
                 DiscoveryUrls = application.DiscoveryUrls,
-                ServerCapabilities = application.ServerCapabilities,
+                Capabilities = application.ServerCapabilities,
                 GatewayServerUri = application.GatewayServerUri,
                 DiscoveryProfileUri = application.DiscoveryProfileUri,
                 ApproveTime = application.ApproveTime,
@@ -49,14 +48,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         public static ApplicationDocument ToDocumentModel(this ApplicationRecordModel model) {
             return new ApplicationDocument {
                 // ID and State are ignored, readonly
-                ApplicationId = model.ApplicationId != null ? new Guid(model.ApplicationId) : Guid.Empty,
+                ApplicationId = model.ApplicationId,
                 ApplicationUri = model.ApplicationUri,
                 ApplicationName = model.ApplicationName,
                 ApplicationType = model.ApplicationType,
-                ApplicationNames = model.ApplicationNames.ToArray(),
+                ApplicationNames = model.LocalizedNames?.ToArray(),
                 ProductUri = model.ProductUri,
                 DiscoveryUrls = model.DiscoveryUrls?.ToArray(),
-                ServerCapabilities = model.ServerCapabilities,
+                ServerCapabilities = model.Capabilities,
                 GatewayServerUri = model.GatewayServerUri,
                 DiscoveryProfileUri = model.DiscoveryProfileUri,
                 UpdateTime = model.UpdateTime,
@@ -66,7 +65,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
                 AuthorityId = model.AuthorityId,
                 ApproveTime = model.ApproveTime,
                 ApplicationState = model.State,
-                Index = model.RecordId,
+                ID = model.RecordId,
             };
         }
     }

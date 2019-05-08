@@ -5,6 +5,7 @@
 
 
 using Microsoft.Azure.IIoT.Exceptions;
+using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
 using Microsoft.Azure.IIoT.OpcUa.Vault;
 using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
 using Microsoft.Azure.IIoT.OpcUa.Vault.Tests.Helpers;
@@ -91,8 +92,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(500)]
         public async Task ApproveAllApplications() {
             await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.ApproveApplicationAsync(null, false, false));
-
-            await Assert.ThrowsAsync<ArgumentException>(() => _applicationsDatabase.ApproveApplicationAsync(Guid.Empty.ToString(), false, false));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.ApproveApplicationAsync("", false, false));
 
             Skip.If(!_fixture.RegistrationOk);
             var fullPasses = 0;
@@ -139,8 +139,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(1000)]
         public async Task GetAllApplications() {
             await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.GetApplicationAsync(null));
-            await Assert.ThrowsAsync<ArgumentException>(() => _applicationsDatabase.GetApplicationAsync(Guid.Empty.ToString()));
-            await Assert.ThrowsAsync<ArgumentException>(() => _applicationsDatabase.GetApplicationAsync("abc"));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.GetApplicationAsync(""));
+            await Assert.ThrowsAsync<ResourceNotFoundException>(() => _applicationsDatabase.GetApplicationAsync("abc"));
             await Assert.ThrowsAsync<ResourceNotFoundException>(() => _applicationsDatabase.GetApplicationAsync(Guid.NewGuid().ToString()));
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {

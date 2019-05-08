@@ -19,7 +19,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using System.IO;
     using Xunit;
 
-    public class CertificateRequestTestFixture : IDisposable {
+    public class CertificateAuthorityTestFixture : IDisposable {
         public IApplicationsDatabase ApplicationsDatabase { get; set; }
         public IVaultClient CertificateGroup { get; set; }
         public ICertificateAuthority CertificateRequest { get; set; }
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public ApplicationTestDataGenerator RandomGenerator { get; set; }
         public bool RegistrationOk { get; set; }
 
-        public CertificateRequestTestFixture() {
+        public CertificateAuthorityTestFixture() {
             RandomGenerator = new ApplicationTestDataGenerator(kRandomStart);
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
@@ -38,7 +38,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             var configuration = builder.Build();
             _serviceConfig = new VaultConfig(configuration);
             _clientConfig = new ClientConfig(configuration);
-            _logger = SerilogTestLogger.Create<CertificateRequestTestFixture>();
+            _logger = SerilogTestLogger.Create<CertificateAuthorityTestFixture>();
             if (!InvalidConfiguration()) {
                 _documentDBRepository = new DocumentDBRepository(_serviceConfig);
                 ApplicationsDatabase = new DefaultApplicationDatabase(null, _serviceConfig, _documentDBRepository, _logger);

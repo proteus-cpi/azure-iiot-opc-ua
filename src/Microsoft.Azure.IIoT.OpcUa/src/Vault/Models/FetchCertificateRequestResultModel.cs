@@ -8,7 +8,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     /// <summary>
     /// Fetch request result
     /// </summary>
-    public sealed class FetchRequestResultModel {
+    public sealed class FetchCertificateRequestResultModel {
 
         /// <summary>
         /// Request state

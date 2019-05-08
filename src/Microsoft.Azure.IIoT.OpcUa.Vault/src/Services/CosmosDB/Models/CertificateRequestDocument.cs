@@ -15,10 +15,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
     public class CertificateRequestDocument {
 
         /// <summary>
-        /// Document id
+        /// Request id
         /// </summary>
         [JsonProperty(PropertyName = "id")]
-        public Guid RequestId { get; set; }
+        public string RequestId { get; set; }
 
         /// <summary>
         /// Etag

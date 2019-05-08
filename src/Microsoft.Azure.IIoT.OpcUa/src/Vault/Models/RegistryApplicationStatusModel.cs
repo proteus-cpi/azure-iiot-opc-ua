@@ -15,19 +15,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// The state of the applications in the registry and the security database.
         /// </summary>
-        [JsonProperty(PropertyName = "status")]
         public RegistryApplicationStatusType Status { get; set; }
 
         /// <summary>
         /// The current application information in the registry database.
         /// </summary>
-        [JsonProperty(PropertyName = "registry")]
         public ApplicationInfoModel Registry { get; set; }
 
         /// <summary>
         /// The application information in the security database.
         /// </summary>
-        [JsonProperty(PropertyName = "application")]
         public ApplicationRecordModel Application { get; set; }
     }
 }

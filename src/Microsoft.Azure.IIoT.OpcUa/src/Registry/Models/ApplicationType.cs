@@ -31,7 +31,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// <summary>
         /// Application is discovery server
         /// </summary>
-        DiscoveryServer,
+        DiscoveryServer
     }
 }
 

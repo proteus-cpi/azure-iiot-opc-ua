@@ -33,17 +33,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         public string ProductUri { get; set; }
 
         /// <summary>
-        /// Name of application
+        /// Default name of application
         /// </summary>
         public string ApplicationName { get; set; }
 
         /// <summary>
-        /// Locale of the application name if not default.
+        /// Localized Names of application keyed on locale
         /// </summary>
-        public string Locale { get; set; }
+        public Dictionary<string, string> LocalizedNames { get; set; }
 
         /// <summary>
-        /// Application cert
+        /// Application certificate
         /// </summary>
         public byte[] Certificate { get; set; }
 
@@ -68,6 +68,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         public string DiscoveryProfileUri { get; set; }
 
         /// <summary>
+        /// Gateway server uri
+        /// </summary>
+        public string GatewayServerUri { get; set; }
+
+        /// <summary>
         /// Site of the application
         /// </summary>
         public string SiteId { get; set; }
@@ -78,9 +83,39 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         public string SupervisorId { get; set; }
 
         /// <summary>
+        /// State
+        /// </summary>
+        public ApplicationState State { get; set; }
+
+        /// <summary>
         /// Last time application was seen
         /// </summary>
         public DateTime? NotSeenSince { get; set; }
+
+        /// <summary>
+        /// Record id
+        /// </summary>
+        public uint? RecordId { get; set; }
+
+        /// <summary>
+        /// Created
+        /// </summary>
+        public RegistryOperationModel Created { get; set; }
+
+        /// <summary>
+        /// Approved
+        /// </summary>
+        public RegistryOperationModel Approved { get; set; }
+
+        /// <summary>
+        /// Updated
+        /// </summary>
+        public RegistryOperationModel Updated { get; set; }
+
+        /// <summary>
+        /// Deleted
+        /// </summary>
+        public RegistryOperationModel Deleted { get; set; }
     }
 }
 

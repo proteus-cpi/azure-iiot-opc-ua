@@ -14,14 +14,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using System.IO;
     using Xunit;
 
-    public class CertificateGroupTestFixture : IDisposable {
+    public class VaultClientTestFixture : IDisposable {
         public ApplicationTestDataGenerator RandomGenerator { get; set; }
         public KeyVaultCertificateStore KeyVault { get; set; }
         public bool KeyVaultInitOk { get; set; }
         public string ConfigId { get;  }
         public string GroupId { get;  }
 
-        public CertificateGroupTestFixture() {
+        public VaultClientTestFixture() {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("testsettings.json", false, true)
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             var configuration = builder.Build();
             _serviceConfig = new VaultConfig(configuration);
             _clientConfig = new ClientConfig(configuration);
-            _logger = SerilogTestLogger.Create<CertificateGroupTestFixture>();
+            _logger = SerilogTestLogger.Create<VaultClientTestFixture>();
             if (!InvalidConfiguration()) {
                 RandomGenerator = new ApplicationTestDataGenerator();
                 var timeid = DateTime.UtcNow.ToFileTimeUtc() / 1000 % 10000;

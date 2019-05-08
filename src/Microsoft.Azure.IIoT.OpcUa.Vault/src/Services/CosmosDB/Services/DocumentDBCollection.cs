@@ -46,10 +46,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<T> GetAsync(Guid id) {
+        public async Task<T> GetAsync(string id) {
+            if (string.IsNullOrEmpty(id)) {
+                throw new ArgumentNullException(nameof(id));
+            }
             try {
                 Document document = await _db.Client.ReadDocumentAsync(
-                    UriFactory.CreateDocumentUri(_db.DatabaseId, _collectionId, id.ToString()));
+                    UriFactory.CreateDocumentUri(_db.DatabaseId, _collectionId, id));
                 return (T)(dynamic)document;
             }
             catch (DocumentClientException e) {
@@ -92,10 +95,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
             while (query.HasMoreResults) {
                 results.AddRange(await query.ExecuteNextAsync<T>());
             }
-
             return results;
         }
-
 
         /// <inheritdoc/>
         public async Task<(string, IEnumerable<T>)> GetPageAsync(
@@ -162,7 +163,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<Document> UpdateAsync(Guid id, T item, string eTag) {
+        public async Task<Document> UpdateAsync(string id, T item, string eTag) {
+            if (string.IsNullOrEmpty(id)) {
+                throw new ArgumentNullException(nameof(id));
+            }
             var ac = new RequestOptions {
                 AccessCondition = new AccessCondition {
                     Condition = eTag,
@@ -171,11 +175,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
             };
 
             return await _db.Client.ReplaceDocumentAsync(
-                UriFactory.CreateDocumentUri(_db.DatabaseId, _collectionId, id.ToString()), item, ac);
+                UriFactory.CreateDocumentUri(_db.DatabaseId, _collectionId, id), item, ac);
         }
 
         /// <inheritdoc/>
-        public Task DeleteAsync(Guid id) {
+        public Task DeleteAsync(string id) {
+            if (string.IsNullOrEmpty(id)) {
+                Task.FromException(new ArgumentNullException(nameof(id)));
+            }
             return _db.Client.DeleteDocumentAsync(UriFactory.CreateDocumentUri(
                 _db.DatabaseId, _collectionId, id.ToString()));
         }

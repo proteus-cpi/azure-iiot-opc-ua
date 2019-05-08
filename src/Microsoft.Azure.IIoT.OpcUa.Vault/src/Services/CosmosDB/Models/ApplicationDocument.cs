@@ -20,7 +20,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         /// Document id
         /// </summary>
         [JsonProperty(PropertyName = "id")]
-        public Guid ApplicationId { get; set; }
+        public string ApplicationId { get; set; }
 
         /// <summary>
         /// Etag
@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         /// <summary>
         /// Numeric id
         /// </summary>
-        public int Index { get; set; }
+        public uint ID { get; set; }
 
         /// <summary>
         /// Application state

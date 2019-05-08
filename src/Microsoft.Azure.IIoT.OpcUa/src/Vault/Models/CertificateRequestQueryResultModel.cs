@@ -15,13 +15,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// The query result.
         /// </summary>
-        [JsonProperty(PropertyName = "requests")]
         public IList<CertificateRequestRecordModel> Requests { get; set; }
 
         /// <summary>
         /// Link to the next page of results.
         /// </summary>
-        [JsonProperty(PropertyName = "nextPageLink")]
         public string NextPageLink { get; set; }
     }
 }

@@ -815,7 +815,7 @@ namespace Opc.Ua.Encoders {
                         if (body.Type != JTokenType.Object) {
                             break;
                         }
-                        XmlElement xml = null;
+                        XmlElement xml;
                         try {
                             xml = body.ToObject<XmlElement>();
                             if (xml == null) {

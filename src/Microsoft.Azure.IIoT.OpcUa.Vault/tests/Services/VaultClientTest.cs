@@ -19,10 +19,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using Xunit.Abstractions;
 
     [TestCaseOrderer("TestCaseOrdering.PriorityOrderer", "Microsoft.Azure.IIoT.OpcUa.Vault.Tests")]
-    public class CertificateGroupTest : IClassFixture<CertificateGroupTestFixture> {
+    public class VaultClientTest : IClassFixture<VaultClientTestFixture> {
 
-        public CertificateGroupTest(CertificateGroupTestFixture fixture, ITestOutputHelper log) {
-            _logger = SerilogTestLogger.Create<CertificateGroupTest>(log);
+        public VaultClientTest(VaultClientTestFixture fixture, ITestOutputHelper log) {
+            _logger = SerilogTestLogger.Create<VaultClientTest>(log);
             _fixture = fixture;
             _keyVault = _fixture.KeyVault;
             _fixture.SkipOnInvalidConfiguration();
@@ -244,7 +244,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 Assert.NotNull(newCert);
                 Assert.False(newCert.Certificate.ToStackModel().HasPrivateKey);
                 Assert.True(Opc.Ua.Utils.CompareDistinguishedName(randomApp.Subject, newCert.Certificate.Subject));
-                Assert.False(Opc.Ua.Utils.CompareDistinguishedName(newCert.Certificate.ToStackModel().Issuer, newCert.Certificate.Subject));
+                Assert.False(Opc.Ua.Utils.CompareDistinguishedName(
+                    newCert.Certificate.ToStackModel().Issuer, newCert.Certificate.Subject));
                 var cert = new X509Certificate2(newCert.Certificate.ToRawData());
                 var crl = await _keyVault.RevokeCertificateAsync(group, cert.ToServiceModel());
                 Assert.NotNull(crl);
@@ -464,7 +465,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             }
         }
 
-        private readonly CertificateGroupTestFixture _fixture;
+        private readonly VaultClientTestFixture _fixture;
         private readonly KeyVaultCertificateStore _keyVault;
         private readonly ILogger _logger;
     }

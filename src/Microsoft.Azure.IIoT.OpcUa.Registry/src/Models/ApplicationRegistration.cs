@@ -71,12 +71,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// <summary>
         /// Application name locale
         /// </summary>
-        public string Locale { get; set; }
+        public Dictionary<string, string> LocalizedNames { get; set; }
 
         /// <summary>
         /// Discovery profile uri
         /// </summary>
         public string DiscoveryProfileUri { get; set; }
+
+        /// <summary>
+        /// Gateway server uri
+        /// </summary>
+        public string GatewayServerUri { get; set; }
 
         /// <summary>
         /// Product uri
@@ -87,6 +92,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// Application type
         /// </summary>
         public ApplicationType? ApplicationType { get; set; }
+
+        /// <summary>
+        /// Application state
+        /// </summary>
+        public ApplicationState? ApplicationState { get; set; }
 
         /// <summary>
         /// Returns discovery urls of the application
@@ -102,6 +112,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// Capabilities
         /// </summary>
         public Dictionary<string, bool> Capabilities { get; set; }
+
+        /// <summary>
+        /// Record Id
+        /// </summary>
+        public uint? RecordId { get; set; }
 
         #endregion Twin Tags
 
@@ -131,7 +146,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
                 twin.Tags.Add(nameof(Models.ApplicationType.Server),
                     update.ApplicationType != Models.ApplicationType.Client);
                 twin.Tags.Add(nameof(Models.ApplicationType.Client),
-                    update.ApplicationType != Models.ApplicationType.Server);
+                    update.ApplicationType != Models.ApplicationType.Server &&
+                    update.ApplicationType != Models.ApplicationType.DiscoveryServer);
+                twin.Tags.Add(nameof(Models.ApplicationType.DiscoveryServer),
+                    update.ApplicationType == Models.ApplicationType.DiscoveryServer);
+            }
+
+            if ((update?.ApplicationState ?? Models.ApplicationState.New) !=
+                existing?.ApplicationState) {
+                twin.Tags.Add(nameof(ApplicationState), JToken.FromObject(
+                    update?.ApplicationState ?? Models.ApplicationState.New));
             }
 
             if (update?.ApplicationUri != existing?.ApplicationUri) {
@@ -143,12 +167,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
                 twin.Tags.Add(nameof(ApplicationName), update?.ApplicationName);
             }
 
-            if (update?.Locale != existing?.Locale) {
-                twin.Tags.Add(nameof(Locale), update?.Locale);
-            }
-
             if (update?.DiscoveryProfileUri != existing?.DiscoveryProfileUri) {
                 twin.Tags.Add(nameof(DiscoveryProfileUri), update?.DiscoveryProfileUri);
+            }
+
+            if (update?.GatewayServerUri != existing?.GatewayServerUri) {
+                twin.Tags.Add(nameof(GatewayServerUri), update?.GatewayServerUri);
+            }
+
+            if (update?.RecordId != existing?.RecordId) {
+                twin.Tags.Add(nameof(RecordId), update?.RecordId);
             }
 
             if (update?.ProductUri != existing?.ProductUri) {
@@ -167,6 +195,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
             if (!(capsUpdate ?? true)) {
                 twin.Tags.Add(nameof(Capabilities), update?.Capabilities == null ?
                     null : JToken.FromObject(update.Capabilities));
+            }
+
+            var namesUpdate = update?.LocalizedNames.DictionaryEqualsSafe(
+                existing?.LocalizedNames);
+            if (!(namesUpdate ?? true)) {
+                twin.Tags.Add(nameof(LocalizedNames), update?.LocalizedNames == null ?
+                    null : JToken.FromObject(update.LocalizedNames));
             }
 
             var hostsUpdate = update?.HostAddresses.DecodeAsList().SequenceEqualsSafe(
@@ -235,20 +270,26 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
 
                 ApplicationName =
                     tags.GetValueOrDefault<string>(nameof(ApplicationName), null),
-                Locale =
-                    tags.GetValueOrDefault<string>(nameof(Locale), null),
+                LocalizedNames =
+                    tags.GetValueOrDefault<Dictionary<string, string>>(nameof(LocalizedNames), null),
                 ApplicationUri =
                     tags.GetValueOrDefault<string>(nameof(ApplicationUri), null),
                 ProductUri =
                     tags.GetValueOrDefault<string>(nameof(ProductUri), null),
+                RecordId =
+                    tags.GetValueOrDefault<uint>(nameof(RecordId), null),
                 SupervisorId =
                     tags.GetValueOrDefault<string>(nameof(SupervisorId), null),
                 DiscoveryProfileUri =
                     tags.GetValueOrDefault<string>(nameof(DiscoveryProfileUri), null),
+                GatewayServerUri =
+                    tags.GetValueOrDefault<string>(nameof(GatewayServerUri), null),
                 ApplicationId =
                     tags.GetValueOrDefault<string>(nameof(ApplicationId), null),
                 ApplicationType =
                     tags.GetValueOrDefault<ApplicationType>(nameof(ApplicationType), null),
+                ApplicationState =
+                    tags.GetValueOrDefault<ApplicationState>(nameof(ApplicationState), null),
                 Capabilities =
                     tags.GetValueOrDefault<Dictionary<string, bool>>(nameof(Capabilities), null),
                 HostAddresses =
@@ -279,13 +320,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
                 SupervisorId = model.SupervisorId,
                 SiteId = model.SiteId,
                 ApplicationName = model.ApplicationName,
-                Locale = model.Locale,
+                LocalizedNames = model.LocalizedNames,
                 HostAddresses = model.HostAddresses?.ToList().EncodeAsDictionary(),
                 ApplicationType = model.ApplicationType,
+                ApplicationState = model.State,
                 ApplicationUri = model.ApplicationUri,
                 ProductUri = model.ProductUri,
+                RecordId = model.RecordId,
                 NotSeenSince = model.NotSeenSince,
                 DiscoveryProfileUri = model.DiscoveryProfileUri,
+                GatewayServerUri = model.GatewayServerUri,
                 Capabilities = model.Capabilities.EncodeAsDictionary(true),
                 Certificate = model.Certificate.EncodeAsDictionary(),
                 Thumbprint = model.Certificate.ToSha1Hash(),
@@ -302,13 +346,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
             return new ApplicationInfoModel {
                 ApplicationId = ApplicationId,
                 ApplicationName = ApplicationName,
-                Locale = Locale,
+                LocalizedNames = LocalizedNames,
                 HostAddresses = HostAddresses.DecodeAsList().ToHashSetSafe(),
                 NotSeenSince = NotSeenSince,
                 ApplicationType = ApplicationType ?? Models.ApplicationType.Server,
+                State = ApplicationState ?? Models.ApplicationState.New,
                 ApplicationUri = string.IsNullOrEmpty(ApplicationUri) ?
                     ApplicationUriLC : ApplicationUri,
                 ProductUri = ProductUri,
+                RecordId = RecordId,
                 Certificate = Certificate?.DecodeAsByteArray(),
                 SiteId = string.IsNullOrEmpty(SiteId) ?
                     null : SiteId,
@@ -316,7 +362,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
                     null : SupervisorId,
                 DiscoveryUrls = DiscoveryUrls.DecodeAsList().ToHashSetSafe(),
                 DiscoveryProfileUri = DiscoveryProfileUri,
-                Capabilities = Capabilities?.DecodeAsSet()
+                GatewayServerUri = GatewayServerUri,
+                Capabilities = Capabilities?.DecodeAsSet(),
+                Approved = null,
+                Created = null,
+                Deleted = null,
+                Updated = null, // TODO
             };
         }
 
@@ -329,11 +380,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         public bool Matches(ApplicationInfoModel model) {
             return model != null &&
                 ApplicationId == model.ApplicationId &&
+                RecordId == model.RecordId &&
                 ApplicationType == model.ApplicationType &&
+                (ApplicationState ?? Models.ApplicationState.New) == model.State &&
                 ApplicationUri == model.ApplicationUri &&
                 HostAddresses.DecodeAsList().SequenceEqualsSafe(
                     model.HostAddresses) &&
                 DiscoveryProfileUri == model.DiscoveryProfileUri &&
+                GatewayServerUri == model.GatewayServerUri &&
                 NotSeenSince == model.NotSeenSince &&
                 SupervisorId == model.SupervisorId &&
                 SiteId == model.SiteId &&
@@ -351,13 +405,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
             var registration = obj as ApplicationRegistration;
             return base.Equals(registration) &&
                 ApplicationType == registration.ApplicationType &&
+                ApplicationState == registration.ApplicationState &&
                 ApplicationUriLC == registration.ApplicationUriLC &&
                 DiscoveryProfileUri == registration.DiscoveryProfileUri &&
+                GatewayServerUri == registration.GatewayServerUri &&
                 ProductUri == registration.ProductUri &&
+                RecordId == registration.RecordId &&
                 HostAddresses.DecodeAsList().SequenceEqualsSafe(
                     registration.HostAddresses.DecodeAsList()) &&
                 ApplicationName == registration.ApplicationName &&
-                Locale == registration.Locale &&
+                LocalizedNames.DictionaryEqualsSafe(
+                    registration.LocalizedNames) &&
                 Capabilities.DecodeAsSet().SetEqualsSafe(
                     registration.Capabilities.DecodeAsSet()) &&
                 DiscoveryUrls.DecodeAsList().SequenceEqualsSafe(
@@ -376,15 +434,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         public override int GetHashCode() {
             var hashCode = base.GetHashCode();
             hashCode = (hashCode * -1521134295) +
+                EqualityComparer<ApplicationState?>.Default.GetHashCode(ApplicationState);
+            hashCode = (hashCode * -1521134295) +
                 EqualityComparer<ApplicationType?>.Default.GetHashCode(ApplicationType);
+            hashCode = (hashCode * -1521134295) +
+                EqualityComparer<uint?>.Default.GetHashCode(RecordId);
             hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(ProductUri);
             hashCode = (hashCode * -1521134295) +
                 EqualityComparer<string>.Default.GetHashCode(DiscoveryProfileUri);
             hashCode = (hashCode * -1521134295) +
-                EqualityComparer<string>.Default.GetHashCode(ApplicationName);
+                EqualityComparer<string>.Default.GetHashCode(GatewayServerUri);
             hashCode = (hashCode * -1521134295) +
-                EqualityComparer<string>.Default.GetHashCode(Locale);
+                EqualityComparer<string>.Default.GetHashCode(ApplicationName);
             return hashCode;
         }
 

@@ -6,6 +6,7 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using Microsoft.Azure.IIoT.Exceptions;
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using Microsoft.Azure.IIoT.OpcUa.Vault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Tests.Helpers;
@@ -19,13 +20,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using Xunit.Abstractions;
 
     [TestCaseOrderer("TestCaseOrdering.PriorityOrderer", "Microsoft.Azure.IIoT.OpcUa.Vault.Tests")]
-    public class CertificateRequestTest : IClassFixture<CertificateRequestTestFixture> {
+    public class CertificateAuthorityTest : IClassFixture<CertificateAuthorityTestFixture> {
 
-        public CertificateRequestTest(CertificateRequestTestFixture fixture, ITestOutputHelper log) {
+        public CertificateAuthorityTest(CertificateAuthorityTestFixture fixture, ITestOutputHelper log) {
             _fixture = fixture;
             // fixture
             fixture.SkipOnInvalidConfiguration();
-            _logger = SerilogTestLogger.Create<CertificateRequestTest>(log);
+            _logger = SerilogTestLogger.Create<CertificateAuthorityTest>(log);
             _applicationsDatabase = fixture.ApplicationsDatabase;
             _certificateGroup = fixture.CertificateGroup;
             _certificateRequest = fixture.CertificateRequest;
@@ -230,7 +231,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     Assert.Equal(CertificateRequestState.New, request.State);
                     // approve/reject 50% randomly
                     var reject = _randomSource.NextInt32(100) > 50;
-                    await _certificateRequest.ApproveAsync(requestId, reject);
+                    if (!reject) {
+                        await _certificateRequest.ApproveAsync(requestId);
+                    }
+                    else {
+                        await _certificateRequest.RejectAsync(requestId);
+                    }
                     request = await _certificateRequest.ReadAsync(requestId);
                     Assert.Equal(reject ? CertificateRequestState.Rejected : CertificateRequestState.Approved, request.State);
                 }
@@ -492,7 +498,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             }
         }
 
-        private readonly CertificateRequestTestFixture _fixture;
+        private readonly CertificateAuthorityTestFixture _fixture;
         private readonly ILogger _logger;
         private readonly IApplicationsDatabase _applicationsDatabase;
         private readonly IVaultClient _certificateGroup;

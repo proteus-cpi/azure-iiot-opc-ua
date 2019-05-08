@@ -22,10 +22,7 @@
     <ProjectReference Include="..\src\Microsoft.Azure.IIoT.OpcUa.Vault.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Update="testsettings.Development.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Update="testsettings.json">
+    <Content Include="testsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

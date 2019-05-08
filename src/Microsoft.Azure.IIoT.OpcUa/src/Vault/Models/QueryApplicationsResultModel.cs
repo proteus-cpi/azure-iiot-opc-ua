@@ -15,13 +15,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Found applications
         /// </summary>
-        [JsonProperty(PropertyName = "applications")]
         public IList<ApplicationRecordModel> Applications { get; set; }
 
         /// <summary>
         /// Next page
         /// </summary>
-        [JsonProperty(PropertyName = "nextPageLink")]
         public string NextPageLink { get; set; }
     }
 }

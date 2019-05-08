@@ -3,7 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
 
@@ -16,27 +16,27 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// New
         /// </summary>
-        New = 0,
+        New,
 
         /// <summary>
         /// Activated
         /// </summary>
-        Approved = 1,
+        Approved,
 
         /// <summary>
         /// Rejected
         /// </summary>
-        Rejected = 2,
+        Rejected,
 
         /// <summary>
         /// Unregistered
         /// </summary>
-        Unregistered = 3,
+        Unregistered,
 
         /// <summary>
         /// Deleted
         /// </summary>
-        Deleted = 4
+        Deleted
     }
 }
 

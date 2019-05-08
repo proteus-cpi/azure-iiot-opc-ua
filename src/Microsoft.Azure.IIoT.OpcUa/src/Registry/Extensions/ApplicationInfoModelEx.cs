@@ -92,14 +92,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
             return new ApplicationInfoModel {
                 ApplicationId = model.ApplicationId,
                 ApplicationName = model.ApplicationName,
-                Locale = model.Locale,
+                LocalizedNames = model.LocalizedNames?
+                    .ToDictionary(k => k.Key, v => v.Value),
                 ApplicationType = model.ApplicationType,
                 ApplicationUri = model.ApplicationUri,
-                Capabilities = model.Capabilities.ToHashSetSafe(),
+                Capabilities = model.Capabilities
+                    .ToHashSetSafe(),
                 Certificate = model.Certificate,
                 DiscoveryProfileUri = model.DiscoveryProfileUri,
-                HostAddresses = model.HostAddresses.ToHashSetSafe(),
-                DiscoveryUrls = model.DiscoveryUrls.ToHashSetSafe(),
+                HostAddresses = model.HostAddresses
+                    .ToHashSetSafe(),
+                DiscoveryUrls = model.DiscoveryUrls
+                    .ToHashSetSafe(),
                 NotSeenSince = model.NotSeenSince,
                 ProductUri = model.ProductUri,
                 SiteId = model.SiteId,

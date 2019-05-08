@@ -38,7 +38,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Protocol.Models {
                     DiscoveryProfileUri = result.Description.Server.DiscoveryProfileUri,
                     HostAddresses = new HashSet<string> { hostAddress },
                     ApplicationName = result.Description.Server.ApplicationName.Text,
-                    Locale = result.Description.Server.ApplicationName.Locale,
+                    LocalizedNames = string.IsNullOrEmpty(result.Description.Server.ApplicationName.Locale) ?
+                        null : new Dictionary<string, string> {
+                            [result.Description.Server.ApplicationName.Locale] =
+                                result.Description.Server.ApplicationName.Text
+                    },
                     NotSeenSince = null,
                     Certificate = result.Description.ServerCertificate,
                     Capabilities = new HashSet<string>(result.Capabilities)

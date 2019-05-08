@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             db.UniqueKeyPolicy.UniqueKeys.Add(new UniqueKey {
                 Paths = new Collection<string> {
                     "/" + nameof(ApplicationDocument.ClassType),
-                    "/" + nameof(ApplicationDocument.Index)
+                    "/" + nameof(ApplicationDocument.ID)
                 }
             });
             _applications = new DocumentDBCollection<ApplicationDocument>(
@@ -60,17 +60,20 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <inheritdoc/>
         public async Task<ApplicationRecordModel> RegisterApplicationAsync(
             ApplicationRecordModel application) {
+            if (application == null) {
+                throw new ArgumentNullException(nameof(application));
+            }
             var document = application.ToDocumentModel();
             var applicationId = VerifyRegisterApplication(document);
-            if (Guid.Empty != applicationId) {
+            if (!string.IsNullOrEmpty(applicationId)) {
                 return await UpdateApplicationAsync(
-                    application.ApplicationId.ToString(), application);
+                    application.ApplicationId, application);
             }
 
             // normalize Server Caps
             document.ServerCapabilities = ServerCapabilities(document);
-            document.ApplicationId = Guid.NewGuid();
-            document.Index = _appIdCounter++;
+            document.ApplicationId = Guid.NewGuid().ToString();
+            document.ID = _appIdCounter++;
             document.ApplicationState = ApplicationState.New;
             document.CreateTime = DateTime.UtcNow;
 
@@ -90,21 +93,24 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 catch (DocumentClientException dce) {
                     if (dce.StatusCode == HttpStatusCode.Conflict) {
                         // retry with new guid and keys
-                        document.ApplicationId = Guid.NewGuid();
+                        document.ApplicationId = Guid.NewGuid().ToString();
                         _appIdCounter = await GetMaxAppIDAsync();
-                        document.Index = _appIdCounter++;
+                        document.ID = _appIdCounter++;
                         retry = true;
                     }
                 }
             } while (retry);
-            return await GetApplicationAsync(applicationId.ToString());
+            return await GetApplicationAsync(document.ApplicationId);
         }
 
         /// <inheritdoc/>
         public async Task<ApplicationRecordModel> GetApplicationAsync(
             string applicationId) {
-            var appId = ToGuidAndVerify(applicationId);
-            var application = await _applications.GetAsync(appId);
+            if (string.IsNullOrEmpty(applicationId)) {
+                throw new ArgumentNullException(nameof(applicationId),
+                    "The application id must be provided");
+            }
+            var application = await _applications.GetAsync(applicationId);
             return application.ToServiceModel();
         }
 
@@ -115,25 +121,27 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 throw new ArgumentNullException(nameof(application),
                     "The application must be provided");
             }
+            if (string.IsNullOrEmpty(applicationId)) {
+                throw new ArgumentNullException(nameof(applicationId),
+                    "The application id must be provided");
+            }
 
             var document = application.ToDocumentModel();
-            var appGuid = ToGuidAndVerify(applicationId);
             var recordId = VerifyRegisterApplication(document);
-
             var capabilities = ServerCapabilities(document);
 
             bool retryUpdate;
             do {
                 retryUpdate = false;
 
-                var record = await _applications.GetAsync(appGuid);
+                var record = await _applications.GetAsync(applicationId);
                 if (record == null) {
                     throw new ResourceNotFoundException(
                         "A record with the specified application id does not exist.");
                 }
 
-                if (record.Index == 0) {
-                    record.Index = await GetMaxAppIDAsync();
+                if (record.ID == 0) {
+                    record.ID = await GetMaxAppIDAsync();
                 }
 
                 record.UpdateTime = DateTime.UtcNow;
@@ -145,7 +153,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 record.ApplicationNames = document.ApplicationNames;
                 record.DiscoveryUrls = document.DiscoveryUrls;
                 try {
-                    await _applications.UpdateAsync(appGuid, record, record.ETag);
+                    await _applications.UpdateAsync(applicationId, record, record.ETag);
                 }
                 catch (DocumentClientException dce) {
                     if (dce.StatusCode == HttpStatusCode.PreconditionFailed) {
@@ -153,19 +161,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     }
                 }
             } while (retryUpdate);
-            document = await _applications.GetAsync(appGuid);
+            document = await _applications.GetAsync(applicationId);
             return document.ToServiceModel();
         }
 
         /// <inheritdoc/>
         public async Task<ApplicationRecordModel> ApproveApplicationAsync(
             string applicationId, bool approved, bool force) {
-            var appId = ToGuidAndVerify(applicationId);
+            if (string.IsNullOrEmpty(applicationId)) {
+                throw new ArgumentNullException(nameof(applicationId),
+                    "The application id must be provided");
+            }
             bool retryUpdate;
             ApplicationDocument record;
             do {
                 retryUpdate = false;
-                record = await _applications.GetAsync(appId);
+                record = await _applications.GetAsync(applicationId);
                 if (record == null) {
                     throw new ResourceNotFoundException(
                         "A record with the specified application id does not exist.");
@@ -181,7 +192,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 record.ApproveTime = DateTime.UtcNow;
 
                 try {
-                    await _applications.UpdateAsync(appId, record, record.ETag);
+                    await _applications.UpdateAsync(applicationId, record, record.ETag);
                 }
                 catch (DocumentClientException dce) {
                     if (dce.StatusCode == HttpStatusCode.PreconditionFailed) {
@@ -195,14 +206,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <inheritdoc/>
         public async Task<ApplicationRecordModel> UnregisterApplicationAsync(
             string applicationId) {
-            var appId = ToGuidAndVerify(applicationId);
+            if (string.IsNullOrEmpty(applicationId)) {
+                throw new ArgumentNullException(nameof(applicationId),
+                    "The application id must be provided");
+            }
             bool retryUpdate;
             var first = true;
             ApplicationDocument record;
             do {
                 retryUpdate = false;
                 var certificates = new List<byte[]>();
-                record = await _applications.GetAsync(appId);
+                record = await _applications.GetAsync(applicationId);
                 if (record == null) {
                     throw new ResourceNotFoundException(
                         "A record with the specified application id does not exist.");
@@ -217,7 +231,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     string nextPageLink = null;
                     do {
                         var result = await certificateRequestsService.QueryPageAsync(
-                            appId.ToString(), null, nextPageLink);
+                            applicationId, null, nextPageLink);
                         foreach (var request in result.Requests) {
                             if (request.State < CertificateRequestState.Deleted) {
                                 await certificateRequestsService.DeleteAsync(request.RequestId);
@@ -232,7 +246,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 record.DeleteTime = DateTime.UtcNow;
 
                 try {
-                    await _applications.UpdateAsync(appId, record, record.ETag);
+                    await _applications.UpdateAsync(applicationId, record, record.ETag);
                 }
                 catch (DocumentClientException dce) {
                     if (dce.StatusCode == HttpStatusCode.PreconditionFailed) {
@@ -245,8 +259,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
         /// <inheritdoc/>
         public async Task DeleteApplicationAsync(string applicationId, bool force) {
-            var appId = ToGuidAndVerify(applicationId);
-            var application = await _applications.GetAsync(appId);
+            if (string.IsNullOrEmpty(applicationId)) {
+                throw new ArgumentNullException(nameof(applicationId),
+                    "The application id must be provided");
+            }
+            var application = await _applications.GetAsync(applicationId);
             if (!force &&
                 application.ApplicationState < ApplicationState.Unregistered) {
                 throw new ResourceInvalidStateException(
@@ -259,14 +276,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 do {
                     var result =
                         await certificateRequestsService.QueryPageAsync(
-                            appId.ToString(), null, nextPageLink);
+                            applicationId, null, nextPageLink);
                     foreach (var request in result.Requests) {
                         await certificateRequestsService.DeleteAsync(request.RequestId);
                     }
                     nextPageLink = result.NextPageLink;
                 } while (nextPageLink != null);
             }
-            await _applications.DeleteAsync(appId);
+            await _applications.DeleteAsync(applicationId);
         }
 
         /// <inheritdoc/>
@@ -333,7 +350,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     applications.Count() < queryRecords || !applications.Any();
 
                 foreach (var application in applications) {
-                    nextRecordId = (uint)application.Index + 1;
+                    nextRecordId = (uint)application.ID + 1;
                     if (!string.IsNullOrEmpty(request.ApplicationName)) {
                         if (!Opc.Ua.Gds.Server.Database.ApplicationsDatabaseBase.Match(
                             application.ApplicationName, request.ApplicationName)) {
@@ -532,7 +549,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// </summary>
         /// <param name="application">The application</param>
         /// <returns>The application Guid.</returns>
-        private Guid VerifyRegisterApplication(ApplicationDocument application) {
+        private string VerifyRegisterApplication(ApplicationDocument application) {
             if (application == null) {
                 throw new ArgumentNullException(nameof(application));
             }
@@ -554,7 +571,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
             if (application.ApplicationNames == null ||
                 application.ApplicationNames.Length == 0 ||
-                string.IsNullOrEmpty(application.ApplicationNames[0].Text)) {
+                string.IsNullOrEmpty(application.ApplicationNames[0].Name)) {
                 throw new ArgumentException(
                     "At least one ApplicationName must be provided.",
                     nameof(application.ApplicationNames));
@@ -645,41 +662,24 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <summary>
-        /// Convert the application Id string to Guid.
-        /// Throws on invalid guid.
-        /// </summary>
-        /// <param name="applicationId"></param>
-        private Guid ToGuidAndVerify(string applicationId) {
-            try {
-                if (string.IsNullOrEmpty(applicationId)) {
-                    throw new ArgumentNullException(nameof(applicationId),
-                        "The application id must be provided");
-                }
-                var guid = new Guid(applicationId);
-                if (guid == Guid.Empty) {
-                    throw new ArgumentException("The applicationId is invalid");
-                }
-                return guid;
-            }
-            catch (FormatException) {
-                throw new ArgumentException("The applicationId is invalid.");
-            }
-        }
-
-        /// <summary>
         /// Returns the next free, largest, application ID value.
         /// This is the ID value used for sorting in GDS queries.
         /// </summary>
-        private async Task<int> GetMaxAppIDAsync() {
+        private async Task<uint> GetMaxAppIDAsync() {
             try {
                 // find new ID for QueryServers
                 var sqlQuerySpec = new SqlQuerySpec {
-                    QueryText = "SELECT TOP 1 * FROM Applications a WHERE a.ClassType = @classType ORDER BY a.ID DESC",
-                    Parameters = new SqlParameterCollection { new SqlParameter("@classType", ApplicationDocument.ClassTypeName) }
+                    QueryText = "SELECT TOP 1 * FROM Applications a WHERE " +
+                        $"a.{nameof(ApplicationDocument.ClassType)} = @classType ORDER BY " +
+                        $"a.{nameof(ApplicationDocument.ID)} DESC",
+                    Parameters = new SqlParameterCollection {
+                        new SqlParameter("@classType",
+                        ApplicationDocument.ClassTypeName)
+                    }
                 };
                 var maxIDEnum = await _applications.GetAsync(sqlQuerySpec);
                 var maxID = maxIDEnum.SingleOrDefault();
-                return (maxID != null) ? maxID.Index + 1 : 1;
+                return (maxID != null) ? maxID.ID + 1 : 1;
             }
             catch {
                 return 1;
@@ -691,6 +691,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         private readonly ILogger _logger;
         private readonly bool _autoApprove;
         private readonly ILifetimeScope _scope;
-        private int _appIdCounter = 1;
+        private uint _appIdCounter = 1;
     }
 }

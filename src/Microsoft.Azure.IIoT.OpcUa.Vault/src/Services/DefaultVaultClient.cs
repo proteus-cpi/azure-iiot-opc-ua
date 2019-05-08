@@ -93,10 +93,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     authority += "/";
                 }
                 authority += _auth.TenantId;
-                var serviceClientCredentials =
-                    new KeyVaultCredentials(token, authority,
-                        _config.KeyVaultResourceId, _auth.AppId,
-                        _auth.AppSecret);
+                var serviceClientCredentials = new KeyVaultCredentials(token, authority,
+                    _config.KeyVaultResourceId, _auth.AppId, _auth.AppSecret);
                 var keyVaultServiceClient = new KeyVaultServiceClient(
                     _groupSecret, _config.KeyVaultBaseUrl, true, _logger);
                 keyVaultServiceClient.SetServiceClientCredentials(serviceClientCredentials);

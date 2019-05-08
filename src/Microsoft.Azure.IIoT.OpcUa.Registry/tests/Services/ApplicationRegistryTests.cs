@@ -91,7 +91,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         }
 
         [Fact]
-        public void QueryApplicationsByClientServerApplicationType() {
+        public void QueryApplicationsByClientAndServerApplicationType() {
             CreateAppFixtures(out var site, out var super, out var apps, out var devices);
 
             using (var mock = AutoMock.GetLoose()) {
@@ -104,7 +104,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                 }, null).Result;
 
                 // Assert
-                Assert.True(apps.IsSameAs(records.Items));
+                Assert.Equal(apps.Count(x =>
+                    x.ApplicationType == ApplicationType.ClientAndServer), records.Items.Count);
             }
         }
 
@@ -122,7 +123,25 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                 }, null).Result;
 
                 // Assert
-                Assert.True(records.Items.Count == apps.Count(x => x.ApplicationType != ApplicationType.Client));
+                Assert.Equal(apps.Count(x => x.ApplicationType != ApplicationType.Client), records.Items.Count);
+            }
+        }
+
+        [Fact]
+        public void QueryApplicationsByDiscoveryServerApplicationType() {
+            CreateAppFixtures(out var site, out var super, out var apps, out var devices);
+
+            using (var mock = AutoMock.GetLoose()) {
+                mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
+                var service = mock.Create<RegistryServices>();
+
+                // Run
+                var records = service.QueryApplicationsAsync(new ApplicationRegistrationQueryModel {
+                    ApplicationType = ApplicationType.DiscoveryServer
+                }, null).Result;
+
+                // Assert
+                Assert.Equal(apps.Count(x => x.ApplicationType == ApplicationType.DiscoveryServer), records.Items.Count);
             }
         }
 
@@ -177,7 +196,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                 }, null).Result;
 
                 // Assert
-                Assert.True(records.Items.Count == apps.Count(x => x.ApplicationType != ApplicationType.Server));
+                Assert.Equal(apps.Count(x =>
+                    x.ApplicationType != ApplicationType.Server &&
+                    x.ApplicationType != ApplicationType.DiscoveryServer), records.Items.Count);
             }
         }
 

@@ -306,13 +306,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             var registration = ApplicationRegistration.FromServiceModel(
                 new ApplicationInfoModel {
                     ApplicationName = request.ApplicationName,
-                    Locale = request.Locale,
+                    LocalizedNames = request.LocalizedNames,
                     ProductUri = request.ProductUri,
                     DiscoveryUrls = request.DiscoveryUrls,
                     DiscoveryProfileUri = request.DiscoveryProfileUri,
                     ApplicationType = request.ApplicationType ?? ApplicationType.Server,
                     ApplicationUri = request.ApplicationUri,
                     Capabilities = request.Capabilities,
+                    GatewayServerUri = request.GatewayServerUri,
+                    HostAddresses = null,
                     SiteId = null
                 });
             await _iothub.CreateOrUpdateAsync(ApplicationRegistration.Patch(
@@ -353,13 +355,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                 patched.ApplicationName = string.IsNullOrEmpty(request.ApplicationName) ?
                     null : request.ApplicationName;
             }
-            if (request.Locale != null) {
-                patched.Locale = string.IsNullOrEmpty(request.Locale) ?
-                    null : request.Locale;
+            if (request.LocalizedNames != null) {
+                patched.LocalizedNames = request.LocalizedNames;
             }
             if (request.ProductUri != null) {
                 patched.ProductUri = string.IsNullOrEmpty(request.ProductUri) ?
                     null : request.ProductUri;
+            }
+            if (request.GatewayServerUri != null) {
+                patched.GatewayServerUri = string.IsNullOrEmpty(request.GatewayServerUri) ?
+                    null : request.GatewayServerUri;
             }
             if (request.Certificate != null) {
                 patched.Certificate = request.Certificate.Length == 0 ?
@@ -420,33 +425,62 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                 // Scope to non deleted applications
                 query += $"AND NOT IS_DEFINED(tags.{nameof(BaseRegistration.NotSeenSince)}) ";
             }
+
+            if (model?.Locale != null) {
+                if (model?.ApplicationName != null) {
+                    // If application name provided, include it in search
+                    query += $"AND tags.{nameof(ApplicationRegistration.LocalizedNames)}" +
+                        $".{model.Locale} = '{model.ApplicationName}' ";
+                }
+                else {
+                    // Just search for locale
+                    query += $"AND IS_DEFINED(tags.{nameof(ApplicationRegistration.LocalizedNames)}" +
+                        $".{model.Locale}) ";
+                }
+            }
             if (model?.ApplicationName != null) {
-                // If application name provided, include it in search
+                // If application name provided, also search default name
                 query += $"AND tags.{nameof(ApplicationRegistration.ApplicationName)} = " +
                     $"'{model.ApplicationName}' ";
-            }
-            if (model?.Locale != null) {
-                // If application name locale provided, include it in search
-                query += $"AND tags.{nameof(ApplicationRegistration.Locale)} = " +
-                    $"'{model.Locale}' ";
             }
             if (model?.ProductUri != null) {
                 // If product uri provided, include it in search
                 query += $"AND tags.{nameof(ApplicationRegistration.ProductUri)} = " +
                     $"'{model.ProductUri}' ";
             }
+            if (model?.GatewayServerUri != null) {
+                // If gateway uri provided, include it in search
+                query += $"AND tags.{nameof(ApplicationRegistration.GatewayServerUri)} = " +
+                    $"'{model.GatewayServerUri}' ";
+            }
+            if (model?.DiscoveryProfileUri != null) {
+                // If discovery profile uri provided, include it in search
+                query += $"AND tags.{nameof(ApplicationRegistration.DiscoveryProfileUri)} = " +
+                    $"'{model.DiscoveryProfileUri}' ";
+            }
             if (model?.ApplicationUri != null) {
                 // If ApplicationUri provided, include it in search
                 query += $"AND tags.{nameof(ApplicationRegistration.ApplicationUriLC)} = " +
                     $"'{model.ApplicationUri.ToLowerInvariant()}' ";
             }
-            if (model?.ApplicationType == ApplicationType.Client) {
+            if (model?.State != null) {
+                // If searching for state include it in search
+                query += $"AND tags.{nameof(ApplicationRegistration.ApplicationState)} = " +
+                    $"'{model.State}' ";
+            }
+            if (model?.ApplicationType == ApplicationType.Client ||
+                model?.ApplicationType == ApplicationType.ClientAndServer) {
                 // If searching for clients include it in search
                 query += $"AND tags.{nameof(ApplicationType.Client)} = true ";
             }
-            if (model?.ApplicationType == ApplicationType.Server) {
+            if (model?.ApplicationType == ApplicationType.Server ||
+                model?.ApplicationType == ApplicationType.ClientAndServer) {
                 // If searching for servers include it in search
                 query += $"AND tags.{nameof(ApplicationType.Server)} = true ";
+            }
+            if (model?.ApplicationType == ApplicationType.DiscoveryServer) {
+                // If searching for servers include it in search
+                query += $"AND tags.{nameof(ApplicationType.DiscoveryServer)} = true ";
             }
             if (model?.Capability != null) {
                 // If Capabilities provided, filter results

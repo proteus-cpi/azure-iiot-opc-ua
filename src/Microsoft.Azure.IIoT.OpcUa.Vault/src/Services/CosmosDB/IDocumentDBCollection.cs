@@ -40,14 +40,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB {
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task DeleteAsync(Guid id);
+        Task DeleteAsync(string id);
 
         /// <summary>
         /// Get
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<T> GetAsync(Guid id);
+        Task<T> GetAsync(string id);
 
         /// <summary>
         /// Get
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB {
         /// <param name="item"></param>
         /// <param name="eTag"></param>
         /// <returns></returns>
-        Task<Document> UpdateAsync(Guid id, T item,
+        Task<Document> UpdateAsync(string id, T item,
             string eTag);
     }
 }

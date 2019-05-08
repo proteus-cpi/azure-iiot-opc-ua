@@ -81,7 +81,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Assert.Equal(expected.DiscoveryProfileUri, actual.DiscoveryProfileUri);
             Assert.Equal(expected.ProductUri, actual.ProductUri);
             Assert.Equal(ServerCapabilities(expected), ServerCapabilities(actual));
-            Assert.Equal(JsonConvert.SerializeObject(expected.ApplicationNames), JsonConvert.SerializeObject(actual.ApplicationNames));
+            Assert.Equal(JsonConvert.SerializeObject(expected.LocalizedNames), JsonConvert.SerializeObject(actual.LocalizedNames));
             Assert.Equal(JsonConvert.SerializeObject(expected.DiscoveryUrls), JsonConvert.SerializeObject(actual.DiscoveryUrls));
         }
 
@@ -92,16 +92,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         /// <returns></returns>
         public static string ServerCapabilities(ApplicationRecordModel application) {
             if (application.ApplicationType != Registry.Models.ApplicationType.Client) {
-                if (string.IsNullOrEmpty(application.ServerCapabilities)) {
-                    throw new ArgumentException("At least one Server Capability must be provided.", nameof(application.ServerCapabilities));
+                if (string.IsNullOrEmpty(application.Capabilities)) {
+                    throw new ArgumentException("At least one Server Capability must be provided.", nameof(application.Capabilities));
                 }
             }
 
             // TODO validate against specified capabilites.
 
             var capabilities = new StringBuilder();
-            if (application.ServerCapabilities != null) {
-                var sortedCaps = application.ServerCapabilities.Split(",").ToList();
+            if (application.Capabilities != null) {
+                var sortedCaps = application.Capabilities.Split(",").ToList();
                 sortedCaps.Sort();
                 foreach (var capability in sortedCaps) {
                     if (string.IsNullOrEmpty(capability)) {

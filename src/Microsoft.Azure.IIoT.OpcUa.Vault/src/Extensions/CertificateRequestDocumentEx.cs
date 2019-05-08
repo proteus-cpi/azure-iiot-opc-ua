@@ -21,8 +21,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         public static CertificateRequestRecordModel ToServiceModel(
             this CertificateRequestDocument application) {
             return new CertificateRequestRecordModel {
-                RequestId = application.RequestId != Guid.Empty ?
-                    application.RequestId.ToString() : null,
+                RequestId = application.RequestId,
                 ApplicationId = application.ApplicationId,
                 CertificateGroupId = application.CertificateGroupId,
                 CertificateTypeId = application.CertificateTypeId,
