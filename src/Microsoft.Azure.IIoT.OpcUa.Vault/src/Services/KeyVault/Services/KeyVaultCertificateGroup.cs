@@ -41,12 +41,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         public CertificateGroupConfigurationModel CertificateGroupConfiguration { get; }
 
         /// <summary>
-        /// Create provider
+        /// Create group
         /// </summary>
         /// <param name="keyVaultServiceClient"></param>
         /// <param name="certificateGroupConfiguration"></param>
         /// <param name="serviceHost"></param>
-        private KeyVaultCertificateGroup(IKeyVaultServiceClient keyVaultServiceClient,
+        public KeyVaultCertificateGroup(IKeyVaultServiceClient keyVaultServiceClient,
             CertificateGroupConfigurationModel certificateGroupConfiguration,
             string serviceHost) :
             base(null, certificateGroupConfiguration.ToGdsServerModel()) {
@@ -56,19 +56,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             CertificateGroupConfiguration = certificateGroupConfiguration;
             Certificate = null;
             Crl = null;
-        }
-
-        /// <summary>
-        /// Factory
-        /// </summary>
-        /// <param name="keyVaultServiceClient"></param>
-        /// <param name="certificateGroupConfiguration"></param>
-        /// <param name="serviceHost"></param>
-        /// <returns></returns>
-        public static KeyVaultCertificateGroup Create(IKeyVaultServiceClient keyVaultServiceClient,
-            CertificateGroupConfigurationModel certificateGroupConfiguration, string serviceHost) {
-            return new KeyVaultCertificateGroup(keyVaultServiceClient, certificateGroupConfiguration,
-                serviceHost);
         }
 
         /// <inheritdoc/>
@@ -187,8 +174,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// Revoke a certificate. Finds the matching CA cert version and updates Crl.
         /// </summary>
         /// <returns></returns>
-        public override async Task<X509CRL> RevokeCertificateAsync(
-            X509Certificate2 certificate) {
+        public override async Task<X509CRL> RevokeCertificateAsync(X509Certificate2 certificate) {
             await LoadPublicAssets().ConfigureAwait(false);
             var certificates = new X509Certificate2Collection { certificate };
             var caCertKeyInfoCollection = await _keyVaultServiceClient.ListCertificateVersionsKeyInfoAsync(
@@ -198,10 +184,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             foreach (var caCertKeyInfo in caCertKeyInfoCollection) {
                 var subjectKeyId = FindSubjectKeyIdentifierExtension(caCertKeyInfo.Certificate);
                 if (Utils.CompareDistinguishedName(caCertKeyInfo.Certificate.Subject, certificate.Issuer) &&
-                    authorityKeyIdentifier.SerialNumber.EqualsIgnoreCase(caCertKeyInfo.Certificate.SerialNumber) &&
-                    authorityKeyIdentifier.KeyId.EqualsIgnoreCase(subjectKeyId.SubjectKeyIdentifier)
+                    authorityKeyIdentifier.SerialNumber.EqualsIgnoreCase(
+                        caCertKeyInfo.Certificate.SerialNumber) &&
+                    authorityKeyIdentifier.KeyId.EqualsIgnoreCase(
+                        subjectKeyId.SubjectKeyIdentifier)
                     ) {
-                    var crl = await _keyVaultServiceClient.LoadIssuerCACrl(Configuration.Id, caCertKeyInfo.Certificate);
+                    var crl = await _keyVaultServiceClient.LoadIssuerCACrl(
+                        Configuration.Id, caCertKeyInfo.Certificate);
                     var crls = new List<X509CRL> { crl };
                     var newCrl = CertUtils.RevokeCertificate(caCertKeyInfo.Certificate, crls,
                         certificates, now, DateTime.MinValue, new KeyVaultSignatureGenerator(
@@ -268,9 +257,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// Creates a new key pair as KeyVault certificate and signs it with KeyVault.
         /// </summary>
         /// <returns></returns>
-        public async Task<Opc.Ua.Gds.Server.X509Certificate2KeyPair> NewKeyPairRequestKeyVaultCertAsync(
+        public async Task<X509Certificate2KeyPair> NewKeyPairRequestKeyVaultCertAsync(
             ApplicationRecordDataType application, string subjectName, string[] domainNames,
             string privateKeyFormat, string privateKeyPassword) {
+
             await LoadPublicAssets().ConfigureAwait(false);
             var notBefore = TrimmedNotBeforeDate();
             var notAfter = notBefore.AddMonths(Configuration.DefaultCertificateLifetime);
@@ -298,7 +288,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                     throw new ServiceResultException(StatusCodes.BadInvalidArgument,
                         "Invalid private key format");
                 }
-                return new Opc.Ua.Gds.Server.X509Certificate2KeyPair(
+                return new X509Certificate2KeyPair(
                     new X509Certificate2(signedCertWithPrivateKey.RawData),
                     privateKeyFormat, privateKey);
             }
@@ -308,7 +298,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// Creates a new key pair with certificate offline and signs it with KeyVault.
         /// </summary>
         /// <returns></returns>
-        public override async Task<Opc.Ua.Gds.Server.X509Certificate2KeyPair> NewKeyPairRequestAsync(
+        public override async Task<X509Certificate2KeyPair> NewKeyPairRequestAsync(
             ApplicationRecordDataType application, string subjectName, string[] domainNames,
             string privateKeyFormat, string privateKeyPassword) {
             if (!privateKeyFormat.Equals("PFX", StringComparison.OrdinalIgnoreCase) &&
@@ -333,7 +323,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                         _keyVaultServiceClient, _caCertKeyIdentifier, Certificate),
                     false, authorityInformationAccess);
                 // Create a PEM or PFX
-                using (var signedCertWithPrivateKey = CreateCertificateWithPrivateKey(signedCert, keyPair)) {
+                using (var signedCertWithPrivateKey = CreateCertificateWithPrivateKey(
+                    signedCert, keyPair)) {
                     byte[] privateKey;
                     if (privateKeyFormat.Equals("PFX", StringComparison.OrdinalIgnoreCase)) {
                         privateKey = signedCertWithPrivateKey.Export(X509ContentType.Pfx, privateKeyPassword);
@@ -342,9 +333,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                         privateKey = CertificateFactory.ExportPrivateKeyAsPEM(signedCertWithPrivateKey);
                     }
                     else {
-                        throw new ServiceResultException(StatusCodes.BadInvalidArgument, "Invalid private key format");
+                        throw new ServiceResultException(StatusCodes.BadInvalidArgument,
+                            "Invalid private key format");
                     }
-                    return new Opc.Ua.Gds.Server.X509Certificate2KeyPair(
+                    return new X509Certificate2KeyPair(
                         new X509Certificate2(signedCertWithPrivateKey.RawData),
                         privateKeyFormat, privateKey);
                 }
@@ -354,47 +346,45 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <summary>
         /// Stores the private key of a cert request in a Key Vault secret.
         /// </summary>
-        public async Task ImportCertKeySecret(string id, string requestId,
+        public async Task ImportCertKeySecret(string requestId,
             byte[] privateKey, string privateKeyFormat, CancellationToken ct = default) {
-            await _keyVaultServiceClient.ImportCertKey(id, requestId, privateKey,
+            await _keyVaultServiceClient.ImportCertKey(Configuration.Id, requestId, privateKey,
                 privateKeyFormat, ct);
         }
 
         /// <summary>
         /// Load the private key of a cert request from Key Vault secret.
         /// </summary>
-        public async Task<byte[]> LoadCertKeySecret(string id, string requestId,
+        public async Task<byte[]> LoadCertKeySecretAsync(string requestId,
             string privateKeyFormat, CancellationToken ct = default) {
-            return await _keyVaultServiceClient.LoadCertKey(id, requestId,
+            return await _keyVaultServiceClient.LoadCertKey(Configuration.Id, requestId,
                 privateKeyFormat, ct);
         }
 
         /// <summary>
         /// Accept the private key of a cert request from Key Vault secret.
         /// </summary>
-        public async Task AcceptCertKeySecret(string id, string requestId,
+        public async Task AcceptCertKeySecretAsync(string requestId,
             CancellationToken ct = default) {
-            await _keyVaultServiceClient.AcceptCertKey(id, requestId, ct);
+            await _keyVaultServiceClient.AcceptCertKey(Configuration.Id, requestId, ct);
         }
 
         /// <summary>
         /// Delete the private key of a cert request from Key Vault secret.
         /// </summary>
-        public async Task DeleteCertKeySecret(string id, string requestId,
+        public async Task DeleteCertKeySecretAsync(string requestId,
             CancellationToken ct = default) {
-            await _keyVaultServiceClient.DeleteCertKey(id, requestId, ct);
+            await _keyVaultServiceClient.DeleteCertKey(Configuration.Id, requestId, ct);
         }
 
         /// <inheritdoc/>
         public override async Task<X509Certificate2> SigningRequestAsync(
-            ApplicationRecordDataType application,
-            string[] domainNames,
-            byte[] certificateRequest
-            ) {
+            ApplicationRecordDataType application, string[] domainNames, byte[] certificateRequest) {
             try {
                 var pkcs10CertificationRequest = new Pkcs10CertificationRequest(certificateRequest);
                 if (!pkcs10CertificationRequest.Verify()) {
-                    throw new ServiceResultException(StatusCodes.BadInvalidArgument, "CSR signature invalid.");
+                    throw new ServiceResultException(StatusCodes.BadInvalidArgument,
+                        "CSR signature invalid.");
                 }
 
                 var info = pkcs10CertificationRequest.GetCertificationRequestInfo();
@@ -447,10 +437,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// Reads the actual Issuer CA cert of the group.
         /// Or a historical CA cert by thumbprint.
         /// </summary>
-        /// <param name="id">The group id</param>
         /// <param name="thumbprint">optional, the thumbprint of the certificate.</param>
         /// <returns>The issuer certificate</returns>
-        public async Task<X509Certificate2> GetIssuerCACertificateAsync(string id, string thumbprint) {
+        public async Task<X509Certificate2> GetIssuerCACertificateAsync(string thumbprint) {
             await LoadPublicAssets().ConfigureAwait(false);
             if (thumbprint == null ||
                 thumbprint.Equals(Certificate.Thumbprint, StringComparison.OrdinalIgnoreCase)) {
@@ -458,8 +447,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             }
             else {
                 try {
-                    var (collection, nextPageLink) = await _keyVaultServiceClient.ListCertificateVersionsAsync(
-                        id, thumbprint, pageSize: 1);
+                    var (collection, nextPageLink) =
+                        await _keyVaultServiceClient.ListCertificateVersionsAsync(
+                            Configuration.Id, thumbprint, pageSize: 1);
                     if (collection.Count == 1) {
                         return collection[0];
                     }
@@ -476,16 +466,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// Get the actual Crl of a certificate group.
         /// Or the Crl of a historical Issuer CA cert by thumbprint.
         /// </summary>
-        /// <param name="id">The group id</param>
         /// <param name="thumbprint">optional, the thumbprint of the certificate.</param>
         /// <returns></returns>
-        public async Task<X509CRL> GetIssuerCACrlAsync(string id, string thumbprint) {
+        public async Task<X509CRL> GetIssuerCACrlAsync(string thumbprint) {
             await LoadPublicAssets().ConfigureAwait(false);
             if (thumbprint == null ||
                 thumbprint.Equals(Certificate.Thumbprint, StringComparison.OrdinalIgnoreCase)) {
                 return Crl;
             }
-            return await _keyVaultServiceClient.LoadIssuerCACrl(id, thumbprint);
+            return await _keyVaultServiceClient.LoadIssuerCACrl(Configuration.Id, thumbprint);
         }
 
         /// <inheritdoc/>
@@ -508,7 +497,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <returns></returns>
         private async Task LoadPublicAssets() {
             if (Certificate == null || _caCertSecretIdentifier == null ||
-                _caCertKeyIdentifier == null || TimeSpan.FromHours(1) < (DateTime.UtcNow - _lastUpdate)) {
+                _caCertKeyIdentifier == null ||
+                TimeSpan.FromHours(1) < (DateTime.UtcNow - _lastUpdate)) {
                 await Init();
                 _lastUpdate = DateTime.UtcNow;
             }

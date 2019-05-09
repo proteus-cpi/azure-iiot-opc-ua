@@ -358,9 +358,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
 
             foreach (var ch in applicationName) {
                 if (char.IsControl(ch) || ch == '/' || ch == ',' || ch == ';') {
-                    ch = '+';
+                    buffer.Append('+');
                 }
-                buffer.Append(ch);
+                else {
+                    buffer.Append(ch);
+                }
             }
 
             applicationName = buffer.ToString();

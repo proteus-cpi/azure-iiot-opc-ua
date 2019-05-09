@@ -56,7 +56,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// Get the configuration of all certificate groups.
         /// </summary>
         /// <returns>The configurations</returns>
-        Task<CertificateGroupConfigurationCollectionModel> GetGroupConfigurationsAsync();
+        Task<CertificateGroupConfigurationCollectionModel> ListGroupConfigurationsAsync();
 
 
         // Group interface
