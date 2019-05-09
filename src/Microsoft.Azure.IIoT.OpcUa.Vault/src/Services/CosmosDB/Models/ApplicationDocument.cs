@@ -89,11 +89,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         public string DiscoveryProfileUri { get; set; }
 
         /// <summary>
-        /// Authority
-        /// </summary>
-        public string AuthorityId { get; set; }
-
-        /// <summary>
         /// Device Registry id - reflects id of what was discovered.
         /// </summary>
         public string RegistryId { get; set; }
@@ -104,9 +99,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         public DateTime? CreateTime { get; set; }
 
         /// <summary>
+        /// Authority
+        /// </summary>
+        public string CreateAuthorityId { get; set; }
+
+        /// <summary>
         /// Approval time
         /// </summary>
         public DateTime? ApproveTime { get; set; }
+
+        /// <summary>
+        /// Authority
+        /// </summary>
+        public string ApproveAuthorityId { get; set; }
 
         /// <summary>
         /// Update time
@@ -114,9 +119,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         public DateTime? UpdateTime { get; set; }
 
         /// <summary>
+        /// Authority
+        /// </summary>
+        public string UpdateAuthorityId { get; set; }
+
+        /// <summary>
         /// Delete time
         /// </summary>
         public DateTime? DeleteTime { get; set; }
+
+        /// <summary>
+        /// Authority
+        /// </summary>
+        public string DeleteAuthorityId { get; set; }
 
         /// <inheritdoc/>
         public static readonly string ClassTypeName = "Application";

@@ -3,29 +3,37 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using System;
+namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
 
     /// <summary>
-    /// Application type query
+    /// The application database status when compared to
+    /// the registry.
     /// </summary>
-    [Flags]
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum QueryApplicationType {
+    public enum RegistryApplicationStatusType {
+
         /// <summary>
-        /// Any type
+        /// The Application Id is not known in the registry.
         /// </summary>
-        Any = 0,
+        Unknown,
+
         /// <summary>
-        /// Server
+        /// The application and registry state are up to
+        /// date and ok.
         /// </summary>
-        Server = 1,
+        Ok,
+
         /// <summary>
-        /// Client
+        /// The registry contains a new application.
         /// </summary>
-        Client = 2,
+        New,
+
+        /// <summary>
+        /// The registry contains updates compared to the
+        /// application database.
+        /// </summary>
+        Update
     }
 }
-

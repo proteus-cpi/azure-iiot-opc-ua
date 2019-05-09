@@ -37,10 +37,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(200)]
         public async Task RegisterAllApplications() {
             foreach (var application in _applicationTestSet) {
-                Assert.Null(application.Model.CreateTime);
-                Assert.Null(application.Model.ApproveTime);
-                Assert.Null(application.Model.UpdateTime);
-                Assert.Null(application.Model.DeleteTime);
+                Assert.Null(application.Model.Created);
+                Assert.Null(application.Model.Approved);
+                Assert.Null(application.Model.Updated);
+                Assert.Null(application.Model.Deleted);
                 var applicationModel = await _applicationsDatabase.RegisterApplicationAsync(application.Model);
                 Assert.NotNull(applicationModel);
                 Assert.NotNull(applicationModel.ApplicationId);
@@ -62,7 +62,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 Assert.NotNull(applicationModelList);
                 foreach (var response in applicationModelList) {
                     try {
-                        await _applicationsDatabase.DeleteApplicationAsync(response.ApplicationId.ToString(), true);
+                        await _applicationsDatabase.DeleteApplicationAsync(response.ApplicationId, true);
                     }
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
                     catch { }
@@ -98,10 +98,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             var fullPasses = 0;
             foreach (var application in _applicationTestSet) {
                 // read model to get state
-                var applicationModel = await _applicationsDatabase.GetApplicationAsync(application.Model.ApplicationId.ToString());
+                var applicationModel = await _applicationsDatabase.GetApplicationAsync(application.Model.ApplicationId);
                 if (applicationModel.State == ApplicationState.New) {
                     // approve app
-                    applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId.ToString(), true, false);
+                    applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId, true, false);
                     Assert.NotNull(applicationModel);
                     Assert.Equal(ApplicationState.Approved, applicationModel.State);
                 }
@@ -112,20 +112,20 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 }
 
                 // reject approved app should fail
-                await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId.ToString(), false, false));
+                await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId, false, false));
 
                 // force approved app to rejected state
-                applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId.ToString(), false, true);
+                applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId, false, true);
                 Assert.NotNull(applicationModel);
                 Assert.NotNull(applicationModel.ApplicationId);
                 Assert.Equal(ApplicationState.Rejected, applicationModel.State);
                 ApplicationTestData.AssertEqualApplicationModelData(applicationModel, application.Model);
 
                 // approve rejected app should fail
-                await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId.ToString(), true, false));
+                await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId, true, false));
 
                 // force approve of rejected app
-                applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId.ToString(), true, true);
+                applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId, true, true);
                 Assert.NotNull(applicationModel);
                 Assert.NotNull(applicationModel.ApplicationId);
                 Assert.Equal(ApplicationState.Approved, applicationModel.State);
@@ -144,7 +144,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             await Assert.ThrowsAsync<ResourceNotFoundException>(() => _applicationsDatabase.GetApplicationAsync(Guid.NewGuid().ToString()));
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                var applicationModel = await _applicationsDatabase.GetApplicationAsync(application.Model.ApplicationId.ToString());
+                var applicationModel = await _applicationsDatabase.GetApplicationAsync(application.Model.ApplicationId);
                 Assert.NotNull(applicationModel);
                 Assert.NotNull(applicationModel.ApplicationId);
                 Assert.Equal(applicationModel.ApplicationId, applicationModel.ApplicationId);
@@ -172,7 +172,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 var applicationModel = await _applicationsDatabase.UpdateApplicationAsync(
-                    application.Model.ApplicationId.ToString(), application.Model);
+                    application.Model.ApplicationId, application.Model);
                 Assert.NotNull(applicationModel);
                 Assert.NotNull(applicationModel.ApplicationId);
                 Assert.Equal(applicationModel.ApplicationId, applicationModel.ApplicationId);
@@ -208,7 +208,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 var applicationModel = await _applicationsDatabase.UnregisterApplicationAsync(
-                    application.Model.ApplicationId.ToString());
+                    application.Model.ApplicationId);
                 Assert.NotNull(applicationModel);
                 Assert.NotNull(applicationModel.ApplicationId);
             }
@@ -233,12 +233,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 var applicationModel = await _applicationsDatabase.GetApplicationAsync(
-                    application.Model.ApplicationId.ToString());
+                    application.Model.ApplicationId);
                 Assert.NotNull(applicationModel);
                 Assert.NotNull(applicationModel.ApplicationId);
                 Assert.Equal(applicationModel.ApplicationId, applicationModel.ApplicationId);
                 Assert.Equal(ApplicationState.Unregistered, applicationModel.State);
-                Assert.NotNull(applicationModel.DeleteTime);
+                Assert.NotNull(applicationModel.Deleted);
                 ApplicationTestData.AssertEqualApplicationModelData(applicationModel, application.Model);
             }
         }
@@ -248,7 +248,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 await _applicationsDatabase.DeleteApplicationAsync(
-                    application.Model.ApplicationId.ToString(), false);
+                    application.Model.ApplicationId, false);
             }
         }
 
@@ -258,7 +258,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 await Assert.ThrowsAsync<ResourceNotFoundException>(async () => {
                     var applicationModel = await _applicationsDatabase.GetApplicationAsync(
-                        application.Model.ApplicationId.ToString());
+                        application.Model.ApplicationId);
                 });
             }
         }

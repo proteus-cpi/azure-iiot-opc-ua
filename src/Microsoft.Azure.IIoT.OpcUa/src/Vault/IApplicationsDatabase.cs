@@ -4,7 +4,7 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using System.Collections.Generic;
     using System.Threading.Tasks;
 
@@ -21,15 +21,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// If the applicationId is not empty an Update is performed.
         /// </summary>
         /// <param name="application">The application record</param>
-        Task<ApplicationInfoModel2> RegisterApplicationAsync(
-            ApplicationInfoModel2 application);
+        Task<ApplicationInfoModel> RegisterApplicationAsync(
+            ApplicationInfoModel application);
 
         /// <summary>
         /// Get the application by applicationId
         /// </summary>
         /// <param name="id">The applicationId</param>
         /// <returns>The application</returns>
-        Task<ApplicationInfoModel2> GetApplicationAsync(string id);
+        Task<ApplicationInfoModel> GetApplicationAsync(string id);
 
         /// <summary>
         /// Update an application.
@@ -37,8 +37,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="id">The applicationId</param>
         /// <param name="application">The application</param>
         /// <returns>The updated application</returns>
-        Task<ApplicationInfoModel2> UpdateApplicationAsync(string id,
-            ApplicationInfoModel2 application);
+        Task<ApplicationInfoModel> UpdateApplicationAsync(string id,
+            ApplicationInfoModel application);
 
         /// <summary>
         /// Approve or reject a new application.
@@ -47,7 +47,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="id">The applicationId</param>
         /// <param name="approved">true if approved, false if rejected</param>
         /// <param name="force">Ignore state check</param>
-        Task<ApplicationInfoModel2> ApproveApplicationAsync(string id,
+        Task<ApplicationInfoModel> ApproveApplicationAsync(string id,
             bool approved, bool force);
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// a similar OPC UA GDS server function.
         /// </summary>
         /// <param name="id">The application Id</param>
-        Task<ApplicationInfoModel2> UnregisterApplicationAsync(string id);
+        Task<ApplicationInfoModel> UnregisterApplicationAsync(string id);
 
         /// <summary>
         /// Physically remove the application form the database.
@@ -77,8 +77,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// List all applications with a ApplicationUri.
         /// </summary>
         /// <param name="uri">The ApplicationUri</param>
+        /// <param name="nextPageLink"></param>
+        /// <param name="pageSize"></param>
         /// <returns>The applications</returns>
-        Task<IList<ApplicationInfoModel2>> ListApplicationAsync(string uri);
+        Task<IList<ApplicationInfoModel>> ListApplicationAsync(string uri,
+            string nextPageLink = null, int? pageSize = null);
 
         /// <summary>
         /// Query for Applications sorted by ID.

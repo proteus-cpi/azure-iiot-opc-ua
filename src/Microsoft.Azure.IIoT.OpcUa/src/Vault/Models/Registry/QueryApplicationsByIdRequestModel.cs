@@ -3,14 +3,14 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
     using Newtonsoft.Json;
     using System.Collections.Generic;
 
     /// <summary>
-    /// Query applications
+    /// Query by id
     /// </summary>
-    public sealed class QueryApplicationsRequestModel {
+    public sealed class QueryApplicationsByIdRequestModel {
 
         /// <summary>
         /// Application name
@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Application type
         /// </summary>
-        public QueryApplicationType ApplicationType { get; set; }
+        public QueryApplicationType? ApplicationType { get; set; }
 
         /// <summary>
         /// Product uri
@@ -41,5 +41,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// Application state
         /// </summary>
         public QueryApplicationState? ApplicationState { get; set; }
+
+        /// <summary>
+        /// Optional starting record id
+        /// </summary>
+        public uint? StartingRecordId { get; set; }
+
+        /// <summary>
+        /// Optional max records to return
+        /// </summary>
+        public uint? MaxRecordsToReturn { get; set; }
     }
 }

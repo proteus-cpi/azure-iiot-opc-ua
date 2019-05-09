@@ -47,12 +47,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 _groupId = "CertReqIssuerCA" + timeid.ToString();
                 _configId = "CertReqConfig" + timeid.ToString();
                 var keyVaultServiceClient = KeyVaultTestServiceClient.Get(_configId, _serviceConfig, _clientConfig, _logger);
-                _keyVaultCertificateGroup = new KeyVaultCertificateStore(keyVaultServiceClient, _serviceConfig, _clientConfig, _logger);
+                _keyVaultCertificateGroup = new DefaultVaultClient(keyVaultServiceClient, _serviceConfig, _logger);
                 _keyVaultCertificateGroup.PurgeAsync(_configId, _groupId).Wait();
-                CertificateGroup = _keyVaultCertificateGroup;
-                CertificateGroup = new KeyVaultCertificateStore(keyVaultServiceClient, _serviceConfig, _clientConfig, _logger);
-                CertificateGroup.CreateGroupConfigurationAsync(_groupId, "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT", null).Wait();
-                CertificateRequest = new DefaultCertificateAuthority(ApplicationsDatabase, CertificateGroup, _keyVaultCertificateGroup, _serviceConfig, _documentDBRepository, _logger);
+                CertificateGroup = new DefaultVaultClient(keyVaultServiceClient, _serviceConfig, _logger);
+                CertificateGroup.CreateGroupConfigurationAsync(_groupId,
+                    "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT", null).Wait();
+                CertificateRequest = new DefaultCertificateAuthority(ApplicationsDatabase, CertificateGroup, _serviceConfig,
+                    _documentDBRepository, _logger);
 
                 // create test set
                 ApplicationTestSet = new List<ApplicationTestData>();
@@ -91,7 +92,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         private readonly VaultConfig _serviceConfig;
         private readonly string _configId;
         private readonly string _groupId;
-        private readonly KeyVaultCertificateStore _keyVaultCertificateGroup;
+        private readonly DefaultVaultClient _keyVaultCertificateGroup;
         private readonly ILogger _logger;
         private const int kRandomStart = 1234;
         private const int kTestSetSize = 10;

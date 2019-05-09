@@ -5,6 +5,14 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     using Opc.Ua;
+    using Org.BouncyCastle.Asn1;
+    using Org.BouncyCastle.Asn1.X509;
+    using Org.BouncyCastle.Crypto;
+    using Org.BouncyCastle.Crypto.Parameters;
+    using Org.BouncyCastle.Math;
+    using Org.BouncyCastle.Security;
+    using Org.BouncyCastle.X509;
+    using Org.BouncyCastle.X509.Extension;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -14,57 +22,42 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading.Tasks;
+    using X509Extension = System.Security.Cryptography.X509Certificates.X509Extension;
 
     /// <summary>
     /// Certificate factory
     /// </summary>
-    public static class KeyVaultCertFactory {
-        /// <inheritdoc/>
-        public const int SerialNumberLength = 20;
-        /// <inheritdoc/>
-        public const int DefaultKeySize = 2048;
+    public static class CertUtils {
 
         /// <summary>
         /// Creates a KeyVault signed certificate.
         /// </summary>
         /// <returns>The signed certificate</returns>
-        public static Task<X509Certificate2> CreateSignedCertificate(
-            string applicationUri,
-            string applicationName,
-            string subjectName,
-            IList<string> domainNames,
-            ushort keySize,
-            DateTime notBefore,
-            DateTime notAfter,
-            ushort hashSizeInBits,
-            X509Certificate2 issuerCAKeyCert,
-            RSA publicKey,
-            X509SignatureGenerator generator,
-            bool caCert = false,
-            string extensionUrl = null
-            ) {
+        public static Task<X509Certificate2> CreateSignedCertificate(string applicationUri,
+            string applicationName, string subjectName, IList<string> domainNames,
+            ushort keySize, DateTime notBefore, DateTime notAfter, ushort hashSizeInBits,
+            X509Certificate2 issuerCAKeyCert, RSA publicKey, X509SignatureGenerator generator,
+            bool caCert = false, string extensionUrl = null) {
             if (publicKey == null) {
                 throw new NotSupportedException("Need a public key and a CA certificate.");
             }
 
             if (publicKey.KeySize != keySize) {
-                throw new NotSupportedException(string.Format("Public key size {0} does not match expected key size {1}", publicKey.KeySize, keySize));
+                throw new NotSupportedException(
+                    string.Format("Public key size {0} does not match expected key size {1}",
+                    publicKey.KeySize, keySize));
             }
-
             // new serial number
-            var serialNumber = new byte[SerialNumberLength];
+            var serialNumber = new byte[kSerialNumberLength];
             RandomNumberGenerator.Fill(serialNumber);
             serialNumber[0] &= 0x7F;
 
             // set default values.
-            var subjectDN = SetSuitableDefaults(
-                ref applicationUri,
-                ref applicationName,
-                ref subjectName,
-                ref domainNames,
-                ref keySize);
+            var subjectDN = SetSuitableDefaults(ref applicationUri,
+                ref applicationName, ref subjectName, ref domainNames, ref keySize);
 
-            var request = new CertificateRequest(subjectDN, publicKey, GetRSAHashAlgorithmName(hashSizeInBits), RSASignaturePadding.Pkcs1);
+            var request = new CertificateRequest(subjectDN, publicKey,
+                GetRSAHashAlgorithmName(hashSizeInBits), RSASignaturePadding.Pkcs1);
 
             // Basic constraints
             request.CertificateExtensions.Add(
@@ -79,23 +72,24 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
 
             // Authority Key Identifier
             if (issuerCAKeyCert != null) {
-                request.CertificateExtensions.Add(BuildAuthorityKeyIdentifier(issuerCAKeyCert));
+                request.CertificateExtensions.Add(
+                    BuildAuthorityKeyIdentifier(issuerCAKeyCert));
             }
             else {
-                request.CertificateExtensions.Add(BuildAuthorityKeyIdentifier(subjectDN, serialNumber.Reverse().ToArray(), ski));
+                request.CertificateExtensions.Add(
+                    BuildAuthorityKeyIdentifier(subjectDN, serialNumber.Reverse().ToArray(), ski));
             }
 
             if (caCert) {
                 request.CertificateExtensions.Add(
                     new X509KeyUsageExtension(
-                        X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign,
-                        true));
-
+                        X509KeyUsageFlags.DigitalSignature |
+                        X509KeyUsageFlags.KeyCertSign |
+                        X509KeyUsageFlags.CrlSign, true));
                 if (extensionUrl != null) {
                     // add CRL endpoint, if available
-                    request.CertificateExtensions.Add(
-                        BuildX509CRLDistributionPoints(PatchExtensionUrl(extensionUrl, serialNumber))
-                        );
+                    request.CertificateExtensions.Add(BuildX509CRLDistributionPoints(
+                        PatchExtensionUrl(extensionUrl, serialNumber)));
                 }
             }
             else {
@@ -124,8 +118,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                 if (issuerCAKeyCert != null &&
                     extensionUrl != null) {   // add Authority Information Access, if available
                     request.CertificateExtensions.Add(
-                        BuildX509AuthorityInformationAccess(new string[] { PatchExtensionUrl(extensionUrl, issuerCAKeyCert.SerialNumber) })
-                        );
+                        BuildX509AuthorityInformationAccess(new string[] {
+                            PatchExtensionUrl(extensionUrl, issuerCAKeyCert.SerialNumber)
+                        }));
                 }
             }
 
@@ -139,14 +134,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             }
 
             var issuerSubjectName = issuerCAKeyCert != null ? issuerCAKeyCert.SubjectName : subjectDN;
-            var signedCert = request.Create(
-                issuerSubjectName,
-                generator,
-                notBefore,
-                notAfter,
-                serialNumber
-                );
-
+            var signedCert = request.Create(issuerSubjectName, generator, notBefore, notAfter, serialNumber);
             return Task.FromResult(signedCert);
         }
 
@@ -154,22 +142,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// Revoke the certificate.
         /// The CRL number is increased by one and the new CRL is returned.
         /// </summary>
-        public static X509CRL RevokeCertificate(
-            X509Certificate2 issuerCertificate,
-            List<X509CRL> issuerCrls,
-            X509Certificate2Collection revokedCertificates,
-            DateTime thisUpdate,
-            DateTime nextUpdate,
-            X509SignatureGenerator generator,
-            uint hashSize
-            ) {
-            var crlSerialNumber = Org.BouncyCastle.Math.BigInteger.Zero;
-            var bcCertCA =
-                new Org.BouncyCastle.X509.X509CertificateParser().ReadCertificate(issuerCertificate.RawData);
-            Org.BouncyCastle.Crypto.ISignatureFactory signatureFactory =
+        public static X509CRL RevokeCertificate(X509Certificate2 issuerCertificate,
+            List<X509CRL> issuerCrls, X509Certificate2Collection revokedCertificates,
+            DateTime thisUpdate, DateTime nextUpdate, X509SignatureGenerator generator,
+            uint hashSize) {
+            var crlSerialNumber = BigInteger.Zero;
+            var bcCertCA = new X509CertificateParser().ReadCertificate(issuerCertificate.RawData);
+            ISignatureFactory signatureFactory =
                     new KeyVaultSignatureFactory(GetRSAHashAlgorithmName(hashSize), generator);
 
-            var crlGen = new Org.BouncyCastle.X509.X509V2CrlGenerator();
+            var crlGen = new X509V2CrlGenerator();
             crlGen.SetIssuerDN(bcCertCA.IssuerDN);
 
             if (thisUpdate == DateTime.MinValue) {
@@ -183,7 +165,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             crlGen.SetNextUpdate(nextUpdate);
             // merge all existing revocation list
             if (issuerCrls != null) {
-                var parser = new Org.BouncyCastle.X509.X509CrlParser();
+                var parser = new X509CrlParser();
                 foreach (var issuerCrl in issuerCrls) {
                     var crl = parser.ReadCrl(issuerCrl.RawData);
                     crlGen.AddCrl(crl);
@@ -196,37 +178,35 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
 
             if (revokedCertificates == null || revokedCertificates.Count == 0) {
                 // add a dummy revoked cert
-                crlGen.AddCrlEntry(Org.BouncyCastle.Math.BigInteger.One, thisUpdate, Org.BouncyCastle.Asn1.X509.CrlReason.Unspecified);
+                crlGen.AddCrlEntry(BigInteger.One, thisUpdate, CrlReason.Unspecified);
             }
             else {
                 // add the revoked cert
                 foreach (var revokedCertificate in revokedCertificates) {
-                    crlGen.AddCrlEntry(GetSerialNumber(revokedCertificate), thisUpdate, Org.BouncyCastle.Asn1.X509.CrlReason.PrivilegeWithdrawn);
+                    crlGen.AddCrlEntry(GetSerialNumber(revokedCertificate),
+                        thisUpdate, CrlReason.PrivilegeWithdrawn);
                 }
             }
 
-            crlGen.AddExtension(Org.BouncyCastle.Asn1.X509.X509Extensions.AuthorityKeyIdentifier,
-                                false,
-                                new Org.BouncyCastle.X509.Extension.AuthorityKeyIdentifierStructure(bcCertCA));
+            crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier, false,
+                new AuthorityKeyIdentifierStructure(bcCertCA));
 
             // set new serial number
-            crlSerialNumber = crlSerialNumber.Add(Org.BouncyCastle.Math.BigInteger.One);
-            crlGen.AddExtension(Org.BouncyCastle.Asn1.X509.X509Extensions.CrlNumber,
-                                false,
-                                new Org.BouncyCastle.Asn1.X509.CrlNumber(crlSerialNumber));
+            crlSerialNumber = crlSerialNumber.Add(BigInteger.One);
+            crlGen.AddExtension(X509Extensions.CrlNumber, false,
+                new CrlNumber(crlSerialNumber));
 
             // generate updated CRL
             var updatedCrl = crlGen.Generate(signatureFactory);
-
             return new X509CRL(updatedCrl.GetEncoded());
         }
 
         /// <summary>
         /// Get RSA public key from a CSR.
         /// </summary>
-        public static RSA GetRSAPublicKey(Org.BouncyCastle.Asn1.X509.SubjectPublicKeyInfo subjectPublicKeyInfo) {
-            var asymmetricKeyParameter = Org.BouncyCastle.Security.PublicKeyFactory.CreateKey(subjectPublicKeyInfo);
-            var rsaKeyParameters = (Org.BouncyCastle.Crypto.Parameters.RsaKeyParameters)asymmetricKeyParameter;
+        public static RSA GetRSAPublicKey(SubjectPublicKeyInfo subjectPublicKeyInfo) {
+            var asymmetricKeyParameter = PublicKeyFactory.CreateKey(subjectPublicKeyInfo);
+            var rsaKeyParameters = (RsaKeyParameters)asymmetricKeyParameter;
             var rsaKeyInfo = new RSAParameters {
                 Modulus = rsaKeyParameters.Modulus.ToByteArrayUnsigned(),
                 Exponent = rsaKeyParameters.Exponent.ToByteArrayUnsigned()
@@ -235,6 +215,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             return rsa;
         }
 
+#if UNUSED
         private static string GetRSAHashAlgorithm(uint hashSizeInBits) {
             if (hashSizeInBits <= 160) {
                 return "SHA1WITHRSA";
@@ -253,7 +234,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                 return "SHA512WITHRSA";
             }
         }
-
+#endif
+        /// <summary>
+        /// Get name of algorithm based on bits
+        /// </summary>
+        /// <param name="hashSizeInBits"></param>
+        /// <returns></returns>
         private static HashAlgorithmName GetRSAHashAlgorithmName(uint hashSizeInBits) {
             if (hashSizeInBits <= 160) {
                 return HashAlgorithmName.SHA1;
@@ -269,16 +255,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             }
         }
 
-
         /// <summary>
         /// Read the Crl number from a X509Crl.
         /// </summary>
-        private static Org.BouncyCastle.Math.BigInteger GetCrlNumber(Org.BouncyCastle.X509.X509Crl crl) {
-            var crlNumber = Org.BouncyCastle.Math.BigInteger.One;
+        private static BigInteger GetCrlNumber(X509Crl crl) {
+            var crlNumber = BigInteger.One;
             try {
-                var asn1Object = GetExtensionValue(crl, Org.BouncyCastle.Asn1.X509.X509Extensions.CrlNumber);
+                var asn1Object = GetExtensionValue(crl, X509Extensions.CrlNumber);
                 if (asn1Object != null) {
-                    crlNumber = Org.BouncyCastle.Asn1.DerInteger.GetInstance(asn1Object).PositiveValue;
+                    crlNumber = DerInteger.GetInstance(asn1Object).PositiveValue;
                 }
             }
             finally {
@@ -289,12 +274,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <summary>
         /// Get the value of an extension oid.
         /// </summary>
-        private static Org.BouncyCastle.Asn1.Asn1Object GetExtensionValue(
-            Org.BouncyCastle.X509.IX509Extension extension,
-            Org.BouncyCastle.Asn1.DerObjectIdentifier oid) {
+        private static Asn1Object GetExtensionValue(
+            IX509Extension extension, DerObjectIdentifier oid) {
             var asn1Octet = extension.GetExtensionValue(oid);
             if (asn1Octet != null) {
-                return Org.BouncyCastle.X509.Extension.X509ExtensionUtilities.FromExtensionValue(asn1Octet);
+                return X509ExtensionUtilities.FromExtensionValue(asn1Octet);
             }
             return null;
         }
@@ -303,14 +287,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <summary>
         /// Get public key parameters from a X509Certificate2
         /// </summary>
-        private static Org.BouncyCastle.Crypto.Parameters.RsaKeyParameters GetPublicKeyParameter(
+        private static RsaKeyParameters GetPublicKeyParameter(
             X509Certificate2 certificate) {
             using (var rsa = certificate.GetRSAPublicKey()) {
                 var rsaParams = rsa.ExportParameters(false);
-                return new Org.BouncyCastle.Crypto.Parameters.RsaKeyParameters(
-                    false,
-                    new Org.BouncyCastle.Math.BigInteger(1, rsaParams.Modulus),
-                    new Org.BouncyCastle.Math.BigInteger(1, rsaParams.Exponent));
+                return new RsaKeyParameters(false,
+                    new BigInteger(1, rsaParams.Modulus),
+                    new BigInteger(1, rsaParams.Exponent));
             }
         }
 #endif
@@ -318,28 +301,26 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <summary>
         /// Get the serial number from a certificate as BigInteger.
         /// </summary>
-        private static Org.BouncyCastle.Math.BigInteger GetSerialNumber(X509Certificate2 certificate) {
+        private static BigInteger GetSerialNumber(X509Certificate2 certificate) {
             var serialNumber = certificate.GetSerialNumber();
             Array.Reverse(serialNumber);
-            return new Org.BouncyCastle.Math.BigInteger(1, serialNumber);
+            return new BigInteger(1, serialNumber);
         }
 
         /// <summary>
         /// Sets the parameters to suitable defaults.
         /// </summary>
-        private static X500DistinguishedName SetSuitableDefaults(
-            ref string applicationUri,
-            ref string applicationName,
-            ref string subjectName,
-            ref IList<string> domainNames,
+        private static X500DistinguishedName SetSuitableDefaults(ref string applicationUri,
+            ref string applicationName, ref string subjectName, ref IList<string> domainNames,
             ref ushort keySize) {
             // enforce recommended keysize unless lower value is enforced.
             if (keySize < 2048) {
-                keySize = DefaultKeySize;
+                keySize = kDefaultKeySize;
             }
 
             if (keySize % 1024 != 0) {
-                throw new ArgumentNullException(nameof(keySize), "KeySize must be a multiple of 1024.");
+                throw new ArgumentNullException(nameof(keySize),
+                    "KeySize must be a multiple of 1024.");
             }
 
             // parse the subject name if specified.
@@ -354,32 +335,31 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             // check the application name.
             if (string.IsNullOrEmpty(applicationName)) {
                 if (subjectNameEntries == null) {
-                    throw new ArgumentNullException(nameof(applicationName), "Must specify a applicationName or a subjectName.");
+                    throw new ArgumentNullException(nameof(applicationName),
+                        "Must specify a applicationName or a subjectName.");
                 }
 
                 // use the common name as the application name.
-                for (var ii = 0; ii < subjectNameEntries.Count; ii++) {
-                    if (subjectNameEntries[ii].StartsWith("CN=", StringComparison.InvariantCulture)) {
-                        applicationName = subjectNameEntries[ii].Substring(3).Trim();
+                foreach (var entry in subjectNameEntries) {
+                    if (entry.StartsWith("CN=", StringComparison.InvariantCulture)) {
+                        applicationName = entry.Substring(3).Trim();
                         break;
                     }
                 }
             }
 
             if (string.IsNullOrEmpty(applicationName)) {
-                throw new ArgumentNullException(nameof(applicationName), "Must specify a applicationName or a subjectName.");
+                throw new ArgumentNullException(nameof(applicationName),
+                    "Must specify a applicationName or a subjectName.");
             }
 
             // remove special characters from name.
             var buffer = new StringBuilder();
 
-            for (var ii = 0; ii < applicationName.Length; ii++) {
-                var ch = applicationName[ii];
-
+            foreach (var ch in applicationName) {
                 if (char.IsControl(ch) || ch == '/' || ch == ',' || ch == ';') {
                     ch = '+';
                 }
-
                 buffer.Append(ch);
             }
 
@@ -387,8 +367,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
 
             // ensure at least one host name.
             if (domainNames == null || domainNames.Count == 0) {
-                domainNames = new List<string>
-                {
+                domainNames = new List<string> {
                     Utils.GetHostName()
                 };
             }
@@ -408,7 +387,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             var uri = Utils.ParseUri(applicationUri);
 
             if (uri == null) {
-                throw new ArgumentNullException(nameof(applicationUri), "Must specify a valid URL.");
+                throw new ArgumentNullException(nameof(applicationUri),
+                    "Must specify a valid URL.");
             }
 
             // create the subject name,
@@ -436,8 +416,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// Build the Subject Alternative name extension (for OPC UA application certs)
         /// </summary>
         /// <param name="applicationUri">The application Uri</param>
-        /// <param name="domainNames">The domain names. DNS Hostnames, IPv4 or IPv6 addresses</param>
-        private static X509Extension BuildSubjectAlternativeName(string applicationUri, IList<string> domainNames) {
+        /// <param name="domainNames">The domain names.
+        /// DNS Hostnames, IPv4 or IPv6 addresses</param>
+        private static X509Extension BuildSubjectAlternativeName(string applicationUri,
+            IList<string> domainNames) {
             var sanBuilder = new SubjectAlternativeNameBuilder();
             sanBuilder.AddUri(new Uri(applicationUri));
             foreach (var domainName in domainNames) {
@@ -476,22 +458,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="issuerCaCertificate">The issuer CA certificate</param>
         private static X509Extension BuildAuthorityKeyIdentifier(X509Certificate2 issuerCaCertificate) {
             // force exception if SKI is not present
-            var ski = issuerCaCertificate.Extensions.OfType<X509SubjectKeyIdentifierExtension>().Single();
-            return BuildAuthorityKeyIdentifier(issuerCaCertificate.SubjectName, issuerCaCertificate.GetSerialNumber(), ski);
+            var ski = issuerCaCertificate.Extensions
+                .OfType<X509SubjectKeyIdentifierExtension>()
+                .Single();
+            return BuildAuthorityKeyIdentifier(issuerCaCertificate.SubjectName,
+                issuerCaCertificate.GetSerialNumber(), ski);
         }
 
         /// <summary>
         /// Build the CRL Distribution Point extension.
         /// </summary>
         /// <param name="distributionPoint">The CRL distribution point</param>
-        private static X509Extension BuildX509CRLDistributionPoints(
-            string distributionPoint
-            ) {
+        private static X509Extension BuildX509CRLDistributionPoints(string distributionPoint) {
             var context0 = new Asn1Tag(TagClass.ContextSpecific, 0, true);
             var distributionPointChoice = context0;
             var fullNameChoice = context0;
             var generalNameUriChoice = new Asn1Tag(TagClass.ContextSpecific, 6);
-
             using (var writer = new AsnWriter(AsnEncodingRules.DER)) {
                 writer.PushSequence();
                 writer.PushSequence();
@@ -514,16 +496,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// </summary>
         /// <param name="caIssuerUrls">Array of CA Issuer Urls</param>
         /// <param name="ocspResponder">optional, the OCSP responder </param>
-        private static X509Extension BuildX509AuthorityInformationAccess(
-            string[] caIssuerUrls,
-            string ocspResponder = null
-            ) {
+        private static X509Extension BuildX509AuthorityInformationAccess(string[] caIssuerUrls,
+            string ocspResponder = null) {
             if (string.IsNullOrEmpty(ocspResponder) &&
                (caIssuerUrls == null ||
                (caIssuerUrls != null && caIssuerUrls.Length == 0))) {
-                throw new ArgumentNullException(nameof(caIssuerUrls), "One CA Issuer Url or OCSP responder is required for the extension.");
+                throw new ArgumentNullException(nameof(caIssuerUrls),
+                    "One CA Issuer Url or OCSP responder is required for the extension.");
             }
-
             var context0 = new Asn1Tag(TagClass.ContextSpecific, 0, true);
             var generalNameUriChoice = new Asn1Tag(TagClass.ContextSpecific, 6);
             using (var writer = new AsnWriter(AsnEncodingRules.DER)) {
@@ -559,11 +539,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="issuerName">The distinguished name of the issuer</param>
         /// <param name="issuerSerialNumber">The serial number of the issuer</param>
         /// <param name="ski">The subject key identifier extension to use</param>
-        private static X509Extension BuildAuthorityKeyIdentifier(
-            X500DistinguishedName issuerName,
-            byte[] issuerSerialNumber,
-            X509SubjectKeyIdentifierExtension ski
-            ) {
+        private static X509Extension BuildAuthorityKeyIdentifier(X500DistinguishedName issuerName,
+            byte[] issuerSerialNumber, X509SubjectKeyIdentifierExtension ski) {
             using (var writer = new AsnWriter(AsnEncodingRules.DER)) {
                 writer.PushSequence();
 
@@ -607,5 +584,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             return extensionUrl.Replace("%serial%", serial.ToLower());
         }
 
+        private const int kSerialNumberLength = 20;
+        private const int kDefaultKeySize = 2048;
     }
 }

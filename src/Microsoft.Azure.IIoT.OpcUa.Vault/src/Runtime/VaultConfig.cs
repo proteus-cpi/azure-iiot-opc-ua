@@ -14,16 +14,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Runtime {
         /// <summary>
         /// Vault configuration
         /// </summary>
-        private const string kOpcVault_KeyVaultBaseUrlKey = "OpcVault:KeyVaultBaseUrl";
-        private const string kOpcVault_KeyVaultResourceIdKey = "OpcVault:KeyVaultResourceId";
-        private const string kOpcVault_CosmosDBConnectionStringKey = "OpcVault:CosmosDBConnectionString";
-        private const string kOpcVault_CosmosDBCollectionKey = "OpcVault:CosmosDBCollection";
-        private const string kOpcVault_CosmosDBDatabaseKey = "OpcVault:CosmosDBDatabase";
         private const string kOpcVault_ServiceHostKey = "OpcVault:ServiceHost";
         private const string kOpcVault_ApplicationsAutoApproveKey = "OpcVault:ApplicationsAutoApprove";
 
         /// <inheritdoc/>
-        public string ServiceHost => GetStringOrDefault(kOpcVault_ServiceHostKey);
+        public string ServiceHost => GetStringOrDefault(
+            kOpcVault_ServiceHostKey);
+        /// <inheritdoc/>
+        public bool ApplicationsAutoApprove => GetBoolOrDefault(kOpcVault_ApplicationsAutoApproveKey,
+            GetBoolOrDefault("OPC_VAULT_AUTOAPPROVE", true));
+
+        /// <summary>
+        /// Key Vault configuration
+        /// </summary>
+        private const string kOpcVault_KeyVaultBaseUrlKey = "OpcVault:KeyVaultBaseUrl";
+        private const string kOpcVault_KeyVaultResourceIdKey = "OpcVault:KeyVaultResourceId";
+        private const string kOpcVault_KeyVaultIsHsmKey = "OpcVault:KeyVaultIsHsm";
 
         /// <inheritdoc/>
         public string KeyVaultBaseUrl => GetStringOrDefault(kOpcVault_KeyVaultBaseUrlKey,
@@ -33,6 +39,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Runtime {
         public string KeyVaultResourceId => GetStringOrDefault(kOpcVault_KeyVaultResourceIdKey,
             GetStringOrDefault("OPC_VAULT_KEYVAULT_RESOURCE_ID",
                 "https://vault.azure.net")).Trim();
+        /// <inheritdoc/>
+        public bool KeyVaultIsHsm => GetBoolOrDefault(
+            kOpcVault_KeyVaultIsHsmKey, true);
+
+        /// <summary>
+        /// Cosmos db configuration
+        /// </summary>
+        private const string kOpcVault_CosmosDBConnectionStringKey = "OpcVault:CosmosDBConnectionString";
+        private const string kOpcVault_CosmosDBCollectionKey = "OpcVault:CosmosDBCollection";
+        private const string kOpcVault_CosmosDBDatabaseKey = "OpcVault:CosmosDBDatabase";
 
         /// <inheritdoc/>
         public string CosmosDBConnectionString => GetStringOrDefault(kOpcVault_CosmosDBConnectionStringKey,
@@ -45,10 +61,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Runtime {
         /// <inheritdoc/>
         public string CollectionName => GetStringOrDefault(kOpcVault_CosmosDBCollectionKey,
             GetStringOrDefault("OPC_VAULT_COSMOSDB_COLLNAME", "AppsAndCertRequests")).Trim();
-
-        /// <inheritdoc/>
-        public bool ApplicationsAutoApprove => GetBoolOrDefault(kOpcVault_ApplicationsAutoApproveKey,
-            GetBoolOrDefault("OPC_VAULT_AUTOAPPROVE", true));
 
         /// <summary>
         /// Configuration constructor

@@ -4,13 +4,12 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.Azure.Documents;
-    using Microsoft.Azure.IIoT.Exceptions;
     using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB;
     using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models;
     using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
+    using Microsoft.Azure.IIoT.Exceptions;
+    using Microsoft.Azure.Documents;
     using Microsoft.Azure.KeyVault.Models;
     using Serilog;
     using System;
@@ -24,77 +23,39 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     /// <summary>
     /// Cosmos db certificate request service
     /// </summary>
-    public sealed class DefaultCertificateAuthority : ICertificateAuthority,
-        IUserImpersonation<ICertificateAuthority> {
+    public sealed class DefaultCertificateAuthority : ICertificateAuthority {
 
         /// <summary>
         /// Create certificate request
         /// </summary>
         /// <param name="database"></param>
         /// <param name="vaultClient"></param>
-        /// <param name="vaultUser"></param>
         /// <param name="config"></param>
         /// <param name="db"></param>
         /// <param name="logger"></param>
         public DefaultCertificateAuthority(IApplicationsDatabase database,
-            IVaultClient vaultClient, IUserImpersonation<IVaultClient> vaultUser,
-            IVaultConfig config, IDocumentDBRepository db, ILogger logger) {
+            IVaultClient vaultClient, IVaultConfig config, IDocumentDBRepository db,
+            ILogger logger) {
 
             _applicationsDatabase = database;
             _vaultClient = vaultClient;
-            _vaultUser = vaultUser;
             _logger = logger;
             _certificateRequests = new DocumentDBCollection<CertificateRequestDocument>(
                 db, config.CollectionName);
-            // // set unique key
-            // db.UniqueKeyPolicy.UniqueKeys.Add(new UniqueKey {
-            //     Paths = new System.Collections.ObjectModel.Collection<string> {
-            //         "/" + nameof(CertificateRequestDocument.ClassType),
-            //         "/" + nameof(CertificateRequestDocument.ID)
-            //     }
-            // });
+            // set unique key
+            db.UniqueKeyPolicy.UniqueKeys.Add(new UniqueKey {
+                Paths = new System.Collections.ObjectModel.Collection<string> {
+                    "/" + nameof(CertificateRequestDocument.ClassType),
+                    "/" + nameof(CertificateRequestDocument.ID)
+                }
+            });
             _logger.Debug("Created new instance of DefaultCertificateAuthority.");
-        }
-
-        /// <summary>
-        /// Create shallow copy of service
-        /// </summary>
-        /// <param name="applicationsDatabase"></param>
-        /// <param name="vaultClient"></param>
-        /// <param name="vaultUser"></param>
-        /// <param name="certificateRequests"></param>
-        /// <param name="logger"></param>
-        /// <param name="certRequestIdCounter"></param>
-        private DefaultCertificateAuthority(IApplicationsDatabase applicationsDatabase,
-            IVaultClient vaultClient, IUserImpersonation<IVaultClient> vaultUser,
-            IDocumentDBCollection<CertificateRequestDocument> certificateRequests,
-            ILogger logger, int certRequestIdCounter) {
-            _applicationsDatabase = applicationsDatabase;
-            _vaultClient = vaultClient;
-            _vaultUser = vaultUser;
-            _certRequestIdCounter = certRequestIdCounter; // ???
-            _certificateRequests = certificateRequests;
-            _logger = logger;
         }
 
         /// <inheritdoc/>
         public async Task InitializeAsync() {
             await _certificateRequests.CreateCollectionIfNotExistsAsync();
             _certRequestIdCounter = await GetMaxCertIdAsync();
-        }
-
-        /// <inheritdoc/>
-        public async Task<ICertificateAuthority> ImpersonateAsync(HttpRequest request) {
-            try {
-                var vaultClient = await _vaultUser.ImpersonateAsync(request);
-                return new DefaultCertificateAuthority(_applicationsDatabase, vaultClient,
-                    _vaultUser, _certificateRequests, _logger, _certRequestIdCounter);
-            }
-            catch (Exception ex) {
-                // try default
-                _logger.Error(ex, "Failed to create on behalf ICertificateRequest. ");
-            }
-            return this;
         }
 
         /// <inheritdoc/>
@@ -145,7 +106,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     }
                 }
             } while (retry);
-            return document.RequestId.ToString();
+            return document.RequestId;
         }
 
         /// <inheritdoc/>
@@ -223,7 +184,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 PrivateKeyFormat = request.PrivateKeyFormat,
                 PrivateKeyPassword = request.PrivateKeyPassword,
                 SigningRequest = null,
-                ApplicationId = application.ApplicationId.ToString(),
+                ApplicationId = application.ApplicationId,
                 RequestTime = DateTime.UtcNow
             };
             bool retry;
@@ -242,7 +203,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     }
                 }
             } while (retry);
-            return document.RequestId.ToString();
+            return document.RequestId;
         }
 
         /// <inheritdoc/>
@@ -276,7 +237,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         error.Append("Error Generating Certificate=" + e.Message);
                         error.Append("\r\nApplicationId=" + application.ApplicationId);
                         error.Append("\r\nApplicationUri=" + application.ApplicationUri);
-                        error.Append("\r\nApplicationName=" + application.LocalizedNames[0].Name);
+                        error.Append("\r\nApplicationName=" + application.ApplicationName);
                         throw new ResourceInvalidStateException(error.ToString());
                     }
                 }
@@ -297,6 +258,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         error.Append("Error Generating New Key Pair Certificate=" + e.Message);
                         error.Append("\r\nApplicationId=" + application.ApplicationId);
                         error.Append("\r\nApplicationUri=" + application.ApplicationUri);
+                        error.Append("\r\nApplicationName=" + application.ApplicationName);
                         throw new ResourceInvalidStateException(error.ToString());
                     }
                     request.Certificate = newKeyPair.Certificate.ToRawData();
@@ -740,7 +702,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         internal IApplicationsDatabase _applicationsDatabase;
         internal IVaultClient _vaultClient;
         private int _certRequestIdCounter = 1;
-        private readonly IUserImpersonation<IVaultClient> _vaultUser;
         private readonly ILogger _logger;
         private readonly IDocumentDBCollection<CertificateRequestDocument> _certificateRequests;
     }

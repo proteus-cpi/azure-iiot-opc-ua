@@ -45,7 +45,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 Assert.NotNull(applicationModelList);
                 foreach (var response in applicationModelList) {
                     try {
-                        await _applicationsDatabase.DeleteApplicationAsync(response.ApplicationId.ToString(), true);
+                        await _applicationsDatabase.DeleteApplicationAsync(response.ApplicationId, true);
                     }
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
                     catch { }
@@ -95,7 +95,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 // approve app
-                var applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId.ToString(), true, true);
+                var applicationModel = await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId, true, true);
                 Assert.NotNull(applicationModel);
                 Assert.Equal(ApplicationState.Approved, applicationModel.State);
             }
@@ -111,7 +111,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 var groups = await _certificateGroup.GetGroupIdsAsync();
                 foreach (var group in groups) {
-                    var applicationId = application.Model.ApplicationId.ToString();
+                    var applicationId = application.Model.ApplicationId;
                     var requestId = await _certificateRequest.StartNewKeyPairRequestAsync(new CreateNewKeyPairRequestModel {
                         ApplicationId = applicationId,
                         CertificateGroupId = group,
@@ -152,7 +152,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 var groups = await _certificateGroup.GetGroupIdsAsync();
                 foreach (var group in groups) {
-                    var applicationId = application.Model.ApplicationId.ToString();
+                    var applicationId = application.Model.ApplicationId;
                     var certificateGroupConfiguration = await _certificateGroup.GetGroupConfigurationAsync(group);
                     var csrCertificate = CertificateFactory.CreateCertificate(
                         null, null, null,
@@ -260,7 +260,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 foreach (var requestId in application.RequestIds) {
                     var appModel = application.Model;
-                    var applicationId = application.Model.ApplicationId.ToString();
+                    var applicationId = application.Model.ApplicationId;
                     var request = await _certificateRequest.ReadAsync(requestId);
                     if (request.State == CertificateRequestState.Approved) {
                         await _certificateRequest.AcceptAsync(requestId);
@@ -431,7 +431,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task UnregisterAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                var applicationModel = await _applicationsDatabase.UnregisterApplicationAsync(application.Model.ApplicationId.ToString());
+                var applicationModel = await _applicationsDatabase.UnregisterApplicationAsync(application.Model.ApplicationId);
                 Assert.NotNull(applicationModel);
                 Assert.NotNull(applicationModel.ApplicationId);
             }
@@ -445,7 +445,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task DeleteAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                await _applicationsDatabase.DeleteApplicationAsync(application.Model.ApplicationId.ToString(), false);
+                await _applicationsDatabase.DeleteApplicationAsync(application.Model.ApplicationId, false);
             }
         }
 
@@ -458,7 +458,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 foreach (var requestId in application.RequestIds) {
                     var appModel = application.Model;
-                    var applicationId = application.Model.ApplicationId.ToString();
+                    var applicationId = application.Model.ApplicationId;
                     if (purged) {
                         await Assert.ThrowsAsync<ResourceNotFoundException>(() => _certificateRequest.FetchRequestAsync(requestId, applicationId));
                         continue;

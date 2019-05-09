@@ -3,11 +3,9 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using Newtonsoft.Json;
+namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
     using System;
     using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
 
     /// <summary>
     /// Create response
@@ -17,7 +15,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Applications found
         /// </summary>
-        public IList<ApplicationInfoModel2> Applications { get; set; }
+        public IList<ApplicationInfoModel> Applications { get; set; }
 
         /// <summary>
         /// Last counter reset

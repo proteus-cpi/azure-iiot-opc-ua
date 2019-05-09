@@ -47,9 +47,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
         /// <summary>
         /// Create key vault trust list model
         /// </summary>
-        /// <param name="id"></param>
-        public KeyVaultTrustListModel(string id) {
-            Group = id;
+        /// <param name="groupId"></param>
+        public KeyVaultTrustListModel(string groupId) {
+            Group = groupId;
             IssuerCertificates = new X509Certificate2Collection();
             IssuerCrls = new List<X509CRL>();
             TrustedCertificates = new X509Certificate2Collection();

@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 
+using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
 using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models;
 using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
 using Opc.Ua;
@@ -11,6 +12,7 @@ using Opc.Ua.Gds;
 using Opc.Ua.Test;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
@@ -24,7 +26,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         }
 
         public ApplicationTestData RandomApplicationTestData() {
-            var appType = (ApplicationType)_randomSource.NextInt32((int)ApplicationType.ClientAndServer);
+            var appType = (Opc.Ua.ApplicationType)_randomSource.NextInt32((int)Opc.Ua.ApplicationType.ClientAndServer);
             var pureAppName = _dataGenerator.GetRandomString("en");
             pureAppName = Regex.Replace(pureAppName, @"[^\w\d\s]", "");
             var pureAppUri = Regex.Replace(pureAppName, @"[^\w\d]", "");
@@ -37,13 +39,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             var discoveryUrls = new StringCollection();
             var serverCapabilities = new StringCollection();
             switch (appType) {
-                case ApplicationType.Client:
+                case Opc.Ua.ApplicationType.Client:
                     appName += " Client";
                     break;
-                case ApplicationType.ClientAndServer:
+                case Opc.Ua.ApplicationType.ClientAndServer:
                     appName += " Client and";
-                    goto case ApplicationType.Server;
-                case ApplicationType.Server:
+                    goto case Opc.Ua.ApplicationType.Server;
+                case Opc.Ua.ApplicationType.Server:
                     appName += " Server";
                     var port = (_dataGenerator.GetRandomInt16() & 0x1fff) + 50000;
                     discoveryUrls = RandomDiscoveryUrl(domainNames, port, pureAppUri);
@@ -51,19 +53,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     break;
             }
             var testData = new ApplicationTestData {
-                Model = new ApplicationInfoModel2 {
+                Model = new ApplicationInfoModel {
                     ApplicationUri = appUri,
                     ApplicationName = appName,
                     ApplicationType = (Registry.Models.ApplicationType)appType,
                     ProductUri = prodUri,
-                    Capabilities = ApplicationTestData.ServerCapabilities(serverCapabilities.ToArray()),
-                    LocalizedNames = new ApplicationNameModel[] {
-                        new ApplicationNameModel {
-                            Locale = "en-us",
-                            Name = appName
-                        }
+                    Capabilities = serverCapabilities.ToHashSet(),
+                    LocalizedNames = new Dictionary<string, string> {
+                        ["en-us"] = appName
                     },
-                    DiscoveryUrls = discoveryUrls.ToArray()
+                    DiscoveryUrls = discoveryUrls.ToHashSet()
                 },
                 ApplicationRecord = new ApplicationRecordDataType {
                     ApplicationNames = new LocalizedTextCollection {

@@ -288,7 +288,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
         /// <inheritdoc/>
         public async Task<IList<ApplicationInfoModel>> ListApplicationAsync(
-            string applicationUri) {
+            string applicationUri, string nexPageLink, int? pageSize) {
             if (string.IsNullOrEmpty(applicationUri)) {
                 throw new ArgumentNullException(nameof(applicationUri),
                     "The applicationUri must be provided.");
@@ -379,8 +379,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
                     if (request.ServerCapabilities != null && request.ServerCapabilities.Count > 0) {
                         var match = true;
-                        for (var ii = 0; ii < request.ServerCapabilities.Count; ii++) {
-                            if (capabilities == null || !capabilities.Contains(request.ServerCapabilities[ii])) {
+                        foreach (var cap in request.ServerCapabilities) {
+                            if (capabilities == null || !capabilities.Contains(cap)) {
                                 match = false;
                                 break;
                             }
@@ -465,8 +465,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
                     if (request.ServerCapabilities != null && request.ServerCapabilities.Count > 0) {
                         var match = true;
-                        for (var ii = 0; ii < request.ServerCapabilities.Count; ii++) {
-                            if (capabilities == null || !capabilities.Contains(request.ServerCapabilities[ii])) {
+                        foreach (var cap in request.ServerCapabilities) {
+                            if (capabilities == null || !capabilities.Contains(cap)) {
                                 match = false;
                                 break;
                             }

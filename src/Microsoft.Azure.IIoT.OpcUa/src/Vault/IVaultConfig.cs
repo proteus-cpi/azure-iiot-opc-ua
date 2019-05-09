@@ -31,6 +31,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         string KeyVaultResourceId { get; }
 
         /// <summary>
+        /// Is hsm key vault
+        /// </summary>
+        bool KeyVaultIsHsm { get; }
+
+        /// <summary>
         /// Cosmos db connection string
         /// </summary>
         string CosmosDBConnectionString { get; }

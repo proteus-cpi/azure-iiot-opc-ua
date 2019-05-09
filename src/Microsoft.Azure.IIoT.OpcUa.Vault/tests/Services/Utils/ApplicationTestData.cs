@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 
+using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
 using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models;
 using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
 using Newtonsoft.Json;
@@ -35,7 +36,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             IssuerCertificates = null;
         }
 
-        public ApplicationInfoModel2 Model { get; set; }
+        public ApplicationInfoModel Model { get; set; }
         public ApplicationRecordDataType ApplicationRecord { get; set; }
         public NodeId CertificateGroupId { get; set; }
         public NodeId CertificateTypeId { get; set; }
@@ -74,56 +75,21 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         /// </summary>
         /// <param name="expected">The expected Application model data</param>
         /// <param name="actual">The actualy Application model data</param>
-        public static void AssertEqualApplicationModelData(ApplicationInfoModel2 expected, ApplicationInfoModel2 actual) {
+        public static void AssertEqualApplicationModelData(ApplicationInfoModel expected, ApplicationInfoModel actual) {
             Assert.Equal(expected.ApplicationName, actual.ApplicationName);
             Assert.Equal(expected.ApplicationType, actual.ApplicationType);
             Assert.Equal(expected.ApplicationUri, actual.ApplicationUri);
             Assert.Equal(expected.DiscoveryProfileUri, actual.DiscoveryProfileUri);
             Assert.Equal(expected.ProductUri, actual.ProductUri);
-            Assert.Equal(ServerCapabilities(expected), ServerCapabilities(actual));
+            Assert.True(expected.Capabilities.SetEqualsSafe(actual.Capabilities));
             Assert.Equal(JsonConvert.SerializeObject(expected.LocalizedNames), JsonConvert.SerializeObject(actual.LocalizedNames));
             Assert.Equal(JsonConvert.SerializeObject(expected.DiscoveryUrls), JsonConvert.SerializeObject(actual.DiscoveryUrls));
         }
 
-        /// <summary>
-        /// Normalize and validate the server capabilites.
-        /// </summary>
-        /// <param name="application">The application with server capabilities.</param>
-        /// <returns></returns>
-        public static string ServerCapabilities(ApplicationInfoModel2 application) {
-            if (application.ApplicationType != Registry.Models.ApplicationType.Client) {
-                if (string.IsNullOrEmpty(application.Capabilities)) {
-                    throw new ArgumentException("At least one Server Capability must be provided.", nameof(application.Capabilities));
-                }
-            }
-
-            // TODO validate against specified capabilites.
-
-            var capabilities = new StringBuilder();
-            if (application.Capabilities != null) {
-                var sortedCaps = application.Capabilities.Split(",").ToList();
-                sortedCaps.Sort();
-                foreach (var capability in sortedCaps) {
-                    if (string.IsNullOrEmpty(capability)) {
-                        continue;
-                    }
-
-                    if (capabilities.Length > 0) {
-                        capabilities.Append(',');
-                    }
-
-                    capabilities.Append(capability);
-                }
-            }
-
-            return capabilities.ToString();
-        }
-
-        public static ApplicationInfoModel2 ApplicationDeepCopy(ApplicationInfoModel2 app) {
+        public static ApplicationInfoModel ApplicationDeepCopy(ApplicationInfoModel app) {
             // serialize/deserialize to avoid using MemberwiseClone
-            return (ApplicationInfoModel2)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(app), typeof(ApplicationInfoModel2));
+            return (ApplicationInfoModel)JsonConvert.DeserializeObject(JsonConvert.SerializeObject(app), typeof(ApplicationInfoModel));
         }
-
     }
 
 }

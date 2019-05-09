@@ -184,7 +184,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
                 Task.FromException(new ArgumentNullException(nameof(id)));
             }
             return _db.Client.DeleteDocumentAsync(UriFactory.CreateDocumentUri(
-                _db.DatabaseId, _collectionId, id.ToString()));
+                _db.DatabaseId, _collectionId, id));
         }
 
         /// <inheritdoc/>
