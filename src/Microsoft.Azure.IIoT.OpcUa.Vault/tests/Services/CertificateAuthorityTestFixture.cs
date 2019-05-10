@@ -8,8 +8,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using Microsoft.Azure.IIoT.Auth.Clients;
     using Microsoft.Azure.IIoT.Auth.Runtime;
     using Microsoft.Azure.IIoT.OpcUa.Vault;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Services;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Runtime;
     using Microsoft.Extensions.Configuration;
@@ -44,7 +42,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             _clientConfig = new ClientConfig(configuration);
             _logger = SerilogTestLogger.Create<CertificateAuthorityTestFixture>();
             if (!InvalidConfiguration()) {
-                _documentDBRepository = new DocumentDBRepository(_serviceConfig);
                 ApplicationsDatabase = new ApplicationDatabase(null, _serviceConfig, 
                     new ItemContainerFactory(new CosmosDbServiceClient(_serviceConfig, _logger)), _logger);
 
@@ -91,7 +88,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         }
 
         private readonly IClientConfig _clientConfig;
-        private readonly IDocumentDBRepository _documentDBRepository;
         private readonly VaultConfig _serviceConfig;
         private readonly string _configId;
         private readonly string _groupId;

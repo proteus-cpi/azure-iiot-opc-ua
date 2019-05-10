@@ -4,8 +4,7 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault.Models;
-    using System.Security.Cryptography.X509Certificates;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
 
     /// <summary>
     /// Trust list model extensions

@@ -4,7 +4,7 @@
 // ------------------------------------------------------------
 
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.Registry.Models {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using Newtonsoft.Json;
     using System;

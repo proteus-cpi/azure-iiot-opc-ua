@@ -5,7 +5,7 @@
 
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Microsoft.Azure.IIoT.Exceptions;
     using Microsoft.Azure.KeyVault.Models;
@@ -19,7 +19,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using Autofac;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault.Services;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Services;
 
     /// <summary>
     /// The Key Vault implementation of storage interface

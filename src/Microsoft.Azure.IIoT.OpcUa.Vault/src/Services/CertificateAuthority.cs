@@ -4,15 +4,12 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Models;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Services;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.Registry.Models;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Microsoft.Azure.IIoT.OpcUa.Vault;
     using Microsoft.Azure.IIoT.OpcUa.Registry;
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using Microsoft.Azure.IIoT.Exceptions;
-    using Microsoft.Azure.Documents;
     using Microsoft.Azure.KeyVault.Models;
     using Serilog;
     using System;
@@ -22,7 +19,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading.Tasks;
-    using Autofac;
     using Microsoft.Azure.IIoT.Storage;
 
     /// <summary>

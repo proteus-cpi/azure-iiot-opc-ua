@@ -5,7 +5,7 @@
 
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Models;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.Registry.Models;
     using System;
     using System.Linq;
 

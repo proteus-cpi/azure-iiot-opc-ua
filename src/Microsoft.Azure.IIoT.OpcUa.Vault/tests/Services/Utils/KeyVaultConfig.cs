@@ -6,8 +6,8 @@
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using Microsoft.Azure.IIoT.Auth.Clients;
     using Microsoft.Azure.IIoT.Auth.Clients.Default;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault.Services;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Services;
     using Serilog;
     public static class KeyVaultTestServiceClient {
 

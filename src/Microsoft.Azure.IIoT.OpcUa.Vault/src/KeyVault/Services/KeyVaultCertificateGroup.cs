@@ -3,8 +3,8 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault.Services {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault;
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Services {
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Microsoft.Azure.IIoT.Exceptions;
     using Opc.Ua;
@@ -20,7 +20,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault.Services {
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using System.Security.Cryptography;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;

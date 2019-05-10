@@ -3,7 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     using System;
     using System.Security.Cryptography;
     using System.Security.Cryptography.X509Certificates;

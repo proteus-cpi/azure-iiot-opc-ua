@@ -3,8 +3,8 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault.Models;
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
     using System;
     using System.Collections.Generic;
     using System.Security.Cryptography;
