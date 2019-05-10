@@ -3,7 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault {
     using System;
     using System.Security.Cryptography;
     using System.Security.Cryptography.X509Certificates;
@@ -19,10 +19,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="keyVaultServiceClient">The KeyVault service client to use</param>
         /// <param name="signingKey">The KeyVault signing key</param>
         /// <param name="issuerCertificate">The issuer certificate used for signing</param>
-        public KeyVaultSignatureGenerator(
-            IKeyVaultServiceClient keyVaultServiceClient,
-            string signingKey,
-            X509Certificate2 issuerCertificate) {
+        public KeyVaultSignatureGenerator(IKeyVaultServiceClient keyVaultServiceClient,
+            string signingKey, X509Certificate2 issuerCertificate) {
             _issuerCert = issuerCertificate;
             _keyVaultServiceClient = keyVaultServiceClient;
             _signingKey = signingKey;

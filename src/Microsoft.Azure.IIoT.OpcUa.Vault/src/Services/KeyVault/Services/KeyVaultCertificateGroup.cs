@@ -3,9 +3,10 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
-    using Microsoft.Azure.IIoT.Exceptions;
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault.Services {
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
+    using Microsoft.Azure.IIoT.Exceptions;
     using Opc.Ua;
     using Opc.Ua.Gds;
     using Opc.Ua.Gds.Server;
@@ -38,7 +39,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <summary>
         /// Certificate group configuration
         /// </summary>
-        public CertificateGroupConfigurationModel CertificateGroupConfiguration { get; }
+        public CertificateGroupInfoModel CertificateGroupConfiguration { get; }
 
         /// <summary>
         /// Create group
@@ -47,7 +48,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="certificateGroupConfiguration"></param>
         /// <param name="serviceHost"></param>
         public KeyVaultCertificateGroup(IKeyVaultServiceClient keyVaultServiceClient,
-            CertificateGroupConfigurationModel certificateGroupConfiguration,
+            CertificateGroupInfoModel certificateGroupConfiguration,
             string serviceHost) :
             base(null, certificateGroupConfiguration.ToGdsServerModel()) {
 
@@ -346,42 +347,47 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <summary>
         /// Stores the private key of a cert request in a Key Vault secret.
         /// </summary>
-        public async Task ImportCertKeySecret(string requestId,
+        public async Task ImportPrivateKeyAsync(string requestId,
             byte[] privateKey, string privateKeyFormat, CancellationToken ct = default) {
-            await _keyVaultServiceClient.ImportCertKey(Configuration.Id, requestId, privateKey,
-                privateKeyFormat, ct);
+            await _keyVaultServiceClient.ImportKeySecretAsync(
+                Configuration.Id, requestId, privateKey, privateKeyFormat, ct);
         }
 
         /// <summary>
         /// Load the private key of a cert request from Key Vault secret.
         /// </summary>
-        public async Task<byte[]> LoadCertKeySecretAsync(string requestId,
+        public async Task<byte[]> LoadPrivateKeyAsync(string requestId,
             string privateKeyFormat, CancellationToken ct = default) {
-            return await _keyVaultServiceClient.LoadCertKey(Configuration.Id, requestId,
+            return await _keyVaultServiceClient.LoadKeySecretAsync(
+                Configuration.Id, requestId,
                 privateKeyFormat, ct);
         }
 
         /// <summary>
         /// Accept the private key of a cert request from Key Vault secret.
         /// </summary>
-        public async Task AcceptCertKeySecretAsync(string requestId,
+        public async Task AcceptPrivateKeyAsync(string requestId,
             CancellationToken ct = default) {
-            await _keyVaultServiceClient.AcceptCertKey(Configuration.Id, requestId, ct);
+            await _keyVaultServiceClient.InvalidateKeySecretAsync(
+                Configuration.Id, requestId, ct);
         }
 
         /// <summary>
         /// Delete the private key of a cert request from Key Vault secret.
         /// </summary>
-        public async Task DeleteCertKeySecretAsync(string requestId,
+        public async Task DeletePrivateKeyAsync(string requestId,
             CancellationToken ct = default) {
-            await _keyVaultServiceClient.DeleteCertKey(Configuration.Id, requestId, ct);
+            await _keyVaultServiceClient.DeleteKeySecretAsync(
+                Configuration.Id, requestId, ct);
         }
 
         /// <inheritdoc/>
         public override async Task<X509Certificate2> SigningRequestAsync(
-            ApplicationRecordDataType application, string[] domainNames, byte[] certificateRequest) {
+            ApplicationRecordDataType application, string[] domainNames,
+            byte[] certificateRequest) {
             try {
-                var pkcs10CertificationRequest = new Pkcs10CertificationRequest(certificateRequest);
+                var pkcs10CertificationRequest = new Pkcs10CertificationRequest(
+                    certificateRequest);
                 if (!pkcs10CertificationRequest.Verify()) {
                     throw new ServiceResultException(StatusCodes.BadInvalidArgument,
                         "CSR signature invalid.");
@@ -511,12 +517,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="subject"></param>
         /// <param name="certType"></param>
         /// <returns></returns>
-        public static CertificateGroupConfigurationModel DefaultConfiguration(
-            string id, string subject, string certType) {
-            var config = new CertificateGroupConfigurationModel {
+        public static CertificateGroupInfoModel DefaultConfiguration(
+            string id, string subject, CertificateType certType) {
+            var config = new CertificateGroupInfoModel {
                 Id = id ?? "Default",
                 SubjectName = subject ?? "CN=Azure Industrial IoT CA, O=Microsoft Corp.",
-                CertificateType = CertTypeMap()[Opc.Ua.ObjectTypeIds.RsaSha256ApplicationCertificateType],
+                CertificateType = certType,
                 DefaultCertificateLifetime = 24,
                 DefaultCertificateHashSize = 256,
                 DefaultCertificateKeySize = 2048,
@@ -526,108 +532,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                 IssuerCACrlDistributionPoint = "http://%servicehost%/certs/crl/%serial%/%group%.crl",
                 IssuerCAAuthorityInformationAccess = "http://%servicehost%/certs/issuer/%serial%/%group%.cer"
             };
-            if (certType != null) {
-                var checkedCertType = CertTypeMap().Single(c => c.Value.ToLower() == certType.ToLower());
-                config.CertificateType = checkedCertType.Value;
-            }
-            ValidateConfiguration(config);
+            config.ValidateConfiguration();
             return config;
-        }
-
-        /// <summary>
-        /// Validate configuration
-        /// </summary>
-        /// <param name="update"></param>
-        public static void ValidateConfiguration(CertificateGroupConfigurationModel update) {
-            var delimiters = new char[] { ' ', '\r', '\n' };
-            var updateIdWords = update.Id.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
-
-            if (updateIdWords.Length != 1) {
-                throw new ArgumentException("Invalid number of words in group Id");
-            }
-
-            update.Id = updateIdWords[0];
-
-            if (!update.Id.All(char.IsLetterOrDigit)) {
-                throw new ArgumentException("Invalid characters in group Id");
-            }
-
-            // verify subject
-            var subjectList = Utils.ParseDistinguishedName(update.SubjectName);
-            if (subjectList == null ||
-                subjectList.Count == 0) {
-                throw new ArgumentException("Invalid Subject");
-            }
-
-            if (!subjectList.Any(c => c.StartsWith("CN=", StringComparison.InvariantCulture))) {
-                throw new ArgumentException("Invalid Subject, must have a common name entry");
-            }
-
-            // enforce proper formatting for the subject name string
-            update.SubjectName = string.Join(", ", subjectList);
-
-            try {
-                // only allow specific cert types for now
-                var certType = CertTypeMap().Single(c => c.Value.ToLower() == update.CertificateType.ToLower());
-                update.CertificateType = certType.Value;
-            }
-            catch (Exception) {
-                throw new ArgumentException("Invalid CertificateType");
-            }
-
-            // specify ranges for lifetime (months)
-            if (update.DefaultCertificateLifetime < 1 ||
-                update.IssuerCACertificateLifetime < 1 ||
-                update.DefaultCertificateLifetime * 2 > update.IssuerCACertificateLifetime ||
-                update.DefaultCertificateLifetime > 60 ||
-                update.IssuerCACertificateLifetime > 1200) {
-                throw new ArgumentException("Invalid lifetime");
-            }
-
-            if (update.DefaultCertificateKeySize < 2048 ||
-                update.DefaultCertificateKeySize % 1024 != 0 ||
-                update.DefaultCertificateKeySize > 2048) {
-                throw new ArgumentException("Invalid key size, must be 2048, 3072 or 4096");
-            }
-
-            if (update.IssuerCACertificateKeySize < 2048 ||
-                update.IssuerCACertificateKeySize % 1024 != 0 ||
-                update.IssuerCACertificateKeySize > 4096) {
-                throw new ArgumentException("Invalid key size, must be 2048, 3072 or 4096");
-            }
-
-            if (update.DefaultCertificateKeySize > update.IssuerCACertificateKeySize) {
-                throw new ArgumentException("Invalid key size, Isser CA key must be >= application key");
-            }
-
-            if (update.DefaultCertificateHashSize < 256 ||
-                update.DefaultCertificateHashSize % 128 != 0 ||
-                update.DefaultCertificateHashSize > 512) {
-                throw new ArgumentException("Invalid hash size, must be 256, 384 or 512");
-            }
-
-            if (update.IssuerCACertificateHashSize < 256 ||
-                update.IssuerCACertificateHashSize % 128 != 0 ||
-                update.IssuerCACertificateHashSize > 512) {
-                throw new ArgumentException("Invalid hash size, must be 256, 384 or 512");
-            }
-        }
-
-        /// <summary>
-        /// Certificate types
-        /// </summary>
-        /// <returns></returns>
-        private static Dictionary<NodeId, string> CertTypeMap() {
-            var certTypeMap = new Dictionary<NodeId, string>
-            {
-                // FUTURE: support more cert types
-                //{ Opc.Ua.ObjectTypeIds.HttpsCertificateType, "HttpsCertificateType" },
-                //{ Opc.Ua.ObjectTypeIds.UserCredentialCertificateType, "UserCredentialCertificateType" },
-                { Opc.Ua.ObjectTypeIds.ApplicationCertificateType, "ApplicationCertificateType" },
-                //{ Opc.Ua.ObjectTypeIds.RsaMinApplicationCertificateType, "RsaMinApplicationCertificateType" },
-                { Opc.Ua.ObjectTypeIds.RsaSha256ApplicationCertificateType, "RsaSha256ApplicationCertificateType" }
-            };
-            return certTypeMap;
         }
 
         /// <summary>

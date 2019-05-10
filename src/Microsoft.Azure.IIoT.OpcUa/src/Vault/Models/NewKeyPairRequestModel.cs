@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     /// <summary>
     /// New key pair request
     /// </summary>
-    public sealed class CreateNewKeyPairRequestModel {
+    public sealed class NewKeyPairRequestModel {
 
         /// <summary>
         /// Application id
@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Type
         /// </summary>
-        public string CertificateTypeId { get; set; }
+        public CertificateType CertificateTypeId { get; set; }
 
         /// <summary>
         /// Subject name
@@ -35,12 +35,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Domain names
         /// </summary>
-        public IList<string> DomainNames { get; set; }
+        public List<string> DomainNames { get; set; }
 
         /// <summary>
         /// Format
         /// </summary>
-        public string PrivateKeyFormat { get; set; }
+        public PrivateKeyFormat PrivateKeyFormat { get; set; }
 
         /// <summary>
         /// Password

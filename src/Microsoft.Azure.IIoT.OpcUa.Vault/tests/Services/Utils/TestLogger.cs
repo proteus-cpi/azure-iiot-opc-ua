@@ -3,13 +3,11 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+namespace Serilog {
+    using Microsoft.Extensions.Logging;
+    using System;
+    using Xunit.Abstractions;
 
-using Microsoft.Extensions.Logging;
-using Serilog;
-using System;
-using Xunit.Abstractions;
-
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     /// <summary>
     /// Testlogger for Microsoft.Extensions.Logging
     /// </summary>

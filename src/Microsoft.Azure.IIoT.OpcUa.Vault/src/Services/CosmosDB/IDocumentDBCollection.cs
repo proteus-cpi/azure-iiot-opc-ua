@@ -4,7 +4,7 @@
 // ------------------------------------------------------------
 
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB {
     using Microsoft.Azure.Documents;
     using System;
     using System.Collections.Generic;
@@ -16,11 +16,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB {
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public interface IDocumentDBCollection<T> where T : class {
-
-        /// <summary>
-        /// Collection
-        /// </summary>
-        DocumentCollection Collection { get; }
 
         /// <summary>
         /// Create if not exist

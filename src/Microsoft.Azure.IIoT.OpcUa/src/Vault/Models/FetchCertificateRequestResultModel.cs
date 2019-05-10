@@ -11,39 +11,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     public sealed class FetchCertificateRequestResultModel {
 
         /// <summary>
-        /// Request state
-        /// </summary>
-        public CertificateRequestState State { get; set; }
-
-        /// <summary>
-        /// Application id
-        /// </summary>
-        public string ApplicationId { get; set; }
-
-        /// <summary>
-        /// Request id
-        /// </summary>
-        public string RequestId { get; set; }
-
-        /// <summary>
-        /// Certificate group
-        /// </summary>
-        public string CertificateGroupId { get; set; }
-
-        /// <summary>
         /// Certificate type
         /// </summary>
-        public string CertificateTypeId { get; set; }
+        public CertificateRequestRecordModel Request { get; set; }
 
         /// <summary>
         /// Signed cert
         /// </summary>
         public byte[] SignedCertificate { get; set; }
-
-        /// <summary>
-        /// Format
-        /// </summary>
-        public string PrivateKeyFormat { get; set; }
 
         /// <summary>
         /// Private key

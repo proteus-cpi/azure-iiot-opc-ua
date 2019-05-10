@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Tests;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Opc.Ua;
     using System;
@@ -12,6 +13,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using Xunit;
+
+
     public static class X509TestUtils {
         public static void VerifyApplicationCertIntegrity(
             X509Certificate2 newCert,

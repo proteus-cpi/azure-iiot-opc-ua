@@ -4,8 +4,8 @@
 // ------------------------------------------------------------
 
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Models;
     using System;
     using System.Linq;
 
@@ -24,9 +24,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
                 RequestId = document.RequestId,
                 ApplicationId = document.ApplicationId,
                 CertificateGroupId = document.CertificateGroupId,
-                CertificateTypeId = document.CertificateTypeId,
+                CertificateTypeId = Enum.Parse<CertificateType>(document.CertificateTypeId),
                 DomainNames = document.DomainNames?.ToList(),
-                PrivateKeyFormat = document.PrivateKeyFormat,
+                PrivateKeyFormat = Enum.Parse<PrivateKeyFormat>(document.PrivateKeyFormat),
                 SigningRequest = document.SigningRequest != null,
                 SubjectName = document.SubjectName,
                 State = document.CertificateRequestState

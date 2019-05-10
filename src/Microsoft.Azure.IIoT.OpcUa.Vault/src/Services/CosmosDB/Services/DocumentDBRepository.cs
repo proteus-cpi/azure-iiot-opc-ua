@@ -3,10 +3,12 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Services {
     using Autofac;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.IIoT.OpcUa.Registry;
+    using Microsoft.Azure.IIoT.Storage.CosmosDb;
     using Microsoft.Azure.IIoT.Utils;
     using Newtonsoft.Json;
     using System;
@@ -31,21 +33,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
         /// Create repository
         /// </summary>
         /// <param name="config"></param>
-        public DocumentDBRepository(IVaultConfig config) {
-            DatabaseId = config.CosmosDBDatabase;
+        public DocumentDBRepository(ICosmosDbConfig config) {
+            DatabaseId = "OpcVault"; // config.DatabaseName;
             UniqueKeyPolicy = new UniqueKeyPolicy {
                 UniqueKeys = new Collection<UniqueKey>()
             };
-            var cs = ConnectionString.Parse(config.CosmosDBConnectionString);
+            var cs = ConnectionString.Parse(config.DbConnectionString);
             Client = new DocumentClient(new Uri(cs.Endpoint),
                 cs.SharedAccessKey, SerializerSettings());
-        }
-
-        /// <inheritdoc/>
-        public System.Threading.Tasks.Task CreateRepositoryIfNotExistsAsync() {
-            return Client.CreateDatabaseIfNotExistsAsync(new Database {
+            Client.CreateDatabaseIfNotExistsAsync(new Database {
                 Id = DatabaseId
-            });
+            }).Wait();
         }
 
         /// <summary>

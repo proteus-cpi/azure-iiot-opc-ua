@@ -110,5 +110,46 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
                 SupervisorId = model.SupervisorId
             };
         }
+
+        /// <summary>
+        /// Convert to registration request
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public static ApplicationRegistrationRequestModel ToRegistrationRequest(
+            this ApplicationInfoModel model) {
+            return new ApplicationRegistrationRequestModel {
+                ApplicationName = model.ApplicationName,
+                ApplicationType = model.ApplicationType,
+                Capabilities = model.Capabilities,
+                ApplicationUri = model.ApplicationUri,
+                Certificate = model.Certificate,
+                DiscoveryProfileUri = model.DiscoveryProfileUri,
+                DiscoveryUrls = model.DiscoveryUrls,
+                GatewayServerUri = model.GatewayServerUri,
+                LocalizedNames = model.LocalizedNames,
+                ProductUri = model.ProductUri,
+                SiteId = model.SiteId
+            };
+        }
+
+        /// <summary>
+        /// Convert to Update model
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public static ApplicationRegistrationUpdateModel ToUpdateRequest(
+            this ApplicationInfoModel model) {
+            return new ApplicationRegistrationUpdateModel {
+                ApplicationName = model.ApplicationName,
+                Capabilities = model.Capabilities,
+                Certificate = model.Certificate,
+                DiscoveryProfileUri = model.DiscoveryProfileUri,
+                DiscoveryUrls = model.DiscoveryUrls,
+                GatewayServerUri = model.GatewayServerUri,
+                LocalizedNames = model.LocalizedNames,
+                ProductUri = model.ProductUri
+            };
+        }
     }
 }

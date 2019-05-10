@@ -5,8 +5,7 @@
 
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Microsoft.Azure.IIoT.Exceptions;
     using Microsoft.Azure.KeyVault.Models;
@@ -19,11 +18,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using System.Net;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
+    using Autofac;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault.Services;
 
     /// <summary>
-    /// The Key Vault implementation of the Certificate Group.
+    /// The Key Vault implementation of storage interface
     /// </summary>
-    public sealed class DefaultVaultClient : IVaultClient {
+    public sealed class CertificateManagement : ICertificateStorage, IStartable {
 
         /// <summary>
         /// Create vault client
@@ -31,7 +32,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="keyVaultServiceClient"></param>
         /// <param name="config"></param>
         /// <param name="logger"></param>
-        public DefaultVaultClient(IKeyVaultServiceClient keyVaultServiceClient,
+        public CertificateManagement(IKeyVaultServiceClient keyVaultServiceClient,
             IVaultConfig config, ILogger logger) {
             _config = config;
             _serviceHost = _config.ServiceHost;
@@ -40,59 +41,37 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task InitializeAsync() {
-            var certificateGroupCollection = await ListGroupConfigurationsAsync().ConfigureAwait(false);
-            foreach (var certificateGroupConfiguration in certificateGroupCollection.Groups) {
-                KeyVaultCertificateGroup certificateGroup = null;
-                try {
-                    certificateGroup = new KeyVaultCertificateGroup(_keyVaultServiceClient,
-                        certificateGroupConfiguration, _config.ServiceHost);
-                    await certificateGroup.Init().ConfigureAwait(false);
-#if LOADPRIVATEKEY
-                    // test if private key can be loaded
-                    await certificateGroup.LoadSigningKeyAsync(null, null);
-#endif
-                    continue;
-                }
-                catch (Exception ex) {
-                    _logger.Error("Failed to initialize certificate group. ", ex);
-                    if (certificateGroup == null) {
-                        throw ex;
-                    }
-                }
-                _logger.Information("Create new issuer CA certificate for group. ", certificateGroup);
-                if (!await certificateGroup.CreateIssuerCACertificateAsync().ConfigureAwait(false)) {
-                    _logger.Error("Failed to create issuer CA certificate. ", certificateGroup);
-                }
-            }
+        public void Start() {
+            InitializeAsync().Wait();
         }
 
         /// <inheritdoc/>
-        public async Task<string[]> GetGroupIdsAsync() {
+        public async Task<CertificateGroupListModel> ListGroupIdsAsync(
+            string nextPageLink, int? pageSize) {
             // TODO: Read JSON of secret "groups"
             var json = await _keyVaultServiceClient.GetCertificateConfigurationGroupsAsync()
                 .ConfigureAwait(false);
             var certificateGroupCollection =
-                JsonConvert.DeserializeObject<List<CertificateGroupConfigurationModel>>(json);
+                JsonConvert.DeserializeObject<List<CertificateGroupInfoModel>>(json);
             var groups = certificateGroupCollection.Select(cg => cg.Id).ToList();
-            return groups.ToArray();
+            return new CertificateGroupListModel { Groups = groups };
         }
 
         /// <inheritdoc/>
-        public async Task<CertificateGroupConfigurationModel> GetGroupConfigurationAsync(
+        public async Task<CertificateGroupInfoModel> GetGroupAsync(
             string groupId) {
             // TODO: Read JSON of secret "groups"
             var json = await _keyVaultServiceClient.GetCertificateConfigurationGroupsAsync()
                 .ConfigureAwait(false);
             var certificateGroupCollection =
-                JsonConvert.DeserializeObject<List<CertificateGroupConfigurationModel>>(json);
+                JsonConvert.DeserializeObject<List<CertificateGroupInfoModel>>(json);
             return certificateGroupCollection
                 .SingleOrDefault(cg => groupId.EqualsIgnoreCase(cg.Id));
         }
 
         /// <inheritdoc/>
-        public async Task<CertificateGroupConfigurationModel> UpdateGroupConfigurationAsync(
-            string groupId, CertificateGroupConfigurationModel config) {
+        public async Task<CertificateGroupInfoModel> UpdateGroupAsync(
+            string groupId, CertificateGroupInfoModel config) {
 
             // TODO: configuration should not have id
             if (groupId.ToLower() != config.Id.ToLower()) {
@@ -103,7 +82,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             var json = await _keyVaultServiceClient.GetCertificateConfigurationGroupsAsync()
                 .ConfigureAwait(false);
             var certificateGroupCollection =
-                JsonConvert.DeserializeObject<List<CertificateGroupConfigurationModel>>(json);
+                JsonConvert.DeserializeObject<List<CertificateGroupInfoModel>>(json);
 
             var original = certificateGroupCollection
                 .SingleOrDefault(cg => groupId.EqualsIgnoreCase(cg.Id));
@@ -111,8 +90,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 throw new ArgumentException("invalid groupid");
             }
 
-            // TODO: Move to extension
-            KeyVaultCertificateGroup.ValidateConfiguration(config);
+            config.ValidateConfiguration();
 
             var index = certificateGroupCollection.IndexOf(original);
             certificateGroupCollection[index] = config;
@@ -122,14 +100,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 .ConfigureAwait(false);
             // read it back to verify
             certificateGroupCollection =
-                JsonConvert.DeserializeObject<List<CertificateGroupConfigurationModel>>(json);
+                JsonConvert.DeserializeObject<List<CertificateGroupInfoModel>>(json);
             return certificateGroupCollection.SingleOrDefault(
                 cg => groupId.EqualsIgnoreCase(cg.Id));
         }
 
         /// <inheritdoc/>
-        public async Task<CertificateGroupConfigurationModel> CreateGroupConfigurationAsync(
-            string groupId, string subject, string certType) {
+        public async Task<CertificateGroupInfoModel> CreateGroupAsync(
+            string groupId, string subject, CertificateType certType) {
             var config = KeyVaultCertificateGroup.DefaultConfiguration(groupId, subject, certType);
             if (groupId.ToLower() != config.Id.ToLower()) {
                 throw new ArgumentException("groupid doesn't match config groupId");
@@ -137,13 +115,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
             // TODO: Read JSON of secret "groups" - throw resource not found if not found
             string json;
-            IList<CertificateGroupConfigurationModel> certificateGroupCollection =
-                new List<CertificateGroupConfigurationModel>();
+            IList<CertificateGroupInfoModel> certificateGroupCollection =
+                new List<CertificateGroupInfoModel>();
             try {
                 json = await _keyVaultServiceClient.GetCertificateConfigurationGroupsAsync()
                     .ConfigureAwait(false);
                 certificateGroupCollection =
-                    JsonConvert.DeserializeObject<List<CertificateGroupConfigurationModel>>(json);
+                    JsonConvert.DeserializeObject<List<CertificateGroupInfoModel>>(json);
             }
             catch (KeyVaultErrorException kex) {
                 // TODO: Catch resource not found exception instead
@@ -158,8 +136,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 throw new ArgumentException("groupid already exists");
             }
 
-            // TODO: Extension
-            KeyVaultCertificateGroup.ValidateConfiguration(config);
+            config.ValidateConfiguration();
 
             certificateGroupCollection.Add(config);
             json = JsonConvert.SerializeObject(certificateGroupCollection);
@@ -170,25 +147,28 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 .ConfigureAwait(false);
             // read it back to verify
             certificateGroupCollection =
-                JsonConvert.DeserializeObject<List<CertificateGroupConfigurationModel>>(json);
+                JsonConvert.DeserializeObject<List<CertificateGroupInfoModel>>(json);
             return certificateGroupCollection
                 .SingleOrDefault(cg => groupId.EqualsIgnoreCase(cg.Id));
         }
 
         /// <inheritdoc/>
-        public async Task<CertificateGroupConfigurationCollectionModel> ListGroupConfigurationsAsync() {
+        public async Task<CertificateGroupInfoListModel> ListGroupsAsync(
+            string nextPageLink, int? pageSize) {
             // TODO: Read JSON of secret "groups" - throw resource not found if not found
             var json = await _keyVaultServiceClient.GetCertificateConfigurationGroupsAsync()
                 .ConfigureAwait(false);
-            var groups = JsonConvert.DeserializeObject<IList<CertificateGroupConfigurationModel>>(json);
-            return new CertificateGroupConfigurationCollectionModel { Groups = groups };
+            var groups = JsonConvert.DeserializeObject<List<CertificateGroupInfoModel>>(json);
+            return new CertificateGroupInfoListModel { Groups = groups };
         }
 
-
-        // Group cert action
+        /// <inheritdoc/>
+        public Task<CertificateGroupInfoModel> DeleteGroupAsync(string groupId) {
+            throw new NotImplementedException();
+        }
 
         /// <inheritdoc/>
-        public async Task<X509CrlModel> RevokeCertificateAsync(string groupId,
+        public async Task<X509CrlModel> RevokeSingleCertificateAsync(string groupId,
             X509CertificateModel certificate) {
             var certificateGroup = await GetGroupAsync(groupId, _serviceHost)
                 .ConfigureAwait(false);
@@ -220,7 +200,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<X509CertificateModel> SigningRequestAsync(string groupId,
+        public async Task<X509CertificateModel> ProcessSigningRequestAsync(string groupId,
             string applicationUri, byte[] certificateRequest) {
             var certificateGroup = await GetGroupAsync(groupId, _serviceHost)
                 .ConfigureAwait(false);
@@ -234,7 +214,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<X509CertificatePrivateKeyPairModel> NewKeyPairRequestAsync(
+        public async Task<X509CertificatePrivateKeyPairModel> ProcessNewKeyPairRequestAsync(
             string groupId, string requestId, string applicationUri, string subjectName,
             string[] domainNames, string privateKeyFormat, string privateKeyPassword) {
             var certificateGroup = await GetGroupAsync(groupId, _serviceHost)
@@ -246,13 +226,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             var keyPair = await certificateGroup.NewKeyPairRequestAsync(
                 app, subjectName, domainNames, privateKeyFormat, privateKeyPassword)
                     .ConfigureAwait(false);
-            await certificateGroup.ImportCertKeySecret(requestId, keyPair.PrivateKey,
+            await certificateGroup.ImportPrivateKeyAsync(requestId, keyPair.PrivateKey,
                 keyPair.PrivateKeyFormat);
             return keyPair.ToServiceModel();
         }
 
         /// <inheritdoc/>
-        public async Task<X509CertificateCollectionModel> GetIssuerCACertificateVersionsAsync(
+        public async Task<X509CertificateCollectionModel> ListIssuerCACertificateVersionsAsync(
             string groupId, bool? withCertificates, string nextPageLink, int? pageSize) {
             // TODO: implement withCertificates
             var certificateGroup = await GetGroupAsync(groupId, _serviceHost)
@@ -264,7 +244,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
         /// <inheritdoc/>
         public async Task<X509CertificateCollectionModel> GetIssuerCACertificateChainAsync(
-            string groupId, string thumbPrint = null, string nextPageLink = null, int? pageSize = null) {
+            string groupId, string thumbPrint = null, string nextPageLink = null,
+            int? pageSize = null) {
             // TODO: implement paging (low priority, only when long chains are expected)
             var certificateGroup = await GetGroupAsync(groupId, _serviceHost)
                 .ConfigureAwait(false);
@@ -287,25 +268,25 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<byte[]> LoadPrivateKeyAsync(string groupId, string requestId,
+        public async Task<byte[]> GetPrivateKeyAsync(string groupId, string requestId,
             string privateKeyFormat) {
             var certificateGroup = await GetGroupAsync(groupId, _serviceHost)
                 .ConfigureAwait(false);
-            return await certificateGroup.LoadCertKeySecretAsync(requestId, privateKeyFormat);
+            return await certificateGroup.LoadPrivateKeyAsync(requestId, privateKeyFormat);
         }
 
         /// <inheritdoc/>
         public async Task AcceptPrivateKeyAsync(string groupId, string requestId) {
             var certificateGroup = await GetGroupAsync(groupId, _serviceHost)
                 .ConfigureAwait(false);
-            await certificateGroup.AcceptCertKeySecretAsync(requestId);
+            await certificateGroup.AcceptPrivateKeyAsync(requestId);
         }
 
         /// <inheritdoc/>
         public async Task DeletePrivateKeyAsync(string groupId, string requestId) {
             var certificateGroup = await GetGroupAsync(groupId, _serviceHost)
                 .ConfigureAwait(false);
-            await certificateGroup.DeleteCertKeySecretAsync(requestId);
+            await certificateGroup.DeletePrivateKeyAsync(requestId);
         }
 
         /// <inheritdoc/>
@@ -327,14 +308,45 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="groupId"></param>
         /// <param name="serviceHost"></param>
         /// <returns></returns>
-        public async Task<KeyVaultCertificateGroup> GetGroupAsync(string groupId,
+        private async Task<KeyVaultCertificateGroup> GetGroupAsync(string groupId,
             string serviceHost) {
-            var certificateGroupConfiguration = await GetGroupConfigurationAsync(groupId);
+            var certificateGroupConfiguration = await GetGroupAsync(groupId);
             if (certificateGroupConfiguration == null) {
                 throw new ResourceNotFoundException("The certificate group doesn't exist.");
             }
             return new KeyVaultCertificateGroup(_keyVaultServiceClient,
                 certificateGroupConfiguration, serviceHost);
+        }
+
+        /// <summary>
+        /// Initialize
+        /// </summary>
+        /// <returns></returns>
+        private async Task InitializeAsync() {
+            var certificateGroupCollection = await ListGroupsAsync(null, null).ConfigureAwait(false);
+            foreach (var certificateGroupConfiguration in certificateGroupCollection.Groups) {
+                KeyVaultCertificateGroup certificateGroup = null;
+                try {
+                    certificateGroup = new KeyVaultCertificateGroup(_keyVaultServiceClient,
+                        certificateGroupConfiguration, _config.ServiceHost);
+                    await certificateGroup.Init().ConfigureAwait(false);
+#if LOADPRIVATEKEY
+                    // test if private key can be loaded
+                    await certificateGroup.LoadSigningKeyAsync(null, null);
+#endif
+                    continue;
+                }
+                catch (Exception ex) {
+                    _logger.Error("Failed to initialize certificate group. ", ex);
+                    if (certificateGroup == null) {
+                        throw ex;
+                    }
+                }
+                _logger.Information("Create new issuer CA certificate for group. ", certificateGroup);
+                if (!await certificateGroup.CreateIssuerCACertificateAsync().ConfigureAwait(false)) {
+                    _logger.Error("Failed to create issuer CA certificate. ", certificateGroup);
+                }
+            }
         }
 
         private readonly IVaultConfig _config;

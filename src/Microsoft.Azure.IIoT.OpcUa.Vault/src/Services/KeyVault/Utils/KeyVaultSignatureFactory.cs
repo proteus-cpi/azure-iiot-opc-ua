@@ -3,14 +3,14 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault {
+    using Org.BouncyCastle.Asn1;
+    using Org.BouncyCastle.Asn1.Pkcs;
+    using Org.BouncyCastle.Asn1.X509;
+    using Org.BouncyCastle.Crypto;
+    using System;
     using System.Security.Cryptography;
     using System.Security.Cryptography.X509Certificates;
-    using System;
-    using Org.BouncyCastle.Asn1.X509;
-    using Org.BouncyCastle.Asn1.Pkcs;
-    using Org.BouncyCastle.Asn1;
-    using Org.BouncyCastle.Crypto;
 
     /// <summary>
     /// The signature factory for Bouncy Castle to sign a digest with a KeyVault key.
@@ -35,8 +35,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         }
 
         /// <inheritdoc/>
-        public IStreamCalculator CreateCalculator() =>
-            new KeyVaultStreamCalculator(_generator, _hashAlgorithm);
+        public IStreamCalculator CreateCalculator() {
+            return new KeyVaultStreamCalculator(_generator, _hashAlgorithm);
+        }
 
         /// <summary>
         /// Get oid for algorithm
@@ -44,7 +45,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="hashAlgorithm"></param>
         /// <returns></returns>
         private static DerObjectIdentifier GetOid(HashAlgorithmName hashAlgorithm) {
-                 if (hashAlgorithm == HashAlgorithmName.SHA256) {
+            if (hashAlgorithm == HashAlgorithmName.SHA256) {
                 return PkcsObjectIdentifiers.Sha256WithRsaEncryption;
             }
             else if (hashAlgorithm == HashAlgorithmName.SHA384) {

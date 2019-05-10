@@ -15,7 +15,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// The query result.
         /// </summary>
-        public IList<CertificateRequestRecordModel> Requests { get; set; }
+        public List<CertificateRequestRecordModel> Requests { get; set; }
 
         /// <summary>
         /// Link to the next page of results.

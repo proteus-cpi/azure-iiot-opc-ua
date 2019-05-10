@@ -295,7 +295,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<ApplicationRegistrationResultModel> RegisterAsync(
+        public async Task<ApplicationRegistrationResultModel> RegisterApplicationAsync(
             ApplicationRegistrationRequestModel request) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
@@ -314,14 +314,24 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                     ApplicationUri = request.ApplicationUri,
                     Capabilities = request.Capabilities,
                     GatewayServerUri = request.GatewayServerUri,
+                    SiteId = request.SiteId,
                     HostAddresses = null,
-                    SiteId = null
                 });
             await _iothub.CreateOrUpdateAsync(ApplicationRegistration.Patch(
                 null, registration));
             return new ApplicationRegistrationResultModel {
                 Id = registration.ApplicationId
             };
+        }
+
+        /// <inheritdoc/>
+        public Task ApproveApplicationAsync(string applicationId, bool force) {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc/>
+        public Task RejectApplicationAsync(string applicationId, bool force) {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc/>
@@ -561,6 +571,30 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         }
 
         /// <inheritdoc/>
+        public async Task PurgeDisabledApplicationsAsync(TimeSpan notSeenSince) {
+            var absolute = DateTime.UtcNow - notSeenSince;
+            var query = "SELECT * FROM devices WHERE " +
+                $"tags.{nameof(BaseRegistration.DeviceType)} = 'Application' " +
+            //    $"AND tags.{nameof(OpcUaEndpointRegistration.NotSeenSince)} <= '{absolute}' " +
+                $"AND IS_DEFINED(tags.{nameof(BaseRegistration.NotSeenSince)}) ";
+            string continuation = null;
+            do {
+                var devices = await _iothub.QueryDeviceTwinsAsync(query, continuation);
+                foreach (var twin in devices.Items) {
+                    var application = ApplicationRegistration.FromTwin(twin);
+                    if (application.NotSeenSince == null ||
+                        application.NotSeenSince.Value >= absolute) {
+                        // Skip
+                        continue;
+                    }
+                    await UnregisterApplicationAsync(application.ApplicationId);
+                }
+                continuation = devices.ContinuationToken;
+            }
+            while (continuation != null);
+        }
+
+        /// <inheritdoc/>
         public async Task<SupervisorModel> GetSupervisorAsync(string id,
             bool onlyServerState) {
             if (string.IsNullOrEmpty(id)) {
@@ -732,30 +766,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                     .Select(s => s.ToServiceModel())
                     .ToList()
             };
-        }
-
-        /// <inheritdoc/>
-        public async Task PurgeDisabledApplicationsAsync(TimeSpan notSeenSince) {
-            var absolute = DateTime.UtcNow - notSeenSince;
-            var query = "SELECT * FROM devices WHERE " +
-                $"tags.{nameof(BaseRegistration.DeviceType)} = 'Application' " +
-            //    $"AND tags.{nameof(OpcUaEndpointRegistration.NotSeenSince)} <= '{absolute}' " +
-                $"AND IS_DEFINED(tags.{nameof(BaseRegistration.NotSeenSince)}) ";
-            string continuation = null;
-            do {
-                var devices = await _iothub.QueryDeviceTwinsAsync(query, continuation);
-                foreach (var twin in devices.Items) {
-                    var application = ApplicationRegistration.FromTwin(twin);
-                    if (application.NotSeenSince == null ||
-                        application.NotSeenSince.Value >= absolute) {
-                        // Skip
-                        continue;
-                    }
-                    await UnregisterApplicationAsync(application.ApplicationId);
-                }
-                continuation = devices.ContinuationToken;
-            }
-            while (continuation != null);
         }
 
         /// <inheritdoc/>

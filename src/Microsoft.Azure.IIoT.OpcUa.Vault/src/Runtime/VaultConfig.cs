@@ -5,11 +5,13 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Runtime {
     using Microsoft.Azure.IIoT.OpcUa.Vault;
+    using Microsoft.Azure.IIoT.Storage;
+    using Microsoft.Azure.IIoT.Storage.CosmosDb;
     using Microsoft.Azure.IIoT.Utils;
     using Microsoft.Extensions.Configuration;
 
     /// <inheritdoc/>
-    public class VaultConfig : ConfigBase, IVaultConfig {
+    public class VaultConfig : ConfigBase, IVaultConfig, ICosmosDbConfig, IItemContainerConfig {
 
         /// <summary>
         /// Vault configuration
@@ -46,20 +48,20 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Runtime {
         /// <summary>
         /// Cosmos db configuration
         /// </summary>
-        private const string kOpcVault_CosmosDBConnectionStringKey = "OpcVault:CosmosDBConnectionString";
-        private const string kOpcVault_CosmosDBCollectionKey = "OpcVault:CosmosDBCollection";
-        private const string kOpcVault_CosmosDBDatabaseKey = "OpcVault:CosmosDBDatabase";
+        private const string kOpcVault_DbConnectionStringKey = "OpcVault:CosmosDBConnectionString";
+        private const string kOpcVault_ContainerNameKey = "OpcVault:CosmosDBCollection";
+        private const string kOpcVault_DatabaseNameKey = "OpcVault:CosmosDBDatabase";
 
         /// <inheritdoc/>
-        public string CosmosDBConnectionString => GetStringOrDefault(kOpcVault_CosmosDBConnectionStringKey,
+        public string DbConnectionString => GetStringOrDefault(kOpcVault_DbConnectionStringKey,
             GetStringOrDefault("OPC_VAULT_COSMOSDB_CONNSTRING",
                 GetStringOrDefault("PCS_TELEMETRY_DOCUMENTDB_CONNSTRING",
                 GetStringOrDefault("_DB_CS", null))));
         /// <inheritdoc/>
-        public string CosmosDBDatabase => GetStringOrDefault(kOpcVault_CosmosDBDatabaseKey,
+        public string DatabaseName => GetStringOrDefault(kOpcVault_DatabaseNameKey,
             GetStringOrDefault("OPC_VAULT_COSMOSDB_DBNAME", "OpcVault")).Trim();
         /// <inheritdoc/>
-        public string CollectionName => GetStringOrDefault(kOpcVault_CosmosDBCollectionKey,
+        public string ContainerName => GetStringOrDefault(kOpcVault_ContainerNameKey,
             GetStringOrDefault("OPC_VAULT_COSMOSDB_COLLNAME", "AppsAndCertRequests")).Trim();
 
         /// <summary>

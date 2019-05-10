@@ -3,37 +3,39 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
 
     /// <summary>
-    /// The application database status when compared to
-    /// the registry.
+    /// Certificate types
     /// </summary>
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum RegistryApplicationStatusType {
+    public enum CertificateType {
 
         /// <summary>
-        /// The Application Id is not known in the registry.
+        /// Application certificate
         /// </summary>
-        Unknown,
+        ApplicationCertificateType,
 
         /// <summary>
-        /// The application and registry state are up to
-        /// date and ok.
+        /// Application certificate type
         /// </summary>
-        Ok,
+        RsaSha256ApplicationCertificateType,
 
         /// <summary>
-        /// The registry contains a new application.
+        /// Applciation certificate type
         /// </summary>
-        New,
+        RsaMinApplicationCertificateType,
 
         /// <summary>
-        /// The registry contains updates compared to the
-        /// application database.
+        /// Https certificate type
         /// </summary>
-        Update
+        HttpsCertificateType,
+
+        /// <summary>
+        /// User credential certificate type
+        /// </summary>
+        UserCredentialCertificateType,
     }
 }

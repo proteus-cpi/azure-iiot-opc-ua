@@ -32,6 +32,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         public string ApplicationName { get; set; }
 
         /// <summary>
+        /// Site of the application
+        /// </summary>
+        public string SiteId { get; set; }
+
+        /// <summary>
         /// Localizations
         /// </summary>
         public Dictionary<string, string> LocalizedNames { get; set; }

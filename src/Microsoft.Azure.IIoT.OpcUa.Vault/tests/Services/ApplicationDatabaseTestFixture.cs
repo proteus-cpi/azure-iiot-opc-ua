@@ -4,24 +4,26 @@
 // ------------------------------------------------------------
 
 
-using Microsoft.Azure.IIoT.Auth.Clients;
-using Microsoft.Azure.IIoT.Auth.Runtime;
-using Microsoft.Azure.IIoT.OpcUa.Vault;
-using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB;
-using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services;
-using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
-using Microsoft.Azure.IIoT.OpcUa.Vault.Runtime;
-using Microsoft.Extensions.Configuration;
-using Serilog;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using Xunit;
+namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
+    using Microsoft.Azure.IIoT.Auth.Clients;
+    using Microsoft.Azure.IIoT.Auth.Runtime;
+    using Microsoft.Azure.IIoT.OpcUa.Registry;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Runtime;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Services;
+    using Microsoft.Azure.IIoT.Storage.CosmosDb.Services;
+    using Microsoft.Azure.IIoT.Storage.Default;
+    using Microsoft.Extensions.Configuration;
+    using Serilog;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using Xunit;
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     public class ApplicationDatabaseTestFixture : IDisposable {
 
-        public IApplicationsDatabase ApplicationsDatabase { get; set; }
+        public IApplicationRegistry2 ApplicationsDatabase { get; set; }
         public IList<ApplicationTestData> ApplicationTestSet { get; set; }
         public ApplicationTestDataGenerator RandomGenerator { get; set; }
         public bool RegistrationOk { get; set; }
@@ -40,15 +42,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             if (!InvalidConfiguration()) {
                 RandomGenerator = new ApplicationTestDataGenerator(kRandomStart);
                 _documentDBRepository = new DocumentDBRepository(_serviceConfig);
-                ApplicationsDatabase = new DefaultApplicationDatabase(null, _serviceConfig, _documentDBRepository, _logger);
+                ApplicationsDatabase = new ApplicationDatabase(null, _serviceConfig,
+                    new ItemContainerFactory(new CosmosDbServiceClient(_serviceConfig, _logger)), _logger);
                 // create test set
                 ApplicationTestSet = new List<ApplicationTestData>();
                 for (var i = 0; i < kTestSetSize; i++) {
                     var randomApp = RandomGenerator.RandomApplicationTestData();
                     ApplicationTestSet.Add(randomApp);
                 }
-                // try initialize DB
-                ApplicationsDatabase.InitializeAsync().Wait();
             }
             RegistrationOk = false;
         }
@@ -62,9 +63,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
         private bool InvalidConfiguration() {
             return
-            string.IsNullOrEmpty(_serviceConfig.CollectionName) ||
-            string.IsNullOrEmpty(_serviceConfig.CosmosDBDatabase) ||
-            string.IsNullOrEmpty(_serviceConfig.CosmosDBConnectionString)
+            string.IsNullOrEmpty(_serviceConfig.ContainerName) ||
+            string.IsNullOrEmpty(_serviceConfig.DatabaseName) ||
+            string.IsNullOrEmpty(_serviceConfig.DbConnectionString)
             ;
         }
 

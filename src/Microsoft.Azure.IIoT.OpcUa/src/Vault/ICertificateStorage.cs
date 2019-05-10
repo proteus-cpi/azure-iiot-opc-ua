@@ -8,28 +8,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Certificate vault client
+    /// Certificate store services
     /// </summary>
-    public interface IVaultClient {
-
-        /// <TODO/>
-        Task InitializeAsync();
-
-        // Configuration
-
-        /// <summary>
-        /// Return the names of the certificate groups in
-        /// the store.
-        /// </summary>
-        /// <returns>The certificate group ids</returns>
-        Task<string[]> GetGroupIdsAsync();
+    public interface ICertificateStorage {
 
         /// <summary>
         /// Get the configuration for a group Id.
         /// </summary>
         /// <param name="groupId">The group Id</param>
         /// <returns>The configuration</returns>
-        Task<CertificateGroupConfigurationModel> GetGroupConfigurationAsync(
+        Task<CertificateGroupInfoModel> GetGroupAsync(
             string groupId);
 
         /// <summary>
@@ -39,38 +27,58 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="groupId">The group Id</param>
         /// <param name="config">The updated configuration</param>
         /// <returns>The updated group</returns>
-        Task<CertificateGroupConfigurationModel> UpdateGroupConfigurationAsync(
-            string groupId, CertificateGroupConfigurationModel config);
+        Task<CertificateGroupInfoModel> UpdateGroupAsync(
+            string groupId, CertificateGroupInfoModel config);
 
         /// <summary>
         /// Create a new certificate group with default settings.
         /// Default settings depend on certificate type.
         /// </summary>
         /// <param name="groupId">The new group Id</param>
-        /// <param name="subject">The subject of the new Issuer CA certificate</param>
-        /// <param name="certType">The certificate type for the new group</param>
-        Task<CertificateGroupConfigurationModel> CreateGroupConfigurationAsync(
-            string groupId, string subject, string certType);
+        /// <param name="subject">The subject of the new Issuer CA
+        /// certificate</param>
+        /// <param name="certType">The certificate type for the
+        /// new group</param>
+        Task<CertificateGroupInfoModel> CreateGroupAsync(
+            string groupId, string subject, CertificateType certType);
+
+        /// <summary>
+        /// Delete a certificate group.
+        /// </summary>
+        /// <param name="groupId">The group Id</param>
+        Task<CertificateGroupInfoModel> DeleteGroupAsync(
+            string groupId);
 
         /// <summary>
         /// Get the configuration of all certificate groups.
         /// </summary>
+        /// <param name="nextPageLink"></param>
+        /// <param name="pageSize"></param>
         /// <returns>The configurations</returns>
-        Task<CertificateGroupConfigurationCollectionModel> ListGroupConfigurationsAsync();
+        Task<CertificateGroupInfoListModel> ListGroupsAsync(
+            string nextPageLink = null, int? pageSize = null);
 
-
-        // Group interface
+        /// <summary>
+        /// Return the names of the certificate groups in
+        /// the store.
+        /// </summary>
+        /// <param name="nextPageLink"></param>
+        /// <param name="pageSize"></param>
+        /// <returns>The certificate group ids</returns>
+        Task<CertificateGroupListModel> ListGroupIdsAsync(
+            string nextPageLink = null, int? pageSize = null);
 
         /// <summary>
         /// Get all Issuer certificate versions in a pageable call.
         /// </summary>
         /// <param name="groupId">The group Id</param>
-        /// <param name="withCertificates">true to return the base64 encoded
-        /// certificates</param>
+        /// <param name="withCertificates">true to return the
+        /// base64 encoded certificates</param>
         /// <param name="nextPageLink">The next page</param>
-        /// <param name="pageSize">max number of versions per call</param>
+        /// <param name="pageSize">max number of versions per call
+        /// </param>
         /// <returns></returns>
-        Task<X509CertificateCollectionModel> GetIssuerCACertificateVersionsAsync(
+        Task<X509CertificateCollectionModel> ListIssuerCACertificateVersionsAsync(
             string groupId, bool? withCertificates, string nextPageLink = null,
             int? pageSize = null);
 
@@ -78,10 +86,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// Get all certificates in the chain of the Issuer CA.
         /// </summary>
         /// <param name="groupId">The group groupId</param>
-        /// <param name="thumbPrint">null for the latest Issuer CA cert,
-        /// thumbprint to get a specific older version</param>
+        /// <param name="thumbPrint">null for the latest Issuer CA
+        /// cert, thumbprint to get a specific older version</param>
         /// <param name="nextPageLink">The next page</param>
-        /// <param name="pageSize">max number of certificates per call</param>
+        /// <param name="pageSize">max number of certificates per call
+        /// </param>
         /// <returns></returns>
         Task<X509CertificateCollectionModel> GetIssuerCACertificateChainAsync(
             string groupId, string thumbPrint = null, string nextPageLink = null,
@@ -120,37 +129,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="applicationUri">The application Uri</param>
         /// <param name="certificateRequest">The binary CSR</param>
         /// <returns></returns>
-        Task<X509CertificateModel> SigningRequestAsync(string groupId,
-            string applicationUri, byte[] certificateRequest);
-
-        /// <summary>
-        /// Revoke a single certificate.
-        /// Creates a new CRL version Issuer CA matching the certificate.
-        /// </summary>
-        /// <param name="groupId">The group Id</param>
-        /// <param name="certificate">The certificate to revoke</param>
-        /// <returns>The new CRL version</returns>
-        Task<X509CrlModel> RevokeCertificateAsync(string groupId,
-            X509CertificateModel certificate);
-
-        /// <summary>
-        /// Revoke a group of certificates.
-        /// Matches certificates with all active Issuer CA versions.
-        /// Creates a new CRL for all Issuer CA versions.
-        /// </summary>
-        /// <param name="groupId">The group Id</param>
-        /// <param name="certificates">The certificates to revoke</param>
-        /// <returns>Returns certificates which could not be revoked</returns>
-        Task<X509CertificateCollectionModel> RevokeCertificatesAsync(string groupId,
-            X509CertificateCollectionModel certificates);
-
-        /// <summary>
-        /// Creates a new self signed Issuer CA certificate and an empty CRL.
-        /// Uses subject and lifetime parameters of group configuration.
-        /// </summary>
-        /// <param name="groupId">The group groupId</param>
-        /// <returns>The new Issuer CA cert</returns>
-        Task<X509CertificateModel> CreateIssuerCACertificateAsync(string groupId);
+        Task<X509CertificateModel> ProcessSigningRequestAsync(
+            string groupId, string applicationUri, byte[] certificateRequest);
 
         /// <summary>
         /// Create a new Issuer CA signed certificate and private key.
@@ -165,25 +145,60 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// certificate</param>
         /// <param name="privateKeyFormat">The private key format,
         /// PFX or PEM</param>
-        /// <param name="password">The password for the private key</param>
+        /// <param name="password">The password for the private key
+        /// </param>
         /// <returns>The new key pair</returns>
-        Task<X509CertificatePrivateKeyPairModel> NewKeyPairRequestAsync(
-            string groupId, string requestId, string applicationUri, string subjectName,
-            string[] domainNames, string privateKeyFormat, string password);
+        Task<X509CertificatePrivateKeyPairModel> ProcessNewKeyPairRequestAsync(
+            string groupId, string requestId, string applicationUri,
+            string subjectName, string[] domainNames, string privateKeyFormat,
+            string password);
+
+        /// <summary>
+        /// Revoke a single certificate.
+        /// Creates a new CRL version Issuer CA matching the certificate.
+        /// </summary>
+        /// <param name="groupId">The group Id</param>
+        /// <param name="certificate">The certificate to revoke</param>
+        /// <returns>The new CRL version</returns>
+        Task<X509CrlModel> RevokeSingleCertificateAsync(string groupId,
+            X509CertificateModel certificate);
+
+        /// <summary>
+        /// Revoke a group of certificates.
+        /// Matches certificates with all active Issuer CA versions.
+        /// Creates a new CRL for all Issuer CA versions.
+        /// </summary>
+        /// <param name="groupId">The group Id</param>
+        /// <param name="certificates">The certificates to revoke</param>
+        /// <returns>Returns certificates which could not be revoked
+        /// </returns>
+        Task<X509CertificateCollectionModel> RevokeCertificatesAsync(
+            string groupId, X509CertificateCollectionModel certificates);
+
+        /// <summary>
+        /// Creates a new self signed Issuer CA certificate and an empty CRL.
+        /// Uses subject and lifetime parameters of group configuration.
+        /// </summary>
+        /// <param name="groupId">The group groupId</param>
+        /// <returns>The new Issuer CA cert</returns>
+        Task<X509CertificateModel> CreateIssuerCACertificateAsync(
+            string groupId);
 
         /// <summary>
         /// Load the private key of a request from secure storage.
         /// </summary>
         /// <param name="groupId">The group groupId</param>
         /// <param name="requestId">The request groupId</param>
-        /// <param name="privateKeyFormat">The format of the private key</param>
+        /// <param name="privateKeyFormat">The format of the private
+        /// key</param>
         /// <returns></returns>
-        Task<byte[]> LoadPrivateKeyAsync(string groupId, string requestId,
+        Task<byte[]> GetPrivateKeyAsync(string groupId, string requestId,
             string privateKeyFormat);
 
         /// <summary>
-        /// Accept a private key.
-        /// Returns the private key and tags the key as accepted.
+        /// Accept and thus disable a private key.
+        /// Returns the private key and tags the key as
+        /// accepted/disabled.
         /// </summary>
         /// <param name="groupId">The group groupId</param>
         /// <param name="requestId">The request groupId</param>

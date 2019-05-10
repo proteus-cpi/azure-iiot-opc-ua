@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// <summary>
         /// Application state
         /// </summary>
-        public QueryApplicationState? ApplicationState { get; set; }
+        public ApplicationStateMask? ApplicationState { get; set; }
 
         /// <summary>
         /// Optional starting record id

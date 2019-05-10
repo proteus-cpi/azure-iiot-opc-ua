@@ -14,7 +14,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Chain
         /// </summary>
-        public IList<X509CrlModel> Chain { get; set; }
+        public List<X509CrlModel> Chain { get; set; }
 
         /// <summary>
         /// Next link

@@ -3,7 +3,9 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault {
+    using Org.BouncyCastle.Crypto;
+    using System;
     using System.IO;
     using System.Security.Cryptography;
     using System.Security.Cryptography.X509Certificates;
@@ -11,7 +13,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     /// <summary>
     /// Signs a Bouncy Castle digest stream with the .Net X509SignatureGenerator.
     /// </summary>
-    public class KeyVaultStreamCalculator : Org.BouncyCastle.Crypto.IStreamCalculator {
+    public class KeyVaultStreamCalculator : IStreamCalculator {
 
         /// <inheritdoc/>
         public Stream Stream { get; }
@@ -34,6 +36,30 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             var digest = memStream.ToArray();
             var signature = _generator.SignData(digest, _hashAlgorithm);
             return new MemoryBlockResult(signature);
+        }
+
+        /// <summary>
+        /// Helper for Bouncy Castle signing operation to store the result in
+        /// a memory block.
+        /// </summary>
+        public class MemoryBlockResult : IBlockResult {
+
+            /// <inheritdoc/>
+            public MemoryBlockResult(byte[] data) {
+                _data = data;
+            }
+
+            /// <inheritdoc/>
+            public byte[] Collect() {
+                return _data;
+            }
+
+            /// <inheritdoc/>
+            public int Collect(byte[] destination, int offset) {
+                throw new NotImplementedException();
+            }
+
+            private readonly byte[] _data;
         }
 
         private readonly X509SignatureGenerator _generator;

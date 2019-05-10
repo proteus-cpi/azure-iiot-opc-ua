@@ -3,6 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+
 namespace Microsoft.Azure.IIoT.OpcUa.Vault {
 
     /// <summary>
@@ -34,20 +35,5 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// Is hsm key vault
         /// </summary>
         bool KeyVaultIsHsm { get; }
-
-        /// <summary>
-        /// Cosmos db connection string
-        /// </summary>
-        string CosmosDBConnectionString { get; }
-
-        /// <summary>
-        /// Optional database name
-        /// </summary>
-        string CosmosDBDatabase { get; }
-
-        /// <summary>
-        /// Optional collection name
-        /// </summary>
-        string CollectionName { get; }
     }
 }

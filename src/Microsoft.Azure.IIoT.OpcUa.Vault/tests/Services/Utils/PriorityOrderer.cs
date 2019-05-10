@@ -3,14 +3,13 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Xunit.Abstractions;
-using Xunit.Sdk;
-
 namespace TestCaseOrdering {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Xunit.Abstractions;
+    using Xunit.Sdk;
+
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class TestPriorityAttribute : Attribute {

@@ -3,14 +3,14 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault {
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.KeyVault.Models;
     using System;
     using System.Collections.Generic;
     using System.Security.Cryptography;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
     using Microsoft.Azure.KeyVault.Models;
     using Opc.Ua;
 
@@ -83,7 +83,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             CancellationToken ct = default);
 
         /// <summary>
-        /// Imports a new CA certificate in specified group,
+        /// Imports an existing CA certificate in specified group,
         /// and tags it for trusted or issuer store.
         /// </summary>
         /// <param name="groupId"></param>
@@ -96,7 +96,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             CancellationToken ct = default);
 
         /// <summary>
-        /// Creates a new Root CA certificate in specified group,
+        /// Creates a new CA certificate in specified group,
         /// and tags it for trusted or issuer store.
         /// </summary>
         /// <param name="groupId"></param>
@@ -119,7 +119,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// </summary>
         /// <remarks>
         /// The key for the certificate is created in KeyVault, then exported.
-        /// In order to deleted the created key, the impersonated user needs
+        /// In order to delete the created key, the user principal needs
         /// create, get and delete rights for KeyVault certificates
         /// </remarks>
         /// <param name="groupId"></param>
@@ -144,7 +144,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             CancellationToken ct = default);
 
         /// <summary>
-        /// Imports a new CRL for group.
+        /// Imports a CRL for group.
         /// </summary>
         /// <param name="groupId"></param>
         /// <param name="certificate"></param>
@@ -183,7 +183,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="privateKeyFormat"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task ImportCertKey(string groupId, string requestId, byte[] privateKey,
+        Task ImportKeySecretAsync(string groupId, string requestId, byte[] privateKey,
             string privateKeyFormat, CancellationToken ct = default);
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="privateKeyFormat"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<byte[]> LoadCertKey(string groupId, string requestId,
+        Task<byte[]> LoadKeySecretAsync(string groupId, string requestId,
             string privateKeyFormat, CancellationToken ct = default);
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="requestId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task AcceptCertKey(string groupId, string requestId,
+        Task InvalidateKeySecretAsync(string groupId, string requestId,
             CancellationToken ct = default);
 
         /// <summary>
@@ -214,7 +214,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="requestId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task DeleteCertKey(string groupId, string requestId,
+        Task DeleteKeySecretAsync(string groupId, string requestId,
             CancellationToken ct = default);
 
         /// <summary>

@@ -3,7 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Services {
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.Documents.Linq;
@@ -190,7 +190,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Services {
         /// <inheritdoc/>
         public async Task CreateCollectionIfNotExistsAsync() {
             try {
-                await _db.CreateRepositoryIfNotExistsAsync();
                 Collection = await _db.Client.ReadDocumentCollectionAsync(
                     UriFactory.CreateDocumentCollectionUri(_db.DatabaseId, _collectionId));
             }

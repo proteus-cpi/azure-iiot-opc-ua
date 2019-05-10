@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// Convert to raw request
         /// </summary>
         /// <returns></returns>
-        public static byte[] ToRawData(this CreateSigningRequestModel model) {
+        public static byte[] ToRawData(this SigningRequestModel model) {
             const string certRequestPemHeader = "-----BEGIN CERTIFICATE REQUEST-----";
             const string certRequestPemFooter = "-----END CERTIFICATE REQUEST-----";
             if (model.CertificateRequest == null) {

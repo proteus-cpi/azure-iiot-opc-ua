@@ -3,7 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Models {
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Newtonsoft.Json;
     using System;
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         /// <summary>
         /// Numeric index
         /// </summary>
-        public int ID { get; set; }
+        public uint ID { get; set; }
 
         /// <summary>
         /// Application id

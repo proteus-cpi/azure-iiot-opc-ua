@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     /// <summary>
     /// Signing request
     /// </summary>
-    public sealed class CreateSigningRequestModel {
+    public sealed class SigningRequestModel {
 
         /// <summary>
         /// Application id
@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Type
         /// </summary>
-        public string CertificateTypeId { get; set; }
+        public CertificateType CertificateTypeId { get; set; }
 
         /// <summary>
         /// Request buffer or PEM formated signing request

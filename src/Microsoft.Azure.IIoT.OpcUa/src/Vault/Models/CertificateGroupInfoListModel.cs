@@ -3,18 +3,18 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using System.Collections.Generic;
 
     /// <summary>
-    /// Registry application status response
+    /// Configuration collection model
     /// </summary>
-    public sealed class RegistryApplicationStatusResponseModel {
+    public sealed class CertificateGroupInfoListModel {
 
         /// <summary>
-        /// Applications
+        /// Groups
         /// </summary>
-        public IList<RegistryApplicationStatusModel> Applications { get; set; }
+        public List<CertificateGroupInfoModel> Groups { get; set; }
 
         /// <summary>
         /// Next link

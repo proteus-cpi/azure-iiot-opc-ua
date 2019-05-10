@@ -4,18 +4,15 @@
 // ------------------------------------------------------------
 
 
-using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
-using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models;
-using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
-using Opc.Ua;
-using Opc.Ua.Gds;
-using Opc.Ua.Test;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
+    using Opc.Ua;
+    using Opc.Ua.Gds;
+    using Opc.Ua.Test;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text.RegularExpressions;
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     public class ApplicationTestDataGenerator {
 
         public ApplicationTestDataGenerator(int randomStart = 1) {
@@ -62,6 +59,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     LocalizedNames = new Dictionary<string, string> {
                         ["en-us"] = appName
                     },
+                    SiteId = _dataGenerator.GetRandomString("en"),
                     DiscoveryUrls = discoveryUrls.ToHashSet()
                 },
                 ApplicationRecord = new ApplicationRecordDataType {

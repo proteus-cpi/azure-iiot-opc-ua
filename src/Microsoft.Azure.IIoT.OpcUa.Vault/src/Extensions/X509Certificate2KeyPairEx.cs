@@ -21,7 +21,7 @@ namespace System.Security.Cryptography.X509Certificates {
             return new X509CertificatePrivateKeyPairModel {
                 Certificate = pair.Certificate.ToServiceModel(),
                 PrivateKey = pair.PrivateKey,
-                PrivateKeyFormat = pair.PrivateKeyFormat
+                PrivateKeyFormat = Enum.Parse<PrivateKeyFormat>(pair.PrivateKeyFormat)
             };
         }
 
@@ -32,7 +32,7 @@ namespace System.Security.Cryptography.X509Certificates {
         public static X509Certificate2KeyPair ToStackModel(
             this X509CertificatePrivateKeyPairModel pair) {
             return new X509Certificate2KeyPair(pair.Certificate.ToStackModel(),
-                pair.PrivateKeyFormat, pair.PrivateKey);
+                pair.PrivateKeyFormat.ToString(), pair.PrivateKey);
         }
     }
 }

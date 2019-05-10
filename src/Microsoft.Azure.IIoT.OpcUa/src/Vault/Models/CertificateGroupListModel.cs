@@ -14,6 +14,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Groups
         /// </summary>
-        public IList<string> Groups { get; set; }
+        public List<string> Groups { get; set; }
+
+        /// <summary>
+        /// Next link
+        /// </summary>
+        public string NextPageLink { get; set; }
     }
 }

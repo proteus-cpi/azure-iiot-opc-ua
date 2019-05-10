@@ -14,44 +14,51 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     public interface IApplicationRegistry {
 
         /// <summary>
-        /// Register application using the application info as
-        /// template.
+        /// Register application using the specified information.
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        Task<ApplicationRegistrationResultModel> RegisterAsync(
+        Task<ApplicationRegistrationResultModel> RegisterApplicationAsync(
             ApplicationRegistrationRequestModel request);
+
+        /// <summary>
+        /// Approve a new application.
+        /// Application is in approved state after this call.
+        /// </summary>
+        /// <param name="applicationId">The applicationId</param>
+        /// <param name="force">Ignore state check</param>
+        Task ApproveApplicationAsync(string applicationId, 
+            bool force = false);
+
+        /// <summary>
+        /// Reject a new application.
+        /// Application is in rejected state after this call.
+        /// </summary>
+        /// <param name="applicationId">The applicationId</param>
+        /// <param name="force">Ignore state check</param>
+        Task RejectApplicationAsync(string applicationId,
+            bool force = false);
 
         /// <summary>
         /// Read full application model for specified
         /// application (server/client) which includes all
         /// endpoints if there are any.
         /// </summary>
-        /// <param name="applicationId"></param>
-        /// <param name="filterInactiveTwins"></param>
+        /// <param name="applicationId">The applicationId</param>
+        /// <param name="filterInactiveEndpoints"></param>
         /// <returns></returns>
         Task<ApplicationRegistrationModel> GetApplicationAsync(
-            string applicationId, bool filterInactiveTwins = false);
+            string applicationId, bool filterInactiveEndpoints = false);
 
         /// <summary>
         /// Update an existing application, e.g. server
         /// certificate, or additional capabilities.
         /// </summary>
-        /// <param name="applicationId"></param>
+        /// <param name="applicationId">The applicationId</param>
         /// <param name="request"></param>
         /// <returns></returns>
         Task UpdateApplicationAsync(string applicationId,
             ApplicationRegistrationUpdateModel request);
-
-        /// <summary>
-        /// Get list of registered application sites to group
-        /// applications visually
-        /// </summary>
-        /// <param name="continuation"></param>
-        /// <param name="pageSize"></param>
-        /// <returns></returns>
-        Task<ApplicationSiteListModel> ListSitesAsync(
-            string continuation, int? pageSize = null);
 
         /// <summary>
         /// List all applications or continue find query.
@@ -60,7 +67,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
         /// <param name="pageSize"></param>
         /// <returns></returns>
         Task<ApplicationInfoListModel> ListApplicationsAsync(
-            string continuation, int? pageSize = null);
+            string continuation = null, int? pageSize = null);
 
         /// <summary>
         /// Find applications for the specified information
@@ -72,6 +79,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
         /// <returns></returns>
         Task<ApplicationInfoListModel> QueryApplicationsAsync(
             ApplicationRegistrationQueryModel query, int? pageSize = null);
+
+        /// <summary>
+        /// Get list of registered application sites to group
+        /// applications visually
+        /// </summary>
+        /// <param name="continuation"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        Task<ApplicationSiteListModel> ListSitesAsync(
+            string continuation = null, int? pageSize = null);
 
         /// <summary>
         /// Unregister application and all associated endpoints.

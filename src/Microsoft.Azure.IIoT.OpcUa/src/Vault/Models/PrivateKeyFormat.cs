@@ -1,19 +1,26 @@
-// ------------------------------------------------------------
+﻿// ------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using System.Collections.Generic;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
 
     /// <summary>
-    /// Configuration collection model
+    /// Private key format
     /// </summary>
-    public sealed class CertificateGroupConfigurationCollectionModel {
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum PrivateKeyFormat {
 
         /// <summary>
-        /// Groups
+        /// Pem format
         /// </summary>
-        public IList<CertificateGroupConfigurationModel> Groups { get; set; }
+        PEM,
+
+        /// <summary>
+        /// Pfx
+        /// </summary>
+        PFX,
     }
 }

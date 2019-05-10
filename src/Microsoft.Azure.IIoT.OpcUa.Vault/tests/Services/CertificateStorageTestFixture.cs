@@ -13,15 +13,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using System;
     using System.IO;
     using Xunit;
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Tests;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
 
-    public class VaultClientTestFixture : IDisposable {
+    public class CertificateStorageTestFixture : IDisposable {
         public ApplicationTestDataGenerator RandomGenerator { get; set; }
-        public DefaultVaultClient VaultClient { get; set; }
+        public CertificateManagement VaultClient { get; set; }
         public bool KeyVaultInitOk { get; set; }
         public string ConfigId { get;  }
         public string GroupId { get;  }
 
-        public VaultClientTestFixture() {
+        public CertificateStorageTestFixture() {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("testsettings.json", false, true)
@@ -31,16 +33,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             var configuration = builder.Build();
             _serviceConfig = new VaultConfig(configuration);
             _clientConfig = new ClientConfig(configuration);
-            _logger = SerilogTestLogger.Create<VaultClientTestFixture>();
+            _logger = SerilogTestLogger.Create<CertificateStorageTestFixture>();
             if (!InvalidConfiguration()) {
                 RandomGenerator = new ApplicationTestDataGenerator();
                 var timeid = DateTime.UtcNow.ToFileTimeUtc() / 1000 % 10000;
                 GroupId = "GroupTestIssuerCA" + timeid.ToString();
                 ConfigId = "GroupTestConfig" + timeid.ToString();
                 var keyVaultServiceClient = KeyVaultTestServiceClient.Get(ConfigId, _serviceConfig, _clientConfig, _logger);
-                VaultClient = new DefaultVaultClient(keyVaultServiceClient, _serviceConfig, _logger);
+                VaultClient = new CertificateManagement(keyVaultServiceClient, _serviceConfig, _logger);
                 VaultClient.PurgeAsync(ConfigId, GroupId).Wait();
-                VaultClient.CreateGroupConfigurationAsync(GroupId, "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT", null).Wait();
+                VaultClient.CreateGroupAsync(GroupId, "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT",
+                    CertificateType.RsaSha256ApplicationCertificateType).Wait();
             }
             KeyVaultInitOk = false;
         }

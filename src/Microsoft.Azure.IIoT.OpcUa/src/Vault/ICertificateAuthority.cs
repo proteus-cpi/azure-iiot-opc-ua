@@ -8,12 +8,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// An abstract interface to the certificate request database
+    /// Represents the interface to a certificate authority
     /// </summary>
-    public interface ICertificateAuthority {
-
-        /// <TODO/>
-        Task InitializeAsync();
+    public interface ICertificateAuthority : ICertificateManagement {
 
         /// <summary>
         /// Create a new certificate request with CSR.
@@ -25,8 +22,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// request
         /// </param>
         /// <returns></returns>
-        Task<string> StartSigningRequestAsync(CreateSigningRequestModel request,
-            string authorityId);
+        Task<string> SubmitSigningRequestAsync(
+            SigningRequestModel request, string authorityId);
 
         /// <summary>
         /// Create a new certificate request with a public/private
@@ -36,56 +33,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="authorityId">The authority Id adding the
         /// request</param>
         /// <returns>The request Id</returns>
-        Task<string> StartNewKeyPairRequestAsync(CreateNewKeyPairRequestModel request,
-            string authorityId);
-
-        /// <summary>
-        /// Approve a certificate request.
-        /// The request is in approved state after the call.
-        /// </summary>
-        /// <param name="requestId">The request Id</param>
-        Task ApproveAsync(string requestId);
-
-        /// <summary>
-        /// Reject a certificate request.
-        /// The request is in rejected state after the call.
-        /// </summary>
-        /// <param name="requestId">The request Id</param>
-        Task RejectAsync(string requestId);
-
-        /// <summary>
-        /// Accept a certificate request.
-        /// The private key of an accepted certificate request is deleted.
-        /// </summary>
-        /// <param name="requestId">The request Id</param>
-        Task AcceptAsync(string requestId);
-
-        /// <summary>
-        /// Delete a certificate request.
-        /// The request is marked deleted until revocation.
-        /// </summary>
-        /// <param name="requestId">The request Id</param>
-        Task DeleteAsync(string requestId);
-
-        /// <summary>
-        /// The request is removed from the database.
-        /// </summary>
-        /// <param name="requestId">The request Id</param>
-        Task PurgeAsync(string requestId);
-
-        /// <summary>
-        /// Revoke the certificate of a request.
-        /// </summary>
-        /// <param name="requestId">The request Id</param>
-        Task RevokeAsync(string requestId);
-
-        /// <summary>
-        /// Revoke all deleted certificate requests in a group.
-        /// </summary>
-        /// <param name="groupId">The group Id</param>
-        /// <param name="allVersions">false to revoke only the lates
-        /// Issuer CA cert</param>
-        Task RevokeGroupAsync(string groupId, bool? allVersions);
+        Task<string> SubmitNewKeyPairRequestAsync(
+            NewKeyPairRequestModel request, string authorityId);
 
         /// <summary>
         /// Fetch the data of a certificate requests.
@@ -95,7 +44,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="requestId">The request Id</param>
         /// <param name="applicationId">The application Id</param>
         /// <returns>The request</returns>
-        Task<FetchCertificateRequestResultModel> FetchRequestAsync(
+        Task<FetchCertificateRequestResultModel> FetchResultAsync(
             string requestId, string applicationId);
 
         /// <summary>
@@ -104,7 +53,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// </summary>
         /// <param name="requestId"></param>
         /// <returns>The request</returns>
-        Task<CertificateRequestRecordModel> ReadAsync(string requestId);
+        Task<CertificateRequestRecordModel> GetRequestAsync(
+            string requestId);
 
         /// <summary>
         /// Query the certificate request database.
@@ -116,7 +66,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// </param>
         /// <returns>Array of certificate requests, next page link
         /// </returns>
-        Task<CertificateRequestQueryResultModel> QueryPageAsync(
+        Task<CertificateRequestQueryResultModel> QueryRequestsAsync(
             string appId, CertificateRequestState? state,
             string nextPageLink, int? maxResults = null);
     }

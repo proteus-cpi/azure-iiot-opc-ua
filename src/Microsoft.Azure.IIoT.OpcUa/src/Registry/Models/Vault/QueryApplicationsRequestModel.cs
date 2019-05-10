@@ -4,46 +4,41 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
-    using System;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
+    using System.Collections.Generic;
 
     /// <summary>
-    /// Query state
+    /// Query applications
     /// </summary>
-    [Flags]
-    [JsonConverter(typeof(StringEnumConverter))]
-    public enum QueryApplicationState : uint {
+    public sealed class QueryApplicationsRequestModel {
 
         /// <summary>
-        /// Any state
+        /// Application name
         /// </summary>
-        Any = 0,
+        public string ApplicationName { get; set; }
 
         /// <summary>
-        /// New
+        /// Application uri
         /// </summary>
-        New = 1,
+        public string ApplicationUri { get; set; }
 
         /// <summary>
-        /// Approved
+        /// Application type
         /// </summary>
-        Approved = 2,
+        public QueryApplicationType ApplicationType { get; set; }
 
         /// <summary>
-        /// Rejected
+        /// Product uri
         /// </summary>
-        Rejected = 4,
+        public string ProductUri { get; set; }
 
         /// <summary>
-        /// Unregistered
+        /// Server capabilities
         /// </summary>
-        Unregistered = 8,
+        public IList<string> ServerCapabilities { get; set; }
 
         /// <summary>
-        /// Deleted
+        /// Application state
         /// </summary>
-        Deleted = 16
+        public ApplicationStateMask? ApplicationState { get; set; }
     }
 }
-

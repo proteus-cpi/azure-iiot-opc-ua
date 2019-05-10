@@ -58,7 +58,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// <summary>
         /// State of application
         /// </summary>
-        public ApplicationState? State { get; set; }
+        public ApplicationStateMask? State { get; set; }
 
         /// <summary>
         /// Whether to include applications that were soft deleted

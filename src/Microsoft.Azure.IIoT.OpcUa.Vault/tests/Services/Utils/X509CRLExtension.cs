@@ -3,14 +3,10 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using System;
-    using System.Collections.Generic;
 
     public static class X509CRLExtension {
-
-
         internal static void AddRange(this X509CertificateCollectionModel list,
             X509CertificateCollectionModel items) {
             if (list == null || items == null) {

@@ -3,20 +3,14 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-
-using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
-using Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models;
-using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
-using Newtonsoft.Json;
-using Opc.Ua;
-using Opc.Ua.Gds;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Xunit;
-
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
+namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
+    using Newtonsoft.Json;
+    using Opc.Ua;
+    using Opc.Ua.Gds;
+    using System.Collections.Generic;
+    using System.Text;
+    using Xunit;
     public class ApplicationTestData {
         public ApplicationTestData() {
             Initialize();
@@ -51,26 +45,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public IList<string> RequestIds { get; set; }
 
         /// <summary>
-        /// Convert the Server Capability array representation to a comma separated string.
-        /// </summary>
-        public static string ServerCapabilities(string[] serverCapabilities) {
-            var capabilities = new StringBuilder();
-            if (serverCapabilities != null) {
-                foreach (var capability in serverCapabilities) {
-                    if (string.IsNullOrEmpty(capability)) {
-                        continue;
-                    }
-
-                    if (capabilities.Length > 0) {
-                        capabilities.Append(',');
-                    }
-                    capabilities.Append(capability);
-                }
-            }
-            return capabilities.ToString();
-        }
-
-        /// <summary>
         /// Helper to assert the application model data which should remain equal.
         /// </summary>
         /// <param name="expected">The expected Application model data</param>
@@ -81,7 +55,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Assert.Equal(expected.ApplicationUri, actual.ApplicationUri);
             Assert.Equal(expected.DiscoveryProfileUri, actual.DiscoveryProfileUri);
             Assert.Equal(expected.ProductUri, actual.ProductUri);
-            Assert.True(expected.Capabilities.SetEqualsSafe(actual.Capabilities));
+            Assert.True(expected.Capabilities.SetEqualsSafe(actual.Capabilities),
+                ApplicationDocumentEx.GetServerCapabilitiesAsString(expected.Capabilities) + " != " +
+                ApplicationDocumentEx.GetServerCapabilitiesAsString(actual.Capabilities));
             Assert.Equal(JsonConvert.SerializeObject(expected.LocalizedNames), JsonConvert.SerializeObject(actual.LocalizedNames));
             Assert.Equal(JsonConvert.SerializeObject(expected.DiscoveryUrls), JsonConvert.SerializeObject(actual.DiscoveryUrls));
         }

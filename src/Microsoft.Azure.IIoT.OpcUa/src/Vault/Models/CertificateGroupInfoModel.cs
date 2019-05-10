@@ -3,26 +3,24 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
 
     /// <summary>
     /// Certificate group model
     /// </summary>
-    public sealed class CertificateGroupConfigurationModel {
+    public sealed class CertificateGroupInfoModel {
 
         /// <summary>
-        /// The name of the certificate group, ofter referred to as group id.
+        /// The name of the certificate group, ofter referred
+        /// to as group id.
         /// </summary>
         public string Id { get; set; }
 
         /// <summary>
-        /// The certificate type as specified in the OPC UA spec 1.04.
-        /// supported values:
-        /// - RsaSha256ApplicationCertificateType (default)
-        /// - ApplicationCertificateType
+        /// The certificate type as specified in the OPC UA
+        /// spec 1.04.
         /// </summary>
-        public string CertificateType { get; set; }
+        public CertificateType CertificateType { get; set; }
 
         /// <summary>
         /// The subject as distinguished name.
@@ -66,16 +64,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         public ushort IssuerCACertificateHashSize { get; set; }
 
         /// <summary>
-        /// The endpoint URL for the CRL Distributionpoint in the Issuer CA certificate.
-        /// The names %servicehost%, %serial% and %group% are replaced with cert values.
-        /// default: 'http://%servicehost%/certs/crl/%serial%/%group%.crl'
+        /// The endpoint URL for the CRL Distributionpoint in
+        /// the Issuer CA certificate.
+        /// The names %servicehost%, %serial% and %group% are
+        /// replaced with cert values.
         /// </summary>
         public string IssuerCACrlDistributionPoint { get; set; }
 
         /// <summary>
-        /// The endpoint URL for the Issuer CA Authority Information Access.
-        /// The names %servicehost%, %serial% and %group% are replaced with cert values.
-        /// default: 'http://%servicehost%/certs/issuer/%serial%/%group%.cer'
+        /// The endpoint URL for the Issuer CA Authority
+        /// Information Access.
+        /// The names %servicehost%, %serial% and %group% are
+        /// replaced with cert values.
         /// </summary>
         public string IssuerCAAuthorityInformationAccess { get; set; }
     }

@@ -18,7 +18,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Format of private key
         /// </summary>
-        public string PrivateKeyFormat { get; set; }
+        public PrivateKeyFormat PrivateKeyFormat { get; set; }
 
         /// <summary>
         /// Private key

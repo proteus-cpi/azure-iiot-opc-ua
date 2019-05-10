@@ -4,9 +4,8 @@
 // ------------------------------------------------------------
 
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.CosmosDB.Models {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Newtonsoft.Json;
     using System;
 
@@ -89,9 +88,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.CosmosDB.Models {
         public string DiscoveryProfileUri { get; set; }
 
         /// <summary>
-        /// Device Registry id - reflects id of what was discovered.
+        /// Site Id
         /// </summary>
-        public string RegistryId { get; set; }
+        public string SiteId { get; set; }
 
         /// <summary>
         /// Create time

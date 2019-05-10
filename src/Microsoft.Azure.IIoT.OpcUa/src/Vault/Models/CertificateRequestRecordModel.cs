@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Type
         /// </summary>
-        public string CertificateTypeId { get; set; }
+        public CertificateType CertificateTypeId { get; set; }
 
         /// <summary>
         /// Is Signing request
@@ -49,11 +49,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Domain names
         /// </summary>
-        public IList<string> DomainNames { get; set; }
+        public List<string> DomainNames { get; set; }
 
         /// <summary>
         /// Private key format to return
         /// </summary>
-        public string PrivateKeyFormat { get; set; }
+        public PrivateKeyFormat PrivateKeyFormat { get; set; }
     }
 }
