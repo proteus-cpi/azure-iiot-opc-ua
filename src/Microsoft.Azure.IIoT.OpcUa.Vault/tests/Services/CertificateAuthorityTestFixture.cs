@@ -25,8 +25,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
     public class CertificateAuthorityTestFixture : IDisposable {
         public IApplicationRegistry2 ApplicationsDatabase { get; set; }
-        public ICertificateStorage CertificateGroup { get; set; }
-        public ICertificateAuthority CertificateRequest { get; set; }
+        public ICertificateStorage CertificateManagement { get; set; }
+        public ICertificateAuthority CertificateAuthority { get; set; }
         public IList<ApplicationTestData> ApplicationTestSet { get; set; }
         public ApplicationTestDataGenerator RandomGenerator { get; set; }
         public bool RegistrationOk { get; set; }
@@ -54,11 +54,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 var keyVaultServiceClient = KeyVaultTestServiceClient.Get(_configId, _serviceConfig, _clientConfig, _logger);
                 _keyVaultCertificateGroup = new CertificateManagement(keyVaultServiceClient, _serviceConfig, _logger);
                 _keyVaultCertificateGroup.PurgeAsync(_configId, _groupId).Wait();
-                CertificateGroup = new CertificateManagement(keyVaultServiceClient, _serviceConfig, _logger);
-                CertificateGroup.CreateGroupAsync(_groupId,
+                CertificateManagement = new CertificateManagement(keyVaultServiceClient, _serviceConfig, _logger);
+                CertificateManagement.CreateGroupAsync(_groupId,
                     "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT", Models.CertificateType.RsaSha256ApplicationCertificateType).Wait();
-                CertificateRequest = new CertificateAuthority(ApplicationsDatabase, CertificateGroup, _serviceConfig,
-                    _documentDBRepository, _logger);
+                CertificateAuthority = new CertificateAuthority(ApplicationsDatabase, CertificateManagement, 
+                    new ItemContainerFactory(new CosmosDbServiceClient(_serviceConfig, _logger)), _logger);
 
                 // create test set
                 ApplicationTestSet = new List<ApplicationTestData>();
