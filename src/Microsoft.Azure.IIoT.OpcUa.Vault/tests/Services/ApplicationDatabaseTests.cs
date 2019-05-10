@@ -59,7 +59,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
         public async Task CleanupAllApplications() {
             _logger.Information("Cleanup All Applications");
             foreach (var application in _applicationTestSet) {
-                var applicationModelList = await _applicationsDatabase.ListApplicationsAsync(application.Model.ApplicationUri);
+                var applicationModelList = await _applicationsDatabase.QueryApplicationsAsync(
+                    new ApplicationRegistrationQueryModel {
+                        ApplicationUri = application.Model.ApplicationUri
+                    });
                 Assert.NotNull(applicationModelList);
                 foreach (var response in applicationModelList.Items) {
                     try {
