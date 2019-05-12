@@ -76,6 +76,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     "The application id must be provided");
             }
             var application = await _applications.GetAsync<ApplicationDocument>(applicationId);
+            if (application == null) {
+                throw new ResourceNotFoundException("No such application");
+            }
             return new ApplicationRegistrationModel {
                 Application = application.Value.ToServiceModel()
             }.SetSecurityAssessment();
@@ -97,9 +100,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 if (document == null) {
                     throw new ResourceNotFoundException("Application does not exist");
                 }
-                document.Value.Patch(request);
+                var application = document.Value.Clone();
+                application.Patch(request);
                 try {
-                    await _applications.ReplaceAsync(document, document.Value);
+                    await _applications.ReplaceAsync(document, application);
                 }
                 catch (ResourceOutOfDateException) {
                     continue;
@@ -110,12 +114,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
         /// <inheritdoc/>
         public Task ApproveApplicationAsync(string applicationId, bool force) {
-            return UpdateApprovalState(applicationId, true, force);
+            return UpdateApplicationStateAsync(applicationId, ApplicationState.Approved, 
+                s => s == ApplicationState.New || force);
         }
 
         /// <inheritdoc/>
         public Task RejectApplicationAsync(string applicationId, bool force) {
-            return UpdateApprovalState(applicationId, false, force);
+            return UpdateApplicationStateAsync(applicationId, ApplicationState.Rejected, 
+                s => s == ApplicationState.New || force);
         }
 
         /// <inheritdoc/>
@@ -126,13 +132,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             }
             var first = true;
             while (true) {
-                var certificates = new List<byte[]>();
-                var record = await _applications.GetAsync<ApplicationDocument>(applicationId);
-                if (record == null) {
+                var document = await _applications.GetAsync<ApplicationDocument>(applicationId);
+                if (document == null) {
                     throw new ResourceNotFoundException(
                         "A record with the specified application id does not exist.");
                 }
-                if (record.Value.ApplicationState >= ApplicationState.Unregistered) {
+                var application = document.Value.Clone();
+                if (application.ApplicationState >= ApplicationState.Unregistered) {
                     throw new ResourceInvalidStateException(
                         "The record is not in a valid state for this operation.");
                 }
@@ -141,31 +147,36 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 if (first && _scope != null) {
                     var certificateRequestsService = _scope.Resolve<ICertificateAuthority>();
                     // mark all requests as deleted
-                    string nextPageLink = null;
-                    do {
-                        var result = await certificateRequestsService.QueryRequestsAsync(
-                            applicationId, null, nextPageLink);
-                        foreach (var request in result.Requests) {
-                            if (request.State < CertificateRequestState.Deleted) {
-                                await certificateRequestsService.DeleteRequestAsync(request.RequestId);
-                            }
-                        }
-                        nextPageLink = result.NextPageLink;
-                    } while (nextPageLink != null);
+                    await DeleteAllRequests(applicationId, certificateRequestsService);
                 }
                 first = false;
 
 
-                record.Value.ApplicationState = ApplicationState.Unregistered;
-                record.Value.DeleteTime = DateTime.UtcNow;
+                application.ApplicationState = ApplicationState.Unregistered;
+                application.DeleteTime = DateTime.UtcNow;
                 try {
-                    await _applications.ReplaceAsync(record, record.Value);
+                    await _applications.ReplaceAsync(document, application);
                 }
                 catch (ResourceOutOfDateException) {
                     continue;
                 }
                 break;
             } 
+        }
+
+        private static async Task DeleteAllRequests(string applicationId, 
+            ICertificateAuthority certificateRequestsService) {
+            string nextPageLink = null;
+            do {
+                var result = await certificateRequestsService.QueryRequestsAsync(
+                    applicationId, null, nextPageLink);
+                foreach (var request in result.Requests) {
+                    if (request.State < CertificateRequestState.Deleted) {
+                        await certificateRequestsService.DeleteRequestAsync(request.RequestId);
+                    }
+                }
+                nextPageLink = result.NextPageLink;
+            } while (nextPageLink != null);
         }
 
         /// <inheritdoc/>
@@ -189,17 +200,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
                 if (first && _scope != null) {
                     var certificateRequestsService = _scope.Resolve<ICertificateAuthority>();
-                    // mark all requests as deleted
-                    string nextPageLink = null;
-                    do {
-                        var result =
-                            await certificateRequestsService.QueryRequestsAsync(
-                                applicationId, null, nextPageLink);
-                        foreach (var request in result.Requests) {
-                            await certificateRequestsService.DeleteRequestAsync(request.RequestId);
-                        }
-                        nextPageLink = result.NextPageLink;
-                    } while (nextPageLink != null);
+                    await DeleteAllRequests(applicationId, certificateRequestsService);
                 }
                 first = false;
 
@@ -236,7 +237,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 client.Continue<ApplicationDocument>(nextPageLink, pageSize) :
                 client.Query<ApplicationDocument>(
                     "SELECT * FROM Applications a WHERE " +
-        $"a.{nameof(ApplicationDocument.ClassType)} = {ApplicationDocument.ClassTypeName}",
+        $"a.{nameof(ApplicationDocument.ClassType)} = '{ApplicationDocument.ClassTypeName}'",
                 null, pageSize);
             // Read results
             var results = await query.ReadAsync();
@@ -408,13 +409,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             var queryParameters = new Dictionary<string, object>();
             if (maxRecordsToQuery != 0) {
                 query = "SELECT TOP @maxRecordsToQuery";
-                queryParameters.Add("@maxRecordsToQuery", maxRecordsToQuery.ToString());
+                queryParameters.Add("@maxRecordsToQuery", maxRecordsToQuery);
             }
             else {
                 query = "SELECT";
             }
-            query += " * FROM Applications a WHERE a.ID >= @startingRecord";
-            queryParameters.Add("@startingRecord", startingRecordId.ToString());
+            query += $" * FROM Applications a WHERE a.{nameof(ApplicationDocument.ID)} >= @startingRecord";
+            queryParameters.Add("@startingRecord", startingRecordId);
             var queryState = applicationState ?? ApplicationStateMask.Approved;
             if (queryState != 0) {
                 var first = true;
@@ -432,7 +433,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         else {
                             query += " OR";
                         }
-                        query += " a.ApplicationState = " + sqlParm;
+                        query += $" a.{nameof(ApplicationDocument.ApplicationState)} = {sqlParm}";
                         queryParameters.Add(sqlParm, state.ToString());
                         first = false;
                     }
@@ -441,8 +442,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     query += " )";
                 }
             }
-            query += " AND a.ClassType = " + ApplicationDocument.ClassTypeName;
-            query += " ORDER BY a.ID";
+            query += $" AND a.{ nameof(ApplicationDocument.ClassType)} = @classType";
+            queryParameters.Add("@classType", ApplicationDocument.ClassTypeName);
+            query += $" ORDER BY a.{nameof(ApplicationDocument.ID)}";
 
             var client = _applications.OpenSqlClient();
             return client.Query<ApplicationDocument>(query, queryParameters, maxRecordsToQuery);
@@ -452,33 +454,32 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// Update approval state
         /// </summary>
         /// <param name="applicationId"></param>
-        /// <param name="approved"></param>
-        /// <param name="force"></param>
+        /// <param name="state"></param>
+        /// <param name="precondition"></param>
         /// <returns></returns>
-        public async Task UpdateApprovalState(string applicationId, bool approved, 
-            bool force) {
+        public async Task UpdateApplicationStateAsync(string applicationId, ApplicationState state, 
+            Func<ApplicationState, bool> precondition) {
             if (string.IsNullOrEmpty(applicationId)) {
                 throw new ArgumentNullException(nameof(applicationId),
                     "The application id must be provided");
             }
             while (true) {
-                var record = await _applications.GetAsync<ApplicationDocument>(applicationId);
-                if (record == null) {
+                var document = await _applications.GetAsync<ApplicationDocument>(applicationId);
+                if (document == null) {
                     throw new ResourceNotFoundException(
                         "A record with the specified application id does not exist.");
                 }
-                if (!force &&
-                    record.Value.ApplicationState != ApplicationState.New) {
+                if (precondition != null && !precondition(document.Value.ApplicationState)) {
                     throw new ResourceInvalidStateException(
                         "The record is not in a valid state for this operation.");
                 }
 
-                record.Value.ApplicationState = approved ?
-                    ApplicationState.Approved : ApplicationState.Rejected;
-                record.Value.ApproveTime = DateTime.UtcNow;
+                var application = document.Value.Clone();
+                application.ApplicationState = state;
+                application.ApproveTime = DateTime.UtcNow;
 
                 try {
-                    await _applications.ReplaceAsync(record, record.Value);
+                    await _applications.ReplaceAsync(document, application);
                 }
                 catch (ResourceOutOfDateException) {
                     continue;
@@ -496,7 +497,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             try {
                 var query = _applications.OpenSqlClient().Query<ApplicationDocument>(
                     "SELECT TOP 1 * FROM Applications a WHERE " +
-                        $"a.{nameof(ApplicationDocument.ClassType)} = {ApplicationDocument.ClassTypeName} ORDER BY " +
+                        $"a.{nameof(ApplicationDocument.ClassType)} = '{ApplicationDocument.ClassTypeName}' ORDER BY " +
                         $"a.{nameof(ApplicationDocument.ID)} DESC");
 
                 var maxIDEnum = await query.AllAsync();

@@ -32,5 +32,35 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
                 State = document.CertificateRequestState
             };
         }
+
+        /// <summary>
+        /// Create model
+        /// </summary>
+        /// <param name="document"></param>
+        public static CertificateRequestDocument Clone(
+            this CertificateRequestDocument document) {
+            return new CertificateRequestDocument {
+                RequestId = document.RequestId,
+                ApplicationId = document.ApplicationId,
+                CertificateGroupId = document.CertificateGroupId,
+                CertificateTypeId = document.CertificateTypeId,
+                DomainNames = document.DomainNames?.ToArray(),
+                PrivateKeyFormat = document.PrivateKeyFormat,
+                SigningRequest = document.SigningRequest.ToArray(),
+                SubjectName = document.SubjectName,
+                AcceptTime = document.AcceptTime,
+                ApproveRejectTime = document.ApproveRejectTime,
+                AuthorityId = document.AuthorityId,
+                Certificate = document.Certificate,
+                ClassType = document.ClassType,
+                DeleteTime = document.DeleteTime,
+                ETag = document.ETag,
+                ID = document.ID,
+                PrivateKeyPassword = document.PrivateKeyPassword,
+                RequestTime = document.RequestTime,
+                RevokeTime =document.RevokeTime,
+                CertificateRequestState = document.CertificateRequestState
+            };
+        }
     }
 }

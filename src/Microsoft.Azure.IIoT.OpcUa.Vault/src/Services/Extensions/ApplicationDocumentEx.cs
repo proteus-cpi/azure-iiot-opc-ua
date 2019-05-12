@@ -86,6 +86,43 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// Convert to service model
         /// </summary>
         /// <returns></returns>
+        public static ApplicationDocument Clone(this ApplicationDocument model) {
+            return new ApplicationDocument {
+                ID = model.ID,
+                ApplicationState = model.ApplicationState,
+                ApplicationId = model.ApplicationId,
+                ApplicationUri = model.ApplicationUri,
+                ApplicationName = model.ApplicationName,
+                ApplicationType = model.ApplicationType,
+                SiteId = model.SiteId,
+                ApplicationNames = model.ApplicationNames?
+                    .Select(n => new ApplicationDocument.LocalizedText {
+                        Locale = n.Locale,
+                        Name = n.Name
+                    })
+                    .ToArray(),
+                ProductUri = model.ProductUri,
+                DiscoveryUrls = model.DiscoveryUrls?.ToArray(),
+                ServerCapabilities = model.ServerCapabilities,
+                GatewayServerUri = model.GatewayServerUri,
+                DiscoveryProfileUri = model.DiscoveryProfileUri,
+                UpdateTime = model.UpdateTime,
+                DeleteTime = model.DeleteTime,
+                CreateTime = model.CreateTime,
+                ApproveTime = model.ApproveTime,
+                UpdateAuthorityId = model.UpdateAuthorityId,
+                DeleteAuthorityId = model.DeleteAuthorityId,
+                CreateAuthorityId = model.CreateAuthorityId,
+                ApproveAuthorityId = model.ApproveAuthorityId,
+                ETag = model.ETag,
+                ClassType = model.ClassType
+            };
+        }
+
+        /// <summary>
+        /// Convert to service model
+        /// </summary>
+        /// <returns></returns>
         public static ApplicationDocument ToDocumentModel(
             this ApplicationRegistrationRequestModel model, uint id) {
             var document = new ApplicationDocument {
