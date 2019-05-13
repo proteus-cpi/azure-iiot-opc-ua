@@ -27,7 +27,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
         /// </summary>
         /// <param name="applicationId">The applicationId</param>
         /// <param name="force">Ignore state check</param>
-        Task ApproveApplicationAsync(string applicationId, 
+        Task ApproveApplicationAsync(string applicationId,
             bool force = false);
 
         /// <summary>

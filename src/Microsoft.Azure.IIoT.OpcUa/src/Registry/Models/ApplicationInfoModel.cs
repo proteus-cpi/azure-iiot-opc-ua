@@ -111,11 +111,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// Updated
         /// </summary>
         public RegistryOperationModel Updated { get; set; }
-
-        /// <summary>
-        /// Deleted
-        /// </summary>
-        public RegistryOperationModel Deleted { get; set; }
     }
 }
 

@@ -5,12 +5,13 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.Registry.Models;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.Models;
     using Microsoft.Azure.IIoT.OpcUa.Registry;
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
-    using Microsoft.Azure.IIoT.Exceptions;
     using Microsoft.Azure.IIoT.Storage;
-    using Autofac;
+    using Microsoft.Azure.IIoT.Storage.Default;
+    using Microsoft.Azure.IIoT.Exceptions;
+    using Microsoft.Azure.IIoT.Utils;
     using Serilog;
     using System;
     using System.Collections.Generic;
@@ -26,24 +27,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <summary>
         /// Create database
         /// </summary>
-        /// <param name="scope"></param>
+        /// <param name="listeners"></param>
         /// <param name="config"></param>
         /// <param name="db"></param>
         /// <param name="logger"></param>
-        public ApplicationDatabase(ILifetimeScope scope,
+        public ApplicationDatabase(IEnumerable<IApplicationChangeListener> listeners,
             IVaultConfig config, IItemContainerFactory db, ILogger logger) {
-            _scope = scope;
-            _autoApprove = config.ApplicationsAutoApprove;
-            _logger = logger;
-            _applications = db.OpenAsync().Result.AsDocuments();
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            if (db == null) {
+                throw new ArgumentNullException(nameof(db));
+            }
+            var container = db.OpenAsync().Result;
+            _applications = container.AsDocuments();
+            _index = new ContainerIndex(container);
 
-          //  // set unique key in CosmosDB for application ID
-          //  db.UniqueKeyPolicy.UniqueKeys.Add(new UniqueKey {
-          //      Paths = new Collection<string> {
-          //          "/" + nameof(ApplicationDocument.ClassType),
-          //          "/" + nameof(ApplicationDocument.ID)
-          //      }
-          //  });
+            _listeners = listeners?.ToList() ?? new List<IApplicationChangeListener>();
         }
 
         /// <inheritdoc/>
@@ -53,35 +52,36 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 throw new ArgumentNullException(nameof(request));
             }
 
-            var recordId = await GetNextRecordIdAsync();
-            var document = request.ToDocumentModel(recordId);
+            var recordId = await _index.AllocateAsync();
+            try {
+                var document = request.ToDocumentModel(recordId);
 
-            // depending on use case, new applications can be auto approved.
-            if (_autoApprove) {
-                document.ApplicationState = ApplicationState.Approved;
-                document.ApproveTime = document.CreateTime;
-            }
+                // depending on use case, new applications can be auto approved.
+                var autoApprove = _config.ApplicationsAutoApprove;
+                if (autoApprove) {
+                    document.ApplicationState = ApplicationState.Approved;
+                    document.ApproveTime = document.CreateTime;
+                }
 
-            var result = await _applications.AddAsync(document);
-            return new ApplicationRegistrationResultModel {
-                Id = document.ApplicationId
-            };
-        }
+                var result = await _applications.AddAsync(document);
 
-        /// <inheritdoc/>
-        public async Task<ApplicationRegistrationModel> GetApplicationAsync(
-            string applicationId, bool filterInactiveEndpoints) {
-            if (string.IsNullOrEmpty(applicationId)) {
-                throw new ArgumentNullException(nameof(applicationId),
-                    "The application id must be provided");
+                await SendEventAsync(ApplicationEvent.New, result.Value.ToServiceModel());
+                // TODO:  Add authority id from context
+                await SendEventAsync(ApplicationEvent.Enabled, result.Value.ToServiceModel());
+                // TODO:  Add authority id from context
+                if (autoApprove) {
+                    await SendEventAsync(ApplicationEvent.Approved,
+                        result.Value.ToServiceModel()); // TODO:  Add authority id from context
+                }
+
+                return new ApplicationRegistrationResultModel {
+                    Id = document.ApplicationId
+                };
             }
-            var application = await _applications.GetAsync<ApplicationDocument>(applicationId);
-            if (application == null) {
-                throw new ResourceNotFoundException("No such application");
+            catch {
+                await Try.Async(() => _index.FreeAsync(recordId));
+                throw;
             }
-            return new ApplicationRegistrationModel {
-                Application = application.Value.ToServiceModel()
-            }.SetSecurityAssessment();
         }
 
         /// <inheritdoc/>
@@ -103,25 +103,29 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 var application = document.Value.Clone();
                 application.Patch(request);
                 try {
-                    await _applications.ReplaceAsync(document, application);
+                    var result = await _applications.ReplaceAsync(document, application);
+                    await SendEventAsync(ApplicationEvent.Updated, result.Value.ToServiceModel());
+                    // TODO:  Add authority id from context
+                    break;
                 }
                 catch (ResourceOutOfDateException) {
                     continue;
                 }
-                break;
-            } 
+            }
         }
 
         /// <inheritdoc/>
-        public Task ApproveApplicationAsync(string applicationId, bool force) {
-            return UpdateApplicationStateAsync(applicationId, ApplicationState.Approved, 
+        public async Task ApproveApplicationAsync(string applicationId, bool force) {
+            var app = await UpdateApplicationStateAsync(applicationId, ApplicationState.Approved,
                 s => s == ApplicationState.New || force);
+            await SendEventAsync(ApplicationEvent.Approved, app); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
-        public Task RejectApplicationAsync(string applicationId, bool force) {
-            return UpdateApplicationStateAsync(applicationId, ApplicationState.Rejected, 
+        public async Task RejectApplicationAsync(string applicationId, bool force) {
+            var app = await UpdateApplicationStateAsync(applicationId, ApplicationState.Rejected,
                 s => s == ApplicationState.New || force);
+            await SendEventAsync(ApplicationEvent.Approved, app); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
@@ -130,7 +134,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 throw new ArgumentNullException(nameof(applicationId),
                     "The application id must be provided");
             }
-            var first = true;
             while (true) {
                 var document = await _applications.GetAsync<ApplicationDocument>(applicationId);
                 if (document == null) {
@@ -138,82 +141,34 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         "A record with the specified application id does not exist.");
                 }
                 var application = document.Value.Clone();
-                if (application.ApplicationState >= ApplicationState.Unregistered) {
-                    throw new ResourceInvalidStateException(
-                        "The record is not in a valid state for this operation.");
-                }
-
-
-                if (first && _scope != null) {
-                    var certificateRequestsService = _scope.Resolve<ICertificateAuthority>();
-                    // mark all requests as deleted
-                    await DeleteAllRequests(applicationId, certificateRequestsService);
-                }
-                first = false;
-
-
-                application.ApplicationState = ApplicationState.Unregistered;
-                application.DeleteTime = DateTime.UtcNow;
                 try {
-                    await _applications.ReplaceAsync(document, application);
+                    // Try delete
+                    await _applications.DeleteAsync(document);
+
+                    // Success -- Notify others to clean upo
+                    await SendEventAsync(ApplicationEvent.Unregistered,
+                        document.Value.ToServiceModel()); // TODO:  Add authority id from context
+
+                    // Try free record id
+                    await Try.Async(() => _index.FreeAsync(document.Value.ID));
+                    break;
                 }
                 catch (ResourceOutOfDateException) {
                     continue;
                 }
-                break;
-            } 
-        }
-
-        private static async Task DeleteAllRequests(string applicationId, 
-            ICertificateAuthority certificateRequestsService) {
-            string nextPageLink = null;
-            do {
-                var result = await certificateRequestsService.QueryRequestsAsync(
-                    applicationId, null, nextPageLink);
-                foreach (var request in result.Requests) {
-                    if (request.State < CertificateRequestState.Deleted) {
-                        await certificateRequestsService.DeleteRequestAsync(request.RequestId);
-                    }
-                }
-                nextPageLink = result.NextPageLink;
-            } while (nextPageLink != null);
+            }
         }
 
         /// <inheritdoc/>
-        public async Task DeleteApplicationAsync(string applicationId, bool force) {
-            if (string.IsNullOrEmpty(applicationId)) {
-                throw new ArgumentNullException(nameof(applicationId),
-                    "The application id must be provided");
-            }
+        public async Task DisableApplicationAsync(string applicationId) {
+            var app = await UpdateEnabledDisabledAsync(applicationId, false);
+            await SendEventAsync(ApplicationEvent.Disabled, app); // TODO:  Add authority id from context
+        }
 
-            var first = true;
-            while (true) {
-                var application = await _applications.GetAsync<ApplicationDocument>(applicationId);
-                if (application == null) {
-                    return;
-                }
-                if (!force &&
-                    application.Value.ApplicationState < ApplicationState.Unregistered) {
-                    throw new ResourceInvalidStateException(
-                        "The record is not in a valid state for this operation.");
-                }
-
-                if (first && _scope != null) {
-                    var certificateRequestsService = _scope.Resolve<ICertificateAuthority>();
-                    await DeleteAllRequests(applicationId, certificateRequestsService);
-                }
-                first = false;
-
-
-                try {
-                    await _applications.DeleteAsync(application);
-                }
-                catch (ResourceOutOfDateException) {
-                    // Try again
-                    continue;
-                }
-                break;
-            }
+        /// <inheritdoc/>
+        public async Task EnableApplicationAsync(string applicationId) {
+            var app = await UpdateEnabledDisabledAsync(applicationId, true);
+            await SendEventAsync(ApplicationEvent.Enabled, app); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
@@ -227,6 +182,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             int? pageSize) {
             // TODO: Implement correctly
             return Task.FromResult(new ApplicationSiteListModel());
+        }
+
+        /// <inheritdoc/>
+        public async Task<ApplicationRegistrationModel> GetApplicationAsync(
+            string applicationId, bool filterInactiveEndpoints) {
+            if (string.IsNullOrEmpty(applicationId)) {
+                throw new ArgumentNullException(nameof(applicationId),
+                    "The application id must be provided");
+            }
+            var application = await _applications.GetAsync<ApplicationDocument>(applicationId);
+            if (application == null) {
+                throw new ResourceNotFoundException("No such application");
+            }
+            return new ApplicationRegistrationModel {
+                Application = application.Value.ToServiceModel()
+            }.SetSecurityAssessment();
         }
 
         /// <inheritdoc/>
@@ -326,7 +297,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 nextRecordId = 0;
             }
             return new QueryApplicationsByIdResultModel {
-                Applications = records.Select(a => a.ToServiceModel()).ToList(),
+                Items = records.Select(a => a.ToServiceModel()).ToList(),
                 LastCounterResetTime = lastCounterResetTime,
                 NextRecordId = nextRecordId
             };
@@ -357,7 +328,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 maxRecordsToReturn = kDefaultRecordsPerQuery;
             }
             var query = CreateServerQuery(0, maxRecordsToReturn.Value, request.State);
-            while (query.HasMore()) { 
+            while (query.HasMore()) {
                 var applications = await query.ReadAsync();
                 foreach (var application in applications.Select(a => a.Value)) {
                     if (!string.IsNullOrEmpty(request.ApplicationName)) {
@@ -451,14 +422,51 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <summary>
-        /// Update approval state
+        /// Update enabled or disabled state
+        /// </summary>
+        /// <param name="applicationId"></param>
+        /// <param name="enabled"></param>
+        /// <returns></returns>
+        public async Task<ApplicationInfoModel> UpdateEnabledDisabledAsync(string applicationId,
+            bool enabled) {
+            if (string.IsNullOrEmpty(applicationId)) {
+                throw new ArgumentNullException(nameof(applicationId),
+                    "The application id must be provided");
+            }
+            while (true) {
+                var document = await _applications.GetAsync<ApplicationDocument>(applicationId);
+                if (document == null) {
+                    throw new ResourceNotFoundException(
+                        "A record with the specified application id does not exist.");
+                }
+                var application = document.Value.Clone();
+
+                if ((enabled && application.NotSeenSince == null) ||
+                    (!enabled && application.NotSeenSince != null)) {
+                    throw new ResourceInvalidStateException(
+                        "The record is not in a valid state for this operation.");
+                }
+
+                application.NotSeenSince = enabled ? (DateTime?)null : DateTime.UtcNow;
+                try {
+                    var result = await _applications.ReplaceAsync(document, application);
+                    return result.Value.ToServiceModel();
+                }
+                catch (ResourceOutOfDateException) {
+                    continue;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update application state
         /// </summary>
         /// <param name="applicationId"></param>
         /// <param name="state"></param>
         /// <param name="precondition"></param>
         /// <returns></returns>
-        public async Task UpdateApplicationStateAsync(string applicationId, ApplicationState state, 
-            Func<ApplicationState, bool> precondition) {
+        public async Task<ApplicationInfoModel> UpdateApplicationStateAsync(string applicationId,
+            ApplicationState state, Func<ApplicationState, bool> precondition) {
             if (string.IsNullOrEmpty(applicationId)) {
                 throw new ArgumentNullException(nameof(applicationId),
                     "The application id must be provided");
@@ -477,42 +485,33 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 var application = document.Value.Clone();
                 application.ApplicationState = state;
                 application.ApproveTime = DateTime.UtcNow;
-
                 try {
-                    await _applications.ReplaceAsync(document, application);
+                    var result = await _applications.ReplaceAsync(document, application);
+                    return result.Value.ToServiceModel();
                 }
                 catch (ResourceOutOfDateException) {
                     continue;
                 }
-                break;
             }
         }
 
         /// <summary>
-        /// Returns the next free, largest, application ID value.
-        /// This is the ID value used for sorting in GDS queries.
+        /// Call listeners
         /// </summary>
+        /// <param name="type"></param>
+        /// <param name="application"></param>
         /// <returns></returns>
-        private async Task<uint> GetNextRecordIdAsync() {
-            try {
-                var query = _applications.OpenSqlClient().Query<ApplicationDocument>(
-                    "SELECT TOP 1 * FROM Applications a WHERE " +
-                        $"a.{nameof(ApplicationDocument.ClassType)} = '{ApplicationDocument.ClassTypeName}' ORDER BY " +
-                        $"a.{nameof(ApplicationDocument.ID)} DESC");
-
-                var maxIDEnum = await query.AllAsync();
-                var maxID = maxIDEnum.SingleOrDefault();
-                return (maxID != null) ? maxID.Value.ID + 1 : 1;
-            }
-            catch {
-                return 1;
-            }
+        private Task SendEventAsync(ApplicationEvent type, ApplicationInfoModel application) {
+            return Task
+                .WhenAll(_listeners.Select(l => l.OnEventAsync(type, application)).ToArray())
+                .ContinueWith(t => Task.CompletedTask);
         }
 
         private const int kDefaultRecordsPerQuery = 10;
         private readonly ILogger _logger;
+        private readonly IContainerIndex _index;
         private readonly IDocuments _applications;
-        private readonly bool _autoApprove;
-        private readonly ILifetimeScope _scope;
+        private readonly IVaultConfig _config;
+        private readonly List<IApplicationChangeListener> _listeners;
     }
 }

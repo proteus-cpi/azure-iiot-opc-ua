@@ -4,7 +4,7 @@
 // ------------------------------------------------------------
 
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.Registry.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.Models {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using Newtonsoft.Json;
     using System;
@@ -123,14 +123,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.Registry.Models {
         public string UpdateAuthorityId { get; set; }
 
         /// <summary>
-        /// Delete time
+        /// Disable time
         /// </summary>
-        public DateTime? DeleteTime { get; set; }
+        public DateTime? NotSeenSince { get; set; }
 
         /// <summary>
         /// Authority
         /// </summary>
-        public string DeleteAuthorityId { get; set; }
+        public string DisableAuthorityId { get; set; }
+
 
         /// <inheritdoc/>
         public static readonly string ClassTypeName = "Application";

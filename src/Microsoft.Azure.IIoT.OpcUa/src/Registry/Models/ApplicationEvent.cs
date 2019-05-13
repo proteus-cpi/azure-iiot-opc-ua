@@ -8,15 +8,20 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
     using Newtonsoft.Json.Converters;
 
     /// <summary>
-    /// State of the application
+    /// Application lifecycle events
     /// </summary>
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum ApplicationState {
+    public enum ApplicationEvent {
 
         /// <summary>
         /// New
         /// </summary>
         New,
+
+        /// <summary>
+        /// New
+        /// </summary>
+        Updated,
 
         /// <summary>
         /// Activated
@@ -26,7 +31,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
         /// <summary>
         /// Rejected
         /// </summary>
-        Rejected
+        Rejected,
+
+        /// <summary>
+        /// Enabled
+        /// </summary>
+        Enabled,
+
+        /// <summary>
+        /// Disabled
+        /// </summary>
+        Disabled,
+
+        /// <summary>
+        /// Unregistered
+        /// </summary>
+        Unregistered,
     }
 }
 

@@ -6,25 +6,30 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using Microsoft.Azure.IIoT.Auth.Clients;
+    using Microsoft.Azure.IIoT.Auth.Clients.Default;
     using Microsoft.Azure.IIoT.Auth.Runtime;
+    using Microsoft.Azure.IIoT.OpcUa.Registry;
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Tests;
     using Microsoft.Azure.IIoT.OpcUa.Vault;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Runtime;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
+    using Microsoft.Azure.IIoT.Storage.CosmosDb.Services;
+    using Microsoft.Azure.IIoT.Storage.Default;
     using Microsoft.Extensions.Configuration;
     using Serilog;
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
     using Xunit;
-    using Microsoft.Azure.IIoT.OpcUa.Registry;
-    using Microsoft.Azure.IIoT.OpcUa.Registry.Tests;
-    using Microsoft.Azure.IIoT.Storage.Default;
-    using Microsoft.Azure.IIoT.Storage.CosmosDb.Services;
 
     public class CertificateAuthorityTestFixture : IDisposable {
         public IApplicationRegistry2 ApplicationsDatabase { get; set; }
-        public ICertificateStorage CertificateManagement { get; set; }
+        public IGroupRegistry GroupRegistry { get; set; }
+        public IGroupServices GroupServices { get; set; }
         public ICertificateAuthority CertificateAuthority { get; set; }
+        public IRequestManagement RequestManagement { get; set; }
         public IList<ApplicationTestData> ApplicationTestSet { get; set; }
         public ApplicationTestDataGenerator RandomGenerator { get; set; }
         public bool RegistrationOk { get; set; }
@@ -42,21 +47,23 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             _clientConfig = new ClientConfig(configuration);
             _logger = SerilogTestLogger.Create<CertificateAuthorityTestFixture>();
             if (!InvalidConfiguration()) {
-                ApplicationsDatabase = new ApplicationDatabase(null, _serviceConfig, 
+                ApplicationsDatabase = new ApplicationDatabase(null, _serviceConfig,
                     new ItemContainerFactory(new CosmosDbServiceClient(_serviceConfig, _logger)), _logger);
 
                 var timeid = DateTime.UtcNow.ToFileTimeUtc() / 1000 % 10000;
                 _groupId = "CertReqIssuerCA" + timeid.ToString();
                 _configId = "CertReqConfig" + timeid.ToString();
-                var keyVaultServiceClient = KeyVaultTestServiceClient.Get(_configId, _serviceConfig, _clientConfig, _logger);
-                _keyVaultCertificateGroup = new CertificateManagement(keyVaultServiceClient, _serviceConfig, _logger);
-                _keyVaultCertificateGroup.PurgeAsync(_configId, _groupId).Wait();
-                CertificateManagement = new CertificateManagement(keyVaultServiceClient, _serviceConfig, _logger);
-                CertificateManagement.CreateGroupAsync(_groupId,
+                _keyVaultServiceClient = new KeyVaultServiceClient(_serviceConfig,
+                    new AppAuthenticationProvider(_clientConfig), _logger);
+                GroupRegistry = new KeyVaultGroupRegistry(_keyVaultServiceClient, _logger);
+                _keyVaultCertificateGroup = new KeyVaultGroupServices(GroupRegistry, _keyVaultServiceClient, _serviceConfig, _logger);
+                _keyVaultServiceClient.PurgeAsync("groups", _groupId, CancellationToken.None).Wait();
+                GroupServices = _keyVaultCertificateGroup;
+                GroupRegistry.CreateGroupAsync(_groupId,
                     "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT", Models.CertificateType.RsaSha256ApplicationCertificateType).Wait();
-                CertificateAuthority = new CertificateAuthority(ApplicationsDatabase, CertificateManagement, 
+                CertificateAuthority = new CertificateAuthority(ApplicationsDatabase, GroupServices,
                     new ItemContainerFactory(new CosmosDbServiceClient(_serviceConfig, _logger)), _logger);
-
+                RequestManagement = (IRequestManagement)CertificateAuthority;
                 // create test set
                 ApplicationTestSet = new List<ApplicationTestData>();
                 for (var i = 0; i < kTestSetSize; i++) {
@@ -68,7 +75,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         }
 
         public void Dispose() {
-            _keyVaultCertificateGroup?.PurgeAsync(_configId, _groupId).Wait();
+            _keyVaultServiceClient?.PurgeAsync("groups", _groupId, CancellationToken.None).Wait();
         }
 
         public void SkipOnInvalidConfiguration() {
@@ -90,8 +97,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         private readonly IClientConfig _clientConfig;
         private readonly VaultConfig _serviceConfig;
         private readonly string _configId;
+        private readonly KeyVaultServiceClient _keyVaultServiceClient;
         private readonly string _groupId;
-        private readonly CertificateManagement _keyVaultCertificateGroup;
+        private readonly KeyVaultGroupServices _keyVaultCertificateGroup;
         private readonly ILogger _logger;
         private const int kRandomStart = 1234;
         private const int kTestSetSize = 10;

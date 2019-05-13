@@ -13,15 +13,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     public interface IApplicationRegistry2 : IApplicationRegistry {
 
         /// <summary>
-        /// Physically remove the application from the database.
-        /// Must be in deleted state.
+        /// Disable the application. Does not remove the application
+        /// from the database.
         /// </summary>
         /// <param name="applicationId">The applicationId</param>
-        /// <param name="force">Force the application to be deleted,
-        /// even when not in deleted state</param>
         /// <returns></returns>
-        Task DeleteApplicationAsync(string applicationId,
-            bool force = false);
+        Task DisableApplicationAsync(string applicationId);
+
+        /// <summary>
+        /// Enable a potentially disabled application.
+        /// </summary>
+        /// <param name="applicationId">The applicationId</param>
+        /// <returns></returns>
+        Task EnableApplicationAsync(string applicationId);
 
         /// <summary>
         /// Query for Applications sorted by ID.

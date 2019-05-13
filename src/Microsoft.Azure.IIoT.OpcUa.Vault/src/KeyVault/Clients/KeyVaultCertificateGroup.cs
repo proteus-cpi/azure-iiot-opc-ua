@@ -3,7 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Services {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
     using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Microsoft.Azure.IIoT.Exceptions;
@@ -47,8 +47,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Services {
         /// <param name="certificateGroupConfiguration"></param>
         /// <param name="serviceHost"></param>
         public KeyVaultCertificateGroup(IKeyVaultServiceClient keyVaultServiceClient,
-            CertificateGroupInfoModel certificateGroupConfiguration,
-            string serviceHost) :
+            CertificateGroupInfoModel certificateGroupConfiguration, string serviceHost) :
             base(null, certificateGroupConfiguration.ToGdsServerModel()) {
 
             _keyVaultServiceClient = keyVaultServiceClient;

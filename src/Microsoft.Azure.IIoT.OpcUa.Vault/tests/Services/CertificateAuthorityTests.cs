@@ -30,8 +30,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             fixture.SkipOnInvalidConfiguration();
             _logger = SerilogTestLogger.Create<CertificateAuthorityTests>(log);
             _applicationsDatabase = fixture.ApplicationsDatabase;
-            _certificateGroup = fixture.CertificateManagement;
-            _certificateRequest = fixture.CertificateAuthority;
+            _groupServices = fixture.GroupServices;
+            _groupRegistry = fixture.GroupRegistry;
+            _requests = fixture.RequestManagement;
+            _ca = fixture.CertificateAuthority;
             _applicationTestSet = fixture.ApplicationTestSet;
             _randomSource = new RandomSource(10815);
         }
@@ -43,11 +45,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         public async Task CleanupAllApplications() {
             _logger.Information("Cleanup All Applications");
             foreach (var application in _applicationTestSet) {
-                var applicationModelList = await _applicationsDatabase.ListApplicationsAsync(application.Model.ApplicationUri);
+                var applicationModelList = await _applicationsDatabase.ListApplicationsAsync(
+                    application.Model.ApplicationUri);
                 Assert.NotNull(applicationModelList);
                 foreach (var response in applicationModelList.Items) {
                     try {
-                        await _applicationsDatabase.DeleteApplicationAsync(response.ApplicationId, true);
+                        await _applicationsDatabase.UnregisterApplicationAsync(response.ApplicationId);
                     }
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
                     catch { }
@@ -81,13 +84,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         /// </summary>
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(190)]
         public async Task InitCertificateRequestAndGroup() {
-            if (_certificateGroup is Autofac.IStartable start) {
+            if (_groupServices is Autofac.IStartable start) {
                 start.Start();
             }
-            var groups = await _certificateGroup.ListGroupIdsAsync();
+            var groups = await _groupRegistry.ListGroupIdsAsync();
             foreach (var group in groups.Groups) {
-                await _certificateGroup.CreateIssuerCACertificateAsync(group);
-                var chain = await _certificateGroup.GetIssuerCACertificateChainAsync(group);
+                await _groupServices.CreateIssuerCACertificateAsync(group);
+                var chain = await _groupServices.GetIssuerCACertificateChainAsync(group);
                 Assert.NotNull(chain);
                 Assert.True(chain.Chain.Count > 0);
             }
@@ -117,10 +120,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             var count = 0;
             foreach (var application in _applicationTestSet) {
-                var groups = await _certificateGroup.ListGroupIdsAsync();
+                var groups = await _groupRegistry.ListGroupIdsAsync();
                 foreach (var group in groups.Groups) {
                     var applicationId = application.Model.ApplicationId;
-                    var requestId = await _certificateRequest.SubmitNewKeyPairRequestAsync(new NewKeyPairRequestModel {
+                    var requestId = await _ca.SubmitNewKeyPairRequestAsync(new NewKeyPairRequestModel {
                         ApplicationId = applicationId,
                         CertificateGroupId = group,
                         SubjectName = application.Subject,
@@ -130,7 +133,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     }, "unittest@opcvault.com");
                     Assert.NotNull(requestId);
                     // read request
-                    var request = await _certificateRequest.GetRequestAsync(requestId);
+                    var request = await _requests.GetRequestAsync(requestId);
                     Assert.Equal(CertificateRequestState.New, request.State);
                     Assert.Equal(requestId, request.RequestId);
                     Assert.Equal(applicationId, request.ApplicationId);
@@ -156,10 +159,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             var count = 0;
             foreach (var application in _applicationTestSet) {
-                var groups = await _certificateGroup.ListGroupIdsAsync();
+                var groups = await _groupRegistry.ListGroupIdsAsync();
                 foreach (var group in groups.Groups) {
                     var applicationId = application.Model.ApplicationId;
-                    var certificateGroupConfiguration = await _certificateGroup.GetGroupAsync(group);
+                    var certificateGroupConfiguration = await _groupRegistry.GetGroupAsync(group);
                     var csrCertificate = CertificateFactory.CreateCertificate(
                         null, null, null,
                         application.ApplicationRecord.ApplicationUri,
@@ -174,14 +177,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     var csr = CertificateFactory.CreateSigningRequest(
                         csrCertificate,
                         application.DomainNames);
-                    var requestId = await _certificateRequest.SubmitSigningRequestAsync(new SigningRequestModel {
+                    var requestId = await _ca.SubmitSigningRequestAsync(new SigningRequestModel {
                             ApplicationId = applicationId,
                             CertificateGroupId = group,
                             CertificateRequest = csr,
                         }, "unittest@opcvault.com");
                     Assert.NotNull(requestId);
                     // read request
-                    var request = await _certificateRequest.GetRequestAsync(requestId);
+                    var request = await _requests.GetRequestAsync(requestId);
                     Assert.Equal(CertificateRequestState.New, request.State);
                     Assert.Equal(PrivateKeyFormat.PEM, request.PrivateKeyFormat);
                     Assert.True(request.SigningRequest);
@@ -216,7 +219,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 foreach (var requestId in application.RequestIds) {
-                    var request = await _certificateRequest.GetRequestAsync(requestId);
+                    var request = await _requests.GetRequestAsync(requestId);
                     Assert.Equal(CertificateRequestState.New, request.State);
                 }
             }
@@ -231,17 +234,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 foreach (var requestId in application.RequestIds) {
-                    var request = await _certificateRequest.GetRequestAsync(requestId);
+                    var request = await _requests.GetRequestAsync(requestId);
                     Assert.Equal(CertificateRequestState.New, request.State);
                     // approve/reject 50% randomly
                     var reject = _randomSource.NextInt32(100) > 50;
                     if (!reject) {
-                        await _certificateRequest.ApproveRequestAsync(requestId);
+                        await _requests.ApproveRequestAsync(requestId);
                     }
                     else {
-                        await _certificateRequest.RejectRequestAsync(requestId);
+                        await _requests.RejectRequestAsync(requestId);
                     }
-                    request = await _certificateRequest.GetRequestAsync(requestId);
+                    request = await _requests.GetRequestAsync(requestId);
                     Assert.Equal(reject ? CertificateRequestState.Rejected : CertificateRequestState.Approved, request.State);
                 }
             }
@@ -265,14 +268,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 foreach (var requestId in application.RequestIds) {
                     var appModel = application.Model;
                     var applicationId = application.Model.ApplicationId;
-                    var request = await _certificateRequest.GetRequestAsync(requestId);
+                    var request = await _requests.GetRequestAsync(requestId);
                     if (request.State == CertificateRequestState.Approved) {
-                        await _certificateRequest.AcceptRequestAsync(requestId);
-                        request = await _certificateRequest.GetRequestAsync(requestId);
+                        await _requests.AcceptRequestAsync(requestId);
+                        request = await _requests.GetRequestAsync(requestId);
                         Assert.Equal(CertificateRequestState.Accepted, request.State);
                     }
                     else {
-                        await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _certificateRequest.AcceptRequestAsync(requestId));
+                        await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _requests.AcceptRequestAsync(requestId));
                     }
                 }
             }
@@ -296,15 +299,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 foreach (var requestId in application.RequestIds) {
                     if (_randomSource.NextInt32(100) > 50) {
-                        var request = await _certificateRequest.GetRequestAsync(requestId);
+                        var request = await _requests.GetRequestAsync(requestId);
                         if (request.State == CertificateRequestState.New ||
                             request.State == CertificateRequestState.Rejected ||
                             request.State == CertificateRequestState.Approved ||
                             request.State == CertificateRequestState.Accepted) {
-                            await _certificateRequest.DeleteRequestAsync(requestId);
+                            await _requests.DeleteRequestAsync(requestId);
                         }
                         else {
-                            await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _certificateRequest.DeleteRequestAsync(requestId));
+                            await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _requests.DeleteRequestAsync(requestId));
                         }
                     }
                 }
@@ -328,9 +331,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 foreach (var requestId in application.RequestIds) {
-                    var request = await _certificateRequest.GetRequestAsync(requestId);
+                    var request = await _requests.GetRequestAsync(requestId);
                     if (request.State == CertificateRequestState.Deleted) {
-                        await _certificateRequest.RevokeRequestCertificateAsync(requestId);
+                        await _requests.RevokeRequestCertificateAsync(requestId);
                     }
                 }
             }
@@ -353,15 +356,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 foreach (var requestId in application.RequestIds) {
-                    var request = await _certificateRequest.GetRequestAsync(requestId);
+                    var request = await _requests.GetRequestAsync(requestId);
                     if (request.State == CertificateRequestState.New ||
                         request.State == CertificateRequestState.Rejected ||
                         request.State == CertificateRequestState.Approved ||
                         request.State == CertificateRequestState.Accepted) {
-                        await _certificateRequest.DeleteRequestAsync(requestId);
+                        await _requests.DeleteRequestAsync(requestId);
                     }
                     else {
-                        await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _certificateRequest.DeleteRequestAsync(requestId));
+                        await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _requests.DeleteRequestAsync(requestId));
                     }
                 }
             }
@@ -382,9 +385,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(5600)]
         public async Task RevokeGroupRequestsAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
-            var groups = await _certificateGroup.ListGroupIdsAsync();
+            var groups = await _groupRegistry.ListGroupIdsAsync();
             foreach (var group in groups.Groups) {
-                await _certificateRequest.RevokeAllRequestsAsync(group, true);
+                await _requests.RevokeAllRequestsAsync(group, true);
             }
         }
 
@@ -405,15 +408,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 foreach (var requestId in application.RequestIds) {
-                    var request = await _certificateRequest.GetRequestAsync(requestId);
+                    var request = await _requests.GetRequestAsync(requestId);
                     if (request.State == CertificateRequestState.Revoked ||
                         request.State == CertificateRequestState.Rejected ||
                         request.State == CertificateRequestState.Removed ||
                         request.State == CertificateRequestState.New) {
-                        await _certificateRequest.PurgeRequestAsync(requestId);
+                        await _requests.PurgeRequestAsync(requestId);
                     }
                     else {
-                        await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _certificateRequest.PurgeRequestAsync(requestId));
+                        await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _requests.PurgeRequestAsync(requestId));
                     }
                 }
             }
@@ -441,18 +444,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         }
 
         /// <summary>
-        /// Delete the application test set.
-        /// </summary>
-        /// <returns></returns>
-        [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(9000)]
-        public async Task DeleteAllApplications() {
-            Skip.If(!_fixture.RegistrationOk);
-            foreach (var application in _applicationTestSet) {
-                await _applicationsDatabase.DeleteApplicationAsync(application.Model.ApplicationId, false);
-            }
-        }
-
-        /// <summary>
         /// Test helper to test fetch for various states of requests in the workflow.
         /// </summary>
         private async Task FetchRequestsAllApplications(bool purged = false) {
@@ -463,10 +454,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     var applicationId = application.Model.ApplicationId;
                     if (purged) {
                         await Assert.ThrowsAsync<ResourceNotFoundException>(
-                            () => _certificateRequest.FetchResultAsync(requestId, applicationId));
+                            () => _ca.FetchResultAsync(requestId, applicationId));
                         continue;
                     }
-                    var fetchResult = await _certificateRequest.FetchResultAsync(requestId, applicationId);
+                    var fetchResult = await _ca.FetchResultAsync(requestId, applicationId);
                     Assert.Equal(requestId, fetchResult.Request.RequestId);
                     Assert.Equal(applicationId, fetchResult.Request.ApplicationId);
                     if (fetchResult.Request.State == CertificateRequestState.Approved ||
@@ -504,8 +495,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         private readonly CertificateAuthorityTestFixture _fixture;
         private readonly ILogger _logger;
         private readonly IApplicationRegistry2 _applicationsDatabase;
-        private readonly ICertificateStorage _certificateGroup;
-        private readonly ICertificateAuthority _certificateRequest;
+        private readonly IGroupRegistry _groupRegistry;
+        private readonly IGroupServices _groupServices;
+        private readonly IRequestManagement _requests;
+        private readonly ICertificateAuthority _ca;
         private readonly IList<ApplicationTestData> _applicationTestSet;
         private readonly RandomSource _randomSource;
     }

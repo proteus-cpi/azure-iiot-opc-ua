@@ -1,30 +1,36 @@
-// ------------------------------------------------------------
+﻿// ------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
-    using System;
-    using System.Collections.Generic;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
 
     /// <summary>
-    /// Create response
+    /// Endpoint registration event
     /// </summary>
-    public sealed class QueryApplicationsByIdResultModel {
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum EndpointEvent {
 
         /// <summary>
-        /// Applications found
+        /// New
         /// </summary>
-        public IList<ApplicationInfoModel> Items { get; set; }
+        Added,
 
         /// <summary>
-        /// Last counter reset
+        /// Activated
         /// </summary>
-        public DateTime LastCounterResetTime { get; set; }
+        Activated,
 
         /// <summary>
-        /// Next record id
+        /// Rejected
         /// </summary>
-        public uint NextRecordId { get; set; }
+        Deactivated,
+
+        /// <summary>
+        /// Deleted
+        /// </summary>
+        Deleted
     }
 }

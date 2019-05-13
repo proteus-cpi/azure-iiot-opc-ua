@@ -37,7 +37,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
                 Assert.Null(application.Model.Created);
                 Assert.Null(application.Model.Approved);
                 Assert.Null(application.Model.Updated);
-                Assert.Null(application.Model.Deleted);
+                Assert.Null(application.Model.NotSeenSince);
                 var result = await _applicationsDatabase.RegisterApplicationAsync(
                     application.Model.ToRegistrationRequest());
                 application.Model.ApplicationId = result.Id;
@@ -66,7 +66,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
                 Assert.NotNull(applicationModelList);
                 foreach (var response in applicationModelList.Items) {
                     try {
-                        await _applicationsDatabase.DeleteApplicationAsync(response.ApplicationId, true);
+                        await _applicationsDatabase.UnregisterApplicationAsync(response.ApplicationId);
                     }
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
                     catch { }
@@ -80,8 +80,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
         /// Test to register all applications in the test set.
         /// </summary>
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(200)]
-        public async Task RegisterAllApplicationsThrow() {
+        public async Task RegisterApplicationsWithBadArgShouldThrowArgNullException() {
             await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.RegisterApplicationAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.RejectApplicationAsync(null, false));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.RejectApplicationAsync("", false));
         }
 
         /// <summary>
@@ -90,9 +92,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
         /// <remarks>After this test all applications are in the approved state.</remarks>
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(500)]
         public async Task ApproveAllApplications() {
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.RejectApplicationAsync(null, false));
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.RejectApplicationAsync("", false));
-
             Skip.If(!_fixture.RegistrationOk);
             var fullPasses = 0;
             foreach (var application in _applicationTestSet) {
@@ -112,7 +111,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
                 }
 
                 // reject approved app should fail
-                await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _applicationsDatabase.RejectApplicationAsync(application.Model.ApplicationId, false));
+                await Assert.ThrowsAsync<ResourceInvalidStateException>(() =>
+                    _applicationsDatabase.RejectApplicationAsync(application.Model.ApplicationId, false));
 
                 // force approved app to rejected state
                 await _applicationsDatabase.RejectApplicationAsync(application.Model.ApplicationId, true);
@@ -123,7 +123,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
                 ApplicationTestData.AssertEqualApplicationModelData(applicationModel.Application, application.Model);
 
                 // approve rejected app should fail
-                await Assert.ThrowsAsync<ResourceInvalidStateException>(() => _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId, false));
+                await Assert.ThrowsAsync<ResourceInvalidStateException>(() =>
+                    _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId, false));
 
                 // force approve of rejected app
                 await _applicationsDatabase.ApproveApplicationAsync(application.Model.ApplicationId, true);
@@ -138,12 +139,20 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
             Skip.If(fullPasses < _applicationTestSet.Count / 2);
         }
 
-        [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(1000)]
-        public async Task GetAllApplications() {
+        [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(990)]
+        public async Task GetApplicationWithBadArgShouldThrowArgNullException() {
             await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.GetApplicationAsync(null));
             await Assert.ThrowsAsync<ArgumentNullException>(() => _applicationsDatabase.GetApplicationAsync(""));
+        }
+
+        [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(995)]
+        public async Task GetApplicationWithUnknownIdShouldThrowResourceNotFoundException() {
             await Assert.ThrowsAsync<ResourceNotFoundException>(() => _applicationsDatabase.GetApplicationAsync("abc"));
             await Assert.ThrowsAsync<ResourceNotFoundException>(() => _applicationsDatabase.GetApplicationAsync(Guid.NewGuid().ToString()));
+        }
+
+        [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(1000)]
+        public async Task GetAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
                 var applicationModel = await _applicationsDatabase.GetApplicationAsync(application.Model.ApplicationId);
@@ -187,35 +196,35 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
         public async Task UpdateAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
             foreach (var application in _applicationTestSet) {
-                await _applicationsDatabase.UpdateApplicationAsync(application.Model.ApplicationId, application.Model.ToUpdateRequest());
-                var applicationModel = await _applicationsDatabase.GetApplicationAsync(application.Model.ApplicationId);
+                await _applicationsDatabase.UpdateApplicationAsync(application.Model.ApplicationId,
+                    application.Model.ToUpdateRequest());
+                var applicationModel = await _applicationsDatabase.GetApplicationAsync(
+                    application.Model.ApplicationId);
                 Assert.NotNull(applicationModel);
                 Assert.NotNull(applicationModel.Application.ApplicationId);
             }
         }
 
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(2200)]
-        public async Task QueryApplicationsByIdAsync() {
+        public async Task QueryApplicationsByIdInAnyStateReturnsAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
-            foreach (var application in _applicationTestSet) {
-                var response = await _applicationsDatabase.QueryApplicationsByIdAsync(
-                    new QueryApplicationsByIdRequestModel {
-                        ApplicationState = ApplicationStateMask.Any
-                    });
-                Assert.NotNull(response);
-            }
+            var response = await _applicationsDatabase.QueryApplicationsByIdAsync(
+                new QueryApplicationsByIdRequestModel {
+                    ApplicationState = ApplicationStateMask.Any
+                });
+            Assert.NotNull(response);
+            Assert.Equal(_applicationTestSet.Count, response.Items.Count);
         }
 
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(2300)]
-        public async Task QueryApplicationsAsync() {
+        public async Task QueryApplicationsInAnyStateReturnsAllApplications() {
             Skip.If(!_fixture.RegistrationOk);
-            foreach (var application in _applicationTestSet) {
-                var response = await _applicationsDatabase.QueryApplicationsAsync(
-                    new ApplicationRegistrationQueryModel {
-                        State = ApplicationStateMask.Any
-                    });
-                Assert.NotNull(response);
-            }
+            var response = await _applicationsDatabase.QueryApplicationsAsync(
+                new ApplicationRegistrationQueryModel {
+                    State = ApplicationStateMask.Any
+                });
+            Assert.NotNull(response);
+            Assert.Equal(_applicationTestSet.Count, response.Items.Count);
         }
 
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(8000)]
@@ -227,49 +236,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
             }
         }
 
-        [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(8100)]
-        public async Task UnregisteredListAllApplications() {
-            Skip.If(!_fixture.RegistrationOk);
-            foreach (var application in _applicationTestSet) {
-                var applicationModelList = await _applicationsDatabase.QueryApplicationsAsync(
-                    new ApplicationRegistrationQueryModel {
-                        ApplicationUri = application.Model.ApplicationUri,
-                        State = ApplicationStateMask.Unregistered
-                    });
-                Assert.NotNull(applicationModelList);
-                foreach (var response in applicationModelList.Items) {
-                    Assert.Equal(application.Model.ApplicationUri, response.ApplicationUri);
-                    Assert.Equal(ApplicationState.Unregistered, response.State);
-                }
-            }
-        }
-
         [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(8200)]
-        public async Task UnregisteredGetAllApplicationsNot() {
+        public async Task AfterAllApplicationsAreUnregisteredQueryReturnsNoApplications() {
             Skip.If(!_fixture.RegistrationOk);
-            foreach (var application in _applicationTestSet) {
-                var applicationModel = await _applicationsDatabase.GetApplicationAsync(
-                    application.Model.ApplicationId);
-                Assert.NotNull(applicationModel);
-                Assert.NotNull(applicationModel.Application.ApplicationId);
-                Assert.Equal(ApplicationState.Unregistered, applicationModel.Application.State);
-                Assert.NotNull(applicationModel.Application.Deleted);
-                ApplicationTestData.AssertEqualApplicationModelData(applicationModel.Application, application.Model);
-            }
-        }
-
-        [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(9000)]
-        public async Task DeleteAllApplications() {
-            Skip.If(!_fixture.RegistrationOk);
-            foreach (var application in _applicationTestSet) {
-                await _applicationsDatabase.DeleteApplicationAsync(
-                    application.Model.ApplicationId, false);
-            }
-        }
-
-        [SkippableFact, Trait(Constants.Type, Constants.UnitTest), TestPriority(9200)]
-        public async Task DeletedGetAllApplications() {
-            Skip.If(!_fixture.RegistrationOk);
+            var response = await _applicationsDatabase.QueryApplicationsAsync(
+               new ApplicationRegistrationQueryModel {
+                   State = ApplicationStateMask.Any
+               });
+            Assert.NotNull(response);
+            Assert.Empty(response.Items);
             foreach (var application in _applicationTestSet) {
                 await Assert.ThrowsAsync<ResourceNotFoundException>(async () => {
                     var applicationModel = await _applicationsDatabase.GetApplicationAsync(
@@ -277,6 +252,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
                 });
             }
         }
+
         private readonly ApplicationDatabaseTestFixture _fixture;
         private readonly ILogger _logger;
         private readonly IApplicationRegistry2 _applicationsDatabase;

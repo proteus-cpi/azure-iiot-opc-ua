@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     /// <summary>
     /// Represents the interface to a certificate authority
     /// </summary>
-    public interface ICertificateAuthority : ICertificateManagement {
+    public interface ICertificateAuthority {
 
         /// <summary>
         /// Create a new certificate request with CSR.
@@ -46,28 +46,5 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <returns>The request</returns>
         Task<FetchCertificateRequestResultModel> FetchResultAsync(
             string requestId, string applicationId);
-
-        /// <summary>
-        /// Read a certificate request.
-        /// Returns only public information, e.g. signed certificate.
-        /// </summary>
-        /// <param name="requestId"></param>
-        /// <returns>The request</returns>
-        Task<CertificateRequestRecordModel> GetRequestAsync(
-            string requestId);
-
-        /// <summary>
-        /// Query the certificate request database.
-        /// </summary>
-        /// <param name="appId">Filter by ApplicationId</param>
-        /// <param name="state">Filter by state, default null</param>
-        /// <param name="nextPageLink">The next page</param>
-        /// <param name="maxResults">max number of requests in a query
-        /// </param>
-        /// <returns>Array of certificate requests, next page link
-        /// </returns>
-        Task<CertificateRequestQueryResultModel> QueryRequestsAsync(
-            string appId, CertificateRequestState? state,
-            string nextPageLink, int? maxResults = null);
     }
 }

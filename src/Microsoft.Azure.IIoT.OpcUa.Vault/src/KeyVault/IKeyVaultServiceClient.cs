@@ -5,38 +5,20 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
+    using Microsoft.Azure.IIoT.Storage;
+    using Microsoft.Azure.KeyVault.Models;
     using System;
     using System.Collections.Generic;
     using System.Security.Cryptography;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Azure.KeyVault.Models;
     using Opc.Ua;
 
     /// <summary>
     /// Key vault service client
     /// </summary>
-    public interface IKeyVaultServiceClient {
-
-        /// <summary>
-        /// Read the OpcVault CertificateConfigurationGroups as Json.
-        /// </summary>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task<string> GetCertificateConfigurationGroupsAsync(
-            CancellationToken ct = default);
-
-        /// <summary>
-        /// Write the OpcVault CertificateConfigurationGroups as Json.
-        /// </summary>
-        /// <param name="json"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task<string> PutCertificateConfigurationGroupsAsync(string json,
-            CancellationToken ct = default);
-
-
+    public interface IKeyVaultServiceClient : IKeyValueStore {
 
         /// <summary>
         /// Get Certificate bundle from key Vault.
@@ -228,17 +210,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <returns></returns>
         Task<KeyVaultTrustListModel> GetTrustListAsync(
             string groupId, int? maxResults, string nextPageLink,
-            CancellationToken ct = default);
-
-        /// <summary>
-        /// Purge all CRL and Certificates groups.
-        /// Use for unit test only!
-        /// </summary>
-        /// <param name="configId"></param>
-        /// <param name="groupId"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task PurgeAsync(string configId = null, string groupId = null,
             CancellationToken ct = default);
     }
 }

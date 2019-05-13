@@ -3,9 +3,10 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Services {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
     using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
+    using Microsoft.Azure.IIoT.Storage;
     using Microsoft.Azure.IIoT.Exceptions;
     using Microsoft.Azure.KeyVault;
     using Microsoft.Azure.KeyVault.Models;
@@ -24,33 +25,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Services {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// The KeyVault service client.
+    /// A KeyVault service client.
     /// </summary>
-    public class KeyVaultServiceClient : IKeyVaultServiceClient {
-
-        /// <summary>
-        /// Create the service client for KeyVault, with user or service
-        /// credentials.
-        /// </summary>
-        /// <param name="config">The keyvault configuration.</param>
-        /// <param name="provider"></param>
-        /// <param name="logger">The logger.</param>
-        public KeyVaultServiceClient(IVaultConfig config,
-            Auth.ITokenProvider provider, ILogger logger) :
-            this(config, "groups", provider, logger) {
-        }
+    public class KeyVaultServiceClient : IKeyVaultServiceClient, IKeyValueStore {
 
         /// <summary>
         /// Create the service client for KeyVault, with user or service
         /// credentials and specify the group secret key.
         /// </summary>
         /// <param name="config">The keyvault configuration.</param>
-        /// <param name="groupSecret"></param>
         /// <param name="provider"></param>
         /// <param name="logger">The logger.</param>
-        public KeyVaultServiceClient(IVaultConfig config, string groupSecret,
-            Auth.ITokenProvider provider, ILogger logger) {
-            _groupSecret = groupSecret;
+        public KeyVaultServiceClient(IVaultConfig config, Auth.ITokenProvider provider,
+            ILogger logger) {
             _vaultBaseUrl = config.KeyVaultBaseUrl;
             _keyStoreHSM = config.KeyVaultIsHsm;
             _logger = logger;
@@ -62,19 +49,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<string> GetCertificateConfigurationGroupsAsync(
-            CancellationToken ct) {
-            var secret = await _keyVaultClient.GetSecretAsync(
-                _vaultBaseUrl, _groupSecret, ct).ConfigureAwait(false);
+        public async Task<string> GetKeyValueAsync(
+            string key, CancellationToken ct) {
+            var secret = await _keyVaultClient.GetSecretAsync(_vaultBaseUrl, key, ct)
+                .ConfigureAwait(false);
             return secret.Value;
         }
 
         /// <inheritdoc/>
-        public async Task<string> PutCertificateConfigurationGroupsAsync(string json,
-            CancellationToken ct) {
-            var secret = await _keyVaultClient.SetSecretAsync(
-                _vaultBaseUrl, _groupSecret, json, null,
-                ContentEncodings.MimeTypeJson, null, ct).ConfigureAwait(false);
+        public async Task<string> SetKeyValueAsync(
+            string key, string value, CancellationToken ct) {
+            var secret = await _keyVaultClient.SetSecretAsync(_vaultBaseUrl, key,
+                value, null, null /*ContentEncodings.MimeTypeJson*/, null, ct)
+                .ConfigureAwait(false);
             return secret.Value;
         }
 
@@ -89,6 +76,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Services {
         public async Task<(X509Certificate2Collection, string)> ListCertificateVersionsAsync(
             string groupId, string thumbprint, string nextPageLink, int? pageSize,
             CancellationToken ct) {
+
             var certificates = new X509Certificate2Collection();
             pageSize = pageSize ?? kMaxResults;
             try {
@@ -919,7 +907,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Services {
         private const string kTagIssuerList = "Issuer";
         private const string kTagTrustedList = "Trusted";
         private const int kMaxResults = 5;
-        private readonly string _groupSecret;
         private readonly string _vaultBaseUrl;
         private readonly bool _keyStoreHSM;
         private readonly ILogger _logger;

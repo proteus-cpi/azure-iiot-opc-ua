@@ -5,7 +5,7 @@
 
 
 namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.Registry.Models;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.Models;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -35,12 +35,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
                 Capabilities = GetServerCapabilities(document.ServerCapabilities),
                 GatewayServerUri = document.GatewayServerUri,
                 DiscoveryProfileUri = document.DiscoveryProfileUri,
+                NotSeenSince = document.NotSeenSince,
                 Approved = ToServiceModel(
                     document.ApproveTime, document.ApproveAuthorityId),
                 Created = ToServiceModel(
                     document.CreateTime, document.CreateAuthorityId),
-                Deleted = ToServiceModel(
-                    document.DeleteTime, document.DeleteAuthorityId),
                 Updated = ToServiceModel(
                     document.UpdateTime, document.UpdateAuthorityId),
             };
@@ -70,11 +69,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
                 GatewayServerUri = model.GatewayServerUri,
                 DiscoveryProfileUri = model.DiscoveryProfileUri,
                 UpdateTime = model.Updated?.Time,
-                DeleteTime = model.Deleted?.Time,
+                NotSeenSince = model.NotSeenSince,
                 CreateTime = model.Created?.Time,
                 ApproveTime = model.Approved?.Time,
                 UpdateAuthorityId = model.Updated?.AuthorityId,
-                DeleteAuthorityId = model.Deleted?.AuthorityId,
                 CreateAuthorityId = model.Created?.AuthorityId,
                 ApproveAuthorityId = model.Approved?.AuthorityId,
             };
@@ -107,11 +105,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
                 GatewayServerUri = model.GatewayServerUri,
                 DiscoveryProfileUri = model.DiscoveryProfileUri,
                 UpdateTime = model.UpdateTime,
-                DeleteTime = model.DeleteTime,
+                NotSeenSince = model.NotSeenSince,
                 CreateTime = model.CreateTime,
                 ApproveTime = model.ApproveTime,
                 UpdateAuthorityId = model.UpdateAuthorityId,
-                DeleteAuthorityId = model.DeleteAuthorityId,
+                DisableAuthorityId = model.DisableAuthorityId,
                 CreateAuthorityId = model.CreateAuthorityId,
                 ApproveAuthorityId = model.ApproveAuthorityId,
                 ETag = model.ETag,

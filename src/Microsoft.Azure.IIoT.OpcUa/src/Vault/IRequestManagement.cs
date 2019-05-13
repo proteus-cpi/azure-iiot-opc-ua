@@ -4,12 +4,13 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault {
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents the management interface
+    /// Represents the certificate management workflow
     /// </summary>
-    public interface ICertificateManagement {
+    public interface IRequestManagement {
 
         /// <summary>
         /// Approve a certificate request.
@@ -31,6 +32,29 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// </summary>
         /// <param name="requestId">The request Id</param>
         Task AcceptRequestAsync(string requestId);
+
+        /// <summary>
+        /// Read a certificate request.
+        /// Returns only public information, e.g. signed certificate.
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <returns>The request</returns>
+        Task<CertificateRequestRecordModel> GetRequestAsync(
+            string requestId);
+
+        /// <summary>
+        /// Query the certificate request database.
+        /// </summary>
+        /// <param name="appId">Filter by ApplicationId</param>
+        /// <param name="state">Filter by state, default null</param>
+        /// <param name="nextPageLink">The next page</param>
+        /// <param name="maxResults">max number of requests in a query
+        /// </param>
+        /// <returns>Array of certificate requests, next page link
+        /// </returns>
+        Task<CertificateRequestQueryResultModel> QueryRequestsAsync(
+            string appId, CertificateRequestState? state,
+            string nextPageLink, int? maxResults = null);
 
         /// <summary>
         /// Delete a certificate request.

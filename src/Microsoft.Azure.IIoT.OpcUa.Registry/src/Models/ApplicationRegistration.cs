@@ -366,7 +366,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
                 Capabilities = Capabilities?.DecodeAsSet(),
                 Approved = null,
                 Created = null,
-                Deleted = null,
                 Updated = null, // TODO
             };
         }
