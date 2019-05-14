@@ -3,28 +3,43 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services.Models {
+    using Newtonsoft.Json;
+    using System;
 
     /// <summary>
-    /// Certificate group model
+    /// Group document
     /// </summary>
-    public sealed class CertificateGroupInfoModel {
+    [Serializable]
+    public sealed class CertificateGroupDocument {
 
         /// <summary>
-        /// The group id.
+        /// The id of the group.
         /// </summary>
-        public string Id { get; set; }
+        [JsonProperty(PropertyName = "id")]
+        public string GroupId { get; set; }
 
         /// <summary>
-        /// The name of the certificate group.
+        /// The name of the group.
         /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Etag
+        /// </summary>
+        [JsonProperty(PropertyName = "_etag")]
+        public string ETag { get; set; }
+
+        /// <summary>
+        /// Document type
+        /// </summary>
+        public string ClassType { get; set; } = ClassTypeName;
 
         /// <summary>
         /// The certificate type as specified in the OPC UA
         /// spec 1.04.
         /// </summary>
-        public CertificateType CertificateType { get; set; }
+        public string CertificateType { get; set; }
 
         /// <summary>
         /// The subject as distinguished name.
@@ -82,5 +97,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// replaced with cert values.
         /// </summary>
         public string IssuerCAAuthorityInformationAccess { get; set; }
+
+        /// <inheritdoc/>
+
+        public static readonly string ClassTypeName = "Group";
     }
 }

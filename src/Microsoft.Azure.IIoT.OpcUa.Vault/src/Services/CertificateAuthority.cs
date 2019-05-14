@@ -381,7 +381,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 if (!newStateRemoved &&
                     request.CertificateRequestState != CertificateRequestState.Approved &&
                     request.CertificateRequestState != CertificateRequestState.Accepted) {
-                    throw new ResourceInvalidStateException("The record is not in a valid state for this operation.");
+                    throw new ResourceInvalidStateException(
+                        "The record is not in a valid state for this operation.");
                 }
                 request.CertificateRequestState = newStateRemoved ?
                     CertificateRequestState.Removed : CertificateRequestState.Deleted;

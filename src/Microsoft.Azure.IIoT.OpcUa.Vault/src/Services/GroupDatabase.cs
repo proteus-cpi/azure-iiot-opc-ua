@@ -3,17 +3,18 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
+    using Microsoft.Azure.IIoT.Exceptions;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Services.Models;
     using Microsoft.Azure.IIoT.Storage;
-    using Microsoft.Azure.IIoT.Storage.Default;
     using Serilog;
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Group database
+    /// Certificate Group database
     /// </summary>
     public sealed class GroupDatabase : IGroupRegistry {
 
@@ -30,45 +31,123 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
             var container = db.OpenAsync().Result;
             _groups = container.AsDocuments();
-            _index = new ContainerIndex(container);
         }
 
-
         /// <inheritdoc/>
-        public Task<CertificateGroupInfoModel> DeleteGroupAsync(
+        public async Task<CertificateGroupInfoModel> GetGroupAsync(
             string groupId) {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(groupId)) {
+                throw new ArgumentNullException(nameof(groupId),
+                    "The group id must be provided");
+            }
+            var document = await _groups.GetAsync<CertificateGroupDocument>(groupId);
+            if (document == null) {
+                throw new ResourceNotFoundException("No such group");
+            }
+            return document.Value.ToServiceModel();
         }
 
         /// <inheritdoc/>
-        public Task<CertificateGroupInfoModel> GetGroupAsync(
-            string groupId) {
-            throw new NotImplementedException();
+        public async Task UpdateGroupAsync(string groupId, CertificateGroupUpdateModel request) {
+            if (request == null) {
+                throw new ArgumentNullException(nameof(request),
+                    "The application must be provided");
+            }
+            if (string.IsNullOrEmpty(groupId)) {
+                throw new ArgumentNullException(nameof(groupId),
+                    "The group id must be provided");
+            }
+            while (true) {
+                var document = await _groups.GetAsync<CertificateGroupDocument>(groupId);
+                if (document == null) {
+                    throw new ResourceNotFoundException("Group does not exist");
+                }
+                var group = document.Value.Clone().ToServiceModel();
+                group.Patch(request);
+                try {
+                    var result = await _groups.ReplaceAsync(document, group.ToDocumentModel());
+                    break;
+                }
+                catch (ResourceOutOfDateException) {
+                    continue;
+                }
+            }
         }
 
         /// <inheritdoc/>
-        public Task<CertificateGroupInfoModel> UpdateGroupAsync(
-            string groupId, CertificateGroupInfoModel config) {
-            throw new NotImplementedException();
+        public async Task<CertificateGroupCreateResultModel> CreateGroupAsync(
+            CertificateGroupCreateRequestModel request) {
+            if (request == null) {
+                throw new ArgumentNullException(nameof(request));
+            }
+            var config = CertificateGroupInfoModelEx.GetDefaultGroupConfiguration(request);
+            var document = config.ToDocumentModel();
+            var result = await _groups.AddAsync(document);
+            return new CertificateGroupCreateResultModel {
+                Id = document.GroupId
+            };
         }
+
         /// <inheritdoc/>
-        public Task<CertificateGroupInfoModel> CreateGroupAsync(
-            string groupId, string subject, CertificateType certType) {
-            throw new NotImplementedException();
-        }
-        /// <inheritdoc/>
-        public Task<CertificateGroupInfoListModel> ListGroupsAsync(
+        public async Task<CertificateGroupInfoListModel> ListGroupsAsync(
             string nextPageLink, int? pageSize) {
-            throw new NotImplementedException();
+            var client = _groups.OpenSqlClient();
+            var query = nextPageLink != null ?
+                client.Continue<CertificateGroupDocument>(nextPageLink, pageSize) :
+                client.Query<CertificateGroupDocument>(
+                    "SELECT * FROM Groups g WHERE " +
+        $"g.{nameof(CertificateGroupDocument.ClassType)} = '{CertificateGroupDocument.ClassTypeName}'",
+                null, pageSize);
+            // Read results
+            var results = await query.ReadAsync();
+            return new CertificateGroupInfoListModel {
+                Groups = results.Select(r => r.Value.ToServiceModel()).ToList(),
+                NextPageLink = query.ContinuationToken
+            };
         }
+
         /// <inheritdoc/>
-        public Task<CertificateGroupListModel> ListGroupIdsAsync(
+        public async Task<CertificateGroupListModel> ListGroupIdsAsync(
             string nextPageLink, int? pageSize) {
-            throw new NotImplementedException();
+            var client = _groups.OpenSqlClient();
+            var query = nextPageLink != null ?
+                client.Continue<string>(nextPageLink, pageSize) :
+                client.Query<string>(
+                    $"SELECT g.id FROM Groups g WHERE " +
+        $"g.{nameof(CertificateGroupDocument.ClassType)} = '{CertificateGroupDocument.ClassTypeName}'",
+                null, pageSize);
+            // Read results
+            var results = await query.ReadAsync();
+            return new CertificateGroupListModel {
+                Groups = results.Select(r => r.Value).ToList(),
+                NextPageLink = query.ContinuationToken
+            };
+        }
+
+        /// <inheritdoc/>
+        public async Task DeleteGroupAsync(string groupId) {
+            if (string.IsNullOrEmpty(groupId)) {
+                throw new ArgumentNullException(nameof(groupId),
+                    "The application id must be provided");
+            }
+            while (true) {
+                var document = await _groups.GetAsync<CertificateGroupDocument>(groupId);
+                if (document == null) {
+                    throw new ResourceNotFoundException(
+                        "A record with the specified group id does not exist.");
+                }
+                try {
+                    // Try delete
+                    await _groups.DeleteAsync(document);
+                    break;
+                }
+                catch (ResourceOutOfDateException) {
+                    continue;
+                }
+            }
         }
 
         private readonly ILogger _logger;
         private readonly IDocuments _groups;
-        private readonly ContainerIndex _index;
     }
 }

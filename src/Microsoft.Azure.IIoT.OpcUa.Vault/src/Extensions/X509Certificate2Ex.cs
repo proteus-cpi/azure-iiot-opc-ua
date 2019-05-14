@@ -7,6 +7,16 @@ namespace System.Security.Cryptography.X509Certificates {
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Newtonsoft.Json.Linq;
     using Opc.Ua;
+    using Org.BouncyCastle.Asn1;
+    using Org.BouncyCastle.Asn1.Pkcs;
+    using Org.BouncyCastle.Asn1.X509;
+    using Org.BouncyCastle.Crypto;
+    using Org.BouncyCastle.Crypto.Parameters;
+    using Org.BouncyCastle.Math;
+    using Org.BouncyCastle.Pkcs;
+    using Org.BouncyCastle.Security;
+    using Org.BouncyCastle.X509;
+    using System.IO;
     using System.Linq;
 
     /// <summary>
@@ -60,6 +70,53 @@ namespace System.Security.Cryptography.X509Certificates {
         }
 
         /// <summary>
+        /// Find subject key in certificate
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <returns></returns>
+        public static X509SubjectKeyIdentifierExtension FindSubjectKeyIdentifierExtension(
+            this X509Certificate2 certificate) {
+            foreach (var extension in certificate.Extensions) {
+                if (extension is X509SubjectKeyIdentifierExtension subjectKeyExtension) {
+                    return subjectKeyExtension;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Find auth key
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <returns></returns>
+        public static X509AuthorityKeyIdentifierExtension FindAuthorityKeyIdentifier(
+            this X509Certificate2 certificate) {
+            foreach (var extension in certificate.Extensions) {
+                switch (extension.Oid.Value) {
+                    case X509AuthorityKeyIdentifierExtension.AuthorityKeyIdentifierOid:
+                    case X509AuthorityKeyIdentifierExtension.AuthorityKeyIdentifier2Oid:
+                        return new X509AuthorityKeyIdentifierExtension(extension, extension.Critical);
+
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Create a X509Certificate2 with a private key by combining
+        /// the new certificate with a private key from an RSA key.
+        /// </summary>
+        public static X509Certificate2 CreateCertificateWithPrivateKey(
+            this X509Certificate2 certificate, RSA privatekey) {
+            using (var cfrg = new CertificateFactoryRandomGenerator()) {
+                var random = new SecureRandom(cfrg);
+                var x509 = new X509CertificateParser().ReadCertificate(certificate.RawData);
+                return CreateCertificateWithPrivateKey(x509, certificate.FriendlyName,
+                    GetPrivateKeyParameter(privatekey), random);
+            }
+        }
+
+        /// <summary>
         /// Get Raw data
         /// </summary>
         /// <returns></returns>
@@ -88,5 +145,90 @@ namespace System.Security.Cryptography.X509Certificates {
                         "Bad certificate data", nameof(model.Certificate));
             }
         }
+
+
+        /// <summary>
+        /// Create a X509Certificate2 with a private key by combining
+        /// a bouncy castle X509Certificate and private key parameters.
+        /// </summary>
+        public static X509Certificate2 CreateCertificateWithPrivateKey(
+            Org.BouncyCastle.X509.X509Certificate certificate, string friendlyName,
+            AsymmetricKeyParameter privateKey, SecureRandom random) {
+            // create pkcs12 store for cert and private key
+            using (var pfxData = new MemoryStream()) {
+                var builder = new Pkcs12StoreBuilder();
+                builder.SetUseDerEncoding(true);
+                var pkcsStore = builder.Build();
+                var chain = new X509CertificateEntry[1];
+                var passcode = Guid.NewGuid().ToString();
+                chain[0] = new X509CertificateEntry(certificate);
+                if (string.IsNullOrEmpty(friendlyName)) {
+                    friendlyName = GetCertificateCommonName(certificate);
+                }
+                pkcsStore.SetKeyEntry(friendlyName, new AsymmetricKeyEntry(privateKey), chain);
+                pkcsStore.Save(pfxData, passcode.ToCharArray(), random);
+                // merge into X509Certificate2
+                return CertificateFactory.CreateCertificateFromPKCS12(pfxData.ToArray(), passcode);
+            }
+        }
+
+        /// <summary>
+        /// Read the Common Name from a certificate.
+        /// </summary>
+        private static string GetCertificateCommonName(
+            Org.BouncyCastle.X509.X509Certificate certificate) {
+            var subjectDN = certificate.SubjectDN.GetValueList(X509Name.CN);
+            if (subjectDN.Count > 0) {
+                return subjectDN[0].ToString();
+            }
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Get private key parameters from a RSA key.
+        /// The private key must be exportable.
+        /// </summary>
+        private static RsaPrivateCrtKeyParameters GetPrivateKeyParameter(RSA rsaKey) {
+            var rsaParams = rsaKey.ExportParameters(true);
+            var keyParams = new RsaPrivateCrtKeyParameters(
+                new BigInteger(1, rsaParams.Modulus),
+                new BigInteger(1, rsaParams.Exponent),
+                new BigInteger(1, rsaParams.D),
+                new BigInteger(1, rsaParams.P),
+                new BigInteger(1, rsaParams.Q),
+                new BigInteger(1, rsaParams.DP),
+                new BigInteger(1, rsaParams.DQ),
+                new BigInteger(1, rsaParams.InverseQ));
+            return keyParams;
+        }
+
+
+        internal static X509SubjectAltNameExtension GetAltNameExtensionFromCSRInfo(
+            this CertificationRequestInfo info) {
+            try {
+                foreach (Asn1Encodable attribute in info.Attributes) {
+                    var sequence = Asn1Sequence.GetInstance(attribute.ToAsn1Object());
+                    var oid = DerObjectIdentifier.GetInstance(sequence[0].ToAsn1Object());
+                    if (oid.Equals(PkcsObjectIdentifiers.Pkcs9AtExtensionRequest)) {
+                        var extensionInstance = Asn1Set.GetInstance(sequence[1]);
+                        var extensionSequence = Asn1Sequence.GetInstance(extensionInstance[0]);
+                        var extensions = X509Extensions.GetInstance(extensionSequence);
+                        var extension = extensions.GetExtension(X509Extensions.SubjectAlternativeName);
+                        var asnEncodedAltNameExtension = new AsnEncodedData(
+                            X509Extensions.SubjectAlternativeName.ToString(),
+                            extension.Value.GetOctets());
+                        var altNameExtension = new X509SubjectAltNameExtension(
+                            asnEncodedAltNameExtension, extension.IsCritical);
+                        return altNameExtension;
+                    }
+                }
+            }
+            catch {
+                throw new ServiceResultException(StatusCodes.BadInvalidArgument,
+                    "CSR altNameExtension invalid.");
+            }
+            return null;
+        }
+
     }
 }

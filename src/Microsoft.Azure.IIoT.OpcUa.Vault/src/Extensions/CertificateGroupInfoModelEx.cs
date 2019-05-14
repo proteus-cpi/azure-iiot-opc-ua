@@ -16,30 +16,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     public static class CertificateGroupInfoModelEx {
 
         /// <summary>
-        /// Convert to gds model
-        /// </summary>
-        /// <returns></returns>
-        public static CertificateGroupConfiguration ToGdsServerModel(
-            this CertificateGroupInfoModel model) {
-            return new CertificateGroupConfiguration {
-                Id = model.Id,
-                CertificateType = model.CertificateType.ToString(),
-                SubjectName = model.SubjectName,
-                BaseStorePath = "/" + model.Id.ToLower(),
-                DefaultCertificateHashSize = model.DefaultCertificateHashSize,
-                DefaultCertificateKeySize = model.DefaultCertificateKeySize,
-                DefaultCertificateLifetime = model.DefaultCertificateLifetime,
-                CACertificateHashSize = model.IssuerCACertificateHashSize,
-                CACertificateKeySize = model.IssuerCACertificateKeySize,
-                CACertificateLifetime = model.IssuerCACertificateLifetime
-            };
-        }
-
-        /// <summary>
         /// Validate configuration
         /// </summary>
         /// <param name="model"></param>
-        public static void ValidateConfiguration(this CertificateGroupInfoModel model) {
+        public static void Validate(this CertificateGroupInfoModel model) {
             var delimiters = new char[] { ' ', '\r', '\n' };
             var updateIdWords = model.Id.Split(delimiters,
                 StringSplitOptions.RemoveEmptyEntries);
@@ -132,6 +112,116 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
             }
         }
 
-    }
+        /// <summary>
+        /// Patch document
+        /// </summary>
+        /// <param name="document"></param>
+        /// <param name="request"></param>
+        public static void Patch(this CertificateGroupInfoModel document,
+            CertificateGroupUpdateModel request) {
+            if (!string.IsNullOrEmpty(request.SubjectName)) {
+                document.SubjectName = request.SubjectName;
+            }
+            if (request.CertificateType != null) {
+                document.CertificateType = request.CertificateType.Value;
+            }
+            if (request.DefaultCertificateLifetime != null) {
+                document.DefaultCertificateLifetime = request.DefaultCertificateLifetime.Value;
+            }
+            if (request.DefaultCertificateKeySize != null) {
+                document.DefaultCertificateKeySize = request.DefaultCertificateKeySize.Value;
+            }
+            if (request.DefaultCertificateHashSize != null) {
+                document.DefaultCertificateHashSize = request.DefaultCertificateHashSize.Value;
+            }
+            if (request.IssuerCACertificateLifetime != null) {
+                document.IssuerCACertificateLifetime = request.IssuerCACertificateLifetime.Value;
+            }
+            if (request.IssuerCACertificateKeySize != null) {
+                document.IssuerCACertificateKeySize = request.IssuerCACertificateKeySize.Value;
+            }
+            if (request.IssuerCACertificateHashSize != null) {
+                document.IssuerCACertificateHashSize = request.IssuerCACertificateHashSize.Value;
+            }
+            document.Validate();
+        }
 
+        /// <summary>
+        /// Return subject name
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public static string GetSubjectName(this CertificateGroupInfoModel model) {
+            return model.SubjectName?.Replace("localhost", Utils.GetHostName()) ??
+                kDefaultSubject;
+        }
+
+        /// <summary>
+        /// Build crl distribution point url
+        /// </summary>
+        /// <param name="model"></param>
+        /// <param name="serviceHost"></param>
+        /// <returns></returns>
+        public static string GetCrlDistributionPointUrl(this CertificateGroupInfoModel model,
+            string serviceHost) {
+            if (!string.IsNullOrWhiteSpace(model.IssuerCACrlDistributionPoint)) {
+                return PatchEndpointUrl(model, serviceHost, model.IssuerCACrlDistributionPoint);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Build auth url
+        /// </summary>
+        /// <param name="model"></param>
+        /// <param name="serviceHost"></param>
+        /// <returns></returns>
+        public static string GetAuthorityInformationAccessUrl(this CertificateGroupInfoModel model,
+            string serviceHost) {
+            if (!string.IsNullOrWhiteSpace(model.IssuerCAAuthorityInformationAccess)) {
+                return PatchEndpointUrl(model, serviceHost, model.IssuerCAAuthorityInformationAccess);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Patch endpoint url
+        /// </summary>
+        /// <param name="endPointUrl"></param>
+        /// <param name="model"></param>
+        /// <param name="serviceHost"></param>
+        /// <returns></returns>
+        private static string PatchEndpointUrl(CertificateGroupInfoModel model, 
+            string serviceHost, string endPointUrl) {
+            var patchedServiceHost = endPointUrl.Replace("%servicehost%", serviceHost);
+            return patchedServiceHost.Replace("%group%", model.Id.ToLower());
+        }
+
+        /// <summary>
+        /// Create default configuration
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public static CertificateGroupInfoModel GetDefaultGroupConfiguration(
+            CertificateGroupCreateRequestModel request) {
+            var config = new CertificateGroupInfoModel {
+                Id = Guid.NewGuid().ToString(),
+                Name = request.Name ?? "Default",
+                SubjectName = request.SubjectName ?? kDefaultSubject,
+                CertificateType = request.CertificateType,
+                DefaultCertificateLifetime = 24,
+                DefaultCertificateHashSize = 256,
+                DefaultCertificateKeySize = 2048,
+                IssuerCACertificateLifetime = 60,
+                IssuerCACertificateHashSize = 256,
+                IssuerCACertificateKeySize = 2048,
+                IssuerCACrlDistributionPoint = "http://%servicehost%/certs/crl/%serial%/%group%.crl",
+                IssuerCAAuthorityInformationAccess = "http://%servicehost%/certs/issuer/%serial%/%group%.cer"
+            };
+            config.Validate();
+            return config;
+        }
+
+        private const string kDefaultSubject = "CN=Azure Industrial IoT CA, O=Microsoft Corp.";
+    }
 }

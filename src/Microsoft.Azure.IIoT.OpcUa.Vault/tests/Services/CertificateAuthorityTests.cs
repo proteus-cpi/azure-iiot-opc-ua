@@ -30,8 +30,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             fixture.SkipOnInvalidConfiguration();
             _logger = SerilogTestLogger.Create<CertificateAuthorityTests>(log);
             _applicationsDatabase = fixture.ApplicationsDatabase;
-            _groupServices = fixture.GroupServices;
-            _groupRegistry = fixture.GroupRegistry;
+            _groupServices = fixture.Services;
+            _groupRegistry = fixture.Registry;
             _requests = fixture.RequestManagement;
             _ca = fixture.CertificateAuthority;
             _applicationTestSet = fixture.ApplicationTestSet;

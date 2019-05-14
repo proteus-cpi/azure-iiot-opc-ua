@@ -191,12 +191,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 throw new ArgumentNullException(nameof(applicationId),
                     "The application id must be provided");
             }
-            var application = await _applications.GetAsync<ApplicationDocument>(applicationId);
-            if (application == null) {
+            var document = await _applications.GetAsync<ApplicationDocument>(applicationId);
+            if (document == null) {
                 throw new ResourceNotFoundException("No such application");
             }
             return new ApplicationRegistrationModel {
-                Application = application.Value.ToServiceModel()
+                Application = document.Value.ToServiceModel()
             }.SetSecurityAssessment();
         }
 

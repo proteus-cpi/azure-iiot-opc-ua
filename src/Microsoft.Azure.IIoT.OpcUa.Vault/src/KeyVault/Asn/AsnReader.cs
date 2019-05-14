@@ -2513,13 +2513,11 @@ namespace System.Security.Cryptography.Asn1
             //  * If fractions are present the last digit mustn't be 0.
 
             bool strict = ruleSet == AsnEncodingRules.DER || ruleSet == AsnEncodingRules.CER;
-            if (strict && contentOctets.Length < 15)
-            {
+            if (strict && contentOctets.Length < 15) {
                 // yyyyMMddHHmmssZ
                 throw new CryptographicException(SR.Cryptography_Der_Invalid_Encoding);
             }
-            else if (contentOctets.Length < 10)
-            {
+            if (contentOctets.Length < 10) {
                 // yyyyMMddHH
                 throw new CryptographicException(SR.Cryptography_Der_Invalid_Encoding);
             }

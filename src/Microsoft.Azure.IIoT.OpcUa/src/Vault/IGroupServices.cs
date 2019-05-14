@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="pageSize">max number of CRL per call</param>
         /// <returns></returns>
         Task<X509CrlCollectionModel> GetIssuerCACrlChainAsync(string groupId,
-            string thumbPrint, string nextPageLink = null, int? pageSize = null);
+            string thumbPrint = null, string nextPageLink = null, int? pageSize = null);
 
         /// <summary>
         /// Get the default trustlist of a certificate group.

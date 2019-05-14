@@ -13,6 +13,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     public interface IGroupRegistry {
 
         /// <summary>
+        /// Create a new certificate group with default settings.
+        /// Default settings depend on certificate type.
+        /// </summary>
+        /// <param name="request">Create request</param>
+        Task<CertificateGroupCreateResultModel> CreateGroupAsync(
+            CertificateGroupCreateRequestModel request);
+
+        /// <summary>
         /// Get the configuration for a group Id.
         /// </summary>
         /// <param name="groupId">The group Id</param>
@@ -25,29 +33,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// The update is sanity checked against default policies.
         /// </summary>
         /// <param name="groupId">The group Id</param>
-        /// <param name="config">The updated configuration</param>
+        /// <param name="request">The update request</param>
         /// <returns>The updated group</returns>
-        Task<CertificateGroupInfoModel> UpdateGroupAsync(
-            string groupId, CertificateGroupInfoModel config);
-
-        /// <summary>
-        /// Create a new certificate group with default settings.
-        /// Default settings depend on certificate type.
-        /// </summary>
-        /// <param name="groupId">The new group Id</param>
-        /// <param name="subject">The subject of the new Issuer CA
-        /// certificate</param>
-        /// <param name="certType">The certificate type for the
-        /// new group</param>
-        Task<CertificateGroupInfoModel> CreateGroupAsync(
-            string groupId, string subject, CertificateType certType);
+        Task UpdateGroupAsync(string groupId,
+            CertificateGroupUpdateModel request);
 
         /// <summary>
         /// Delete a certificate group.
         /// </summary>
         /// <param name="groupId">The group Id</param>
-        Task<CertificateGroupInfoModel> DeleteGroupAsync(
-            string groupId);
+        Task DeleteGroupAsync(string groupId);
 
         /// <summary>
         /// Get the configuration of all certificate groups.

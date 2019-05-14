@@ -78,7 +78,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                     48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 11, 5, 0
                 };
             }
-            else if (hashAlgorithm == HashAlgorithmName.SHA384) {
+            if (hashAlgorithm == HashAlgorithmName.SHA384) {
                 // const string RsaPkcs1Sha384 = "1.2.840.113549.1.1.12";
                 return new byte[] {
                     48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 12, 5, 0
@@ -105,7 +105,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             if (hashAlgorithm == HashAlgorithmName.SHA256) {
                 return SHA256.Create();
             }
-            else if (hashAlgorithm == HashAlgorithmName.SHA384) {
+            if (hashAlgorithm == HashAlgorithmName.SHA384) {
                 return SHA384.Create();
             }
             else if (hashAlgorithm == HashAlgorithmName.SHA512) {

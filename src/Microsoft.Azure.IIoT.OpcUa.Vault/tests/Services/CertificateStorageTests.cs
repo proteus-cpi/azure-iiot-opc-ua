@@ -470,8 +470,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         }
 
         private readonly CertificateStorageTestFixture _fixture;
-        private readonly KeyVaultGroupServices _services;
-        private readonly KeyVaultGroupRegistry _registry;
+        private readonly IGroupServices _services;
+        private readonly IGroupRegistry _registry;
         private readonly ILogger _logger;
     }
 }

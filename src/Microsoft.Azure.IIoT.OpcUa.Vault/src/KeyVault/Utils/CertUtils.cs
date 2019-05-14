@@ -244,7 +244,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             if (hashSizeInBits <= 160) {
                 return HashAlgorithmName.SHA1;
             }
-            else if (hashSizeInBits <= 256) {
+            if (hashSizeInBits <= 256) {
                 return HashAlgorithmName.SHA256;
             }
             else if (hashSizeInBits <= 384) {

@@ -48,7 +48,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             if (hashAlgorithm == HashAlgorithmName.SHA256) {
                 return PkcsObjectIdentifiers.Sha256WithRsaEncryption;
             }
-            else if (hashAlgorithm == HashAlgorithmName.SHA384) {
+            if (hashAlgorithm == HashAlgorithmName.SHA384) {
                 return PkcsObjectIdentifiers.Sha384WithRsaEncryption;
             }
             else if (hashAlgorithm == HashAlgorithmName.SHA512) {
