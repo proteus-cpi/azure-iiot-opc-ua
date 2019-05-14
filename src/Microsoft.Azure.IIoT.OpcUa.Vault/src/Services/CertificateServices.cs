@@ -90,8 +90,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<X509CrlCollectionModel> GetIssuerCACrlChainAsync(string groupId,
-            string thumbPrint, string nextPageLink, int? pageSize) {
+        public async Task<X509CrlCollectionModel> GetIssuerCACrlChainAsync(
+            string groupId, string thumbPrint, string nextPageLink, int? pageSize) {
             var group = await GetGroupAsync(groupId);
             return await group.GetIssuerCACrlAsync(thumbPrint, 
                 nextPageLink, pageSize);
