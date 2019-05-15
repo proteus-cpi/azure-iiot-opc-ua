@@ -19,7 +19,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="keyVaultServiceClient">The KeyVault service client to use</param>
         /// <param name="signingKey">The KeyVault signing key</param>
         /// <param name="issuerCertificate">The issuer certificate used for signing</param>
-        public KeyVaultSignatureGenerator(IKeyVaultServiceClient keyVaultServiceClient,
+        public KeyVaultSignatureGenerator(IKeyVault keyVaultServiceClient,
             string signingKey, X509Certificate2 issuerCertificate) {
             _issuerCert = issuerCertificate;
             _keyVaultServiceClient = keyVaultServiceClient;
@@ -118,7 +118,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         }
 
         private readonly X509Certificate2 _issuerCert;
-        private readonly IKeyVaultServiceClient _keyVaultServiceClient;
+        private readonly IKeyVault _keyVaultServiceClient;
         private readonly string _signingKey;
     }
 }

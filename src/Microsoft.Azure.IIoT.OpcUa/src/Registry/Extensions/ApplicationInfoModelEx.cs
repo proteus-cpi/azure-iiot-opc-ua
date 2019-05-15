@@ -151,5 +151,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
                 ProductUri = model.ProductUri
             };
         }
+
+
+        /// <summary>
+        /// Returns an application name from either application name field or
+        /// localized text dictionary
+        /// </summary>
+        /// <param name="model">The application model.</param>
+        public static string GetApplicationName(this ApplicationInfoModel model) {
+            if (!string.IsNullOrWhiteSpace(model.ApplicationName)) {
+                return model.ApplicationName;
+            }
+            return model.LocalizedNames?
+                .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n.Value)).Value;
+        }
     }
 }

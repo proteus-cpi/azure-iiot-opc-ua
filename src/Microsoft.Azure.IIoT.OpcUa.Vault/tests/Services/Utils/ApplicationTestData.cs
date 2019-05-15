@@ -5,6 +5,7 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Newtonsoft.Json;
     using Opc.Ua;
     using Opc.Ua.Gds;
@@ -23,7 +24,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
             CertificateRequestId = null;
             DomainNames = new StringCollection();
             Subject = null;
-            PrivateKeyFormat = "PFX";
+            PrivateKeyFormat = PrivateKeyFormat.PFX;
             PrivateKeyPassword = "";
             Certificate = null;
             PrivateKey = null;
@@ -37,7 +38,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
         public NodeId CertificateRequestId { get; set; }
         public StringCollection DomainNames { get; set; }
         public string Subject { get; set; }
-        public string PrivateKeyFormat { get; set; }
+        public PrivateKeyFormat PrivateKeyFormat { get; set; }
         public string PrivateKeyPassword { get; set; }
         public byte[] Certificate { get; set; }
         public byte[] PrivateKey { get; set; }

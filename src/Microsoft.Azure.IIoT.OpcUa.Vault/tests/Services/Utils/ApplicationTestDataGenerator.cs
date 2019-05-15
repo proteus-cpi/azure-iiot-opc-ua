@@ -6,6 +6,7 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Opc.Ua;
     using Opc.Ua.Gds;
     using Opc.Ua.Test;
@@ -30,7 +31,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
             var appName = "UA " + pureAppName;
             StringCollection domainNames = RandomDomainNames();
             var localhost = domainNames[0];
-            var privateKeyFormat = _randomSource.NextInt32(1) == 0 ? "PEM" : "PFX";
+            var privateKeyFormat = _randomSource.NextInt32(1) == 0 ? PrivateKeyFormat.PEM : PrivateKeyFormat.PFX;
             var appUri = ("urn:localhost:opcfoundation.org:" + pureAppUri.ToLower()).Replace("localhost", localhost);
             var prodUri = "http://opcfoundation.org/UA/" + pureAppUri;
             var discoveryUrls = new StringCollection();

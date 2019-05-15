@@ -304,10 +304,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     );
 
                 // test to load the key from KeyVault
-                var privateKey = await _services.GetPrivateKeyAsync(group, requestId.ToString(), randomApp.PrivateKeyFormat);
+                var privateKey = await _services.GetPrivateKeyAsync(group, requestId.ToString(),
+                    randomApp.PrivateKeyFormat);
                 X509Certificate2 privateKeyX509;
-                if (randomApp.PrivateKeyFormat == "PFX") {
-                    privateKeyX509 = CertificateFactory.CreateCertificateFromPKCS12(privateKey, randomApp.PrivateKeyPassword);
+                if (randomApp.PrivateKeyFormat == PrivateKeyFormat.PFX) {
+                    privateKeyX509 = CertificateFactory.CreateCertificateFromPKCS12(privateKey,
+                        randomApp.PrivateKeyPassword);
                 }
                 else {
                     privateKeyX509 = CertificateFactory.CreateCertificateWithPEMPrivateKey(

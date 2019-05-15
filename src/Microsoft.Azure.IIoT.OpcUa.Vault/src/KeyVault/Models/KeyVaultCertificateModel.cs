@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
     /// <summary>
     /// Certificate key info
     /// </summary>
-    public struct CertificateKeyInfo {
+    public struct KeyVaultCertificateModel {
 
         /// <summary>
         /// Certificate
@@ -20,6 +20,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
         /// Key
         /// </summary>
         public string KeyIdentifier { get; set; }
+
+        /// <summary>
+        /// Cert
+        /// </summary>
+        public string CertIdentifier { get; set; }
+
+        /// <summary>
+        /// Attributes
+        /// </summary>
+        public string SecretIdentifier { get; set; }
     }
 }
 

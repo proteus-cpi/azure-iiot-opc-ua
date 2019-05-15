@@ -20,15 +20,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             X509Certificate2 newCert,
             byte[] privateKey,
             string privateKeyPassword,
-            string privateKeyFormat,
+            PrivateKeyFormat privateKeyFormat,
             X509Certificate2Collection issuerCertificates) {
             Assert.NotNull(newCert);
             if (privateKey != null) {
                 X509Certificate2 newPrivateKeyCert = null;
-                if (privateKeyFormat == "PFX") {
+                if (privateKeyFormat == PrivateKeyFormat.PFX) {
                     newPrivateKeyCert = CertificateFactory.CreateCertificateFromPKCS12(privateKey, privateKeyPassword);
                 }
-                else if (privateKeyFormat == "PEM") {
+                else if (privateKeyFormat == PrivateKeyFormat.PEM) {
                     newPrivateKeyCert = CertificateFactory.CreateCertificateWithPEMPrivateKey(newCert, privateKey, privateKeyPassword);
                 }
                 else {
@@ -58,7 +58,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             certValidator.Validate(newCert);
         }
 
-        public static void VerifySignedApplicationCert(ApplicationTestData testApp, X509Certificate2 signedCert, X509Certificate2Collection issuerCerts) {
+        public static void VerifySignedApplicationCert(ApplicationTestData testApp,
+            X509Certificate2 signedCert, X509Certificate2Collection issuerCerts) {
             var issuerCert = issuerCerts[0];
 
             Assert.NotNull(signedCert);

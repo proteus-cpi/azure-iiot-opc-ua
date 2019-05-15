@@ -11,7 +11,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using Serilog;
     public static class KeyVaultTestServiceClient {
 
-        public static IKeyVaultServiceClient Get(IVaultConfig _serviceConfig,
+        public static IKeyVault Get(IVaultConfig _serviceConfig,
             IClientConfig _clientConfig, ILogger logger) {
             var _keyVaultServiceClient = new KeyVaultServiceClient(_serviceConfig,
                 new AppAuthenticationProvider(_clientConfig), logger);

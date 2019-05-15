@@ -7,8 +7,6 @@ namespace System.Security.Cryptography.X509Certificates {
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Newtonsoft.Json.Linq;
     using Opc.Ua;
-    using Org.BouncyCastle.Asn1;
-    using Org.BouncyCastle.Asn1.Pkcs;
     using Org.BouncyCastle.Asn1.X509;
     using Org.BouncyCastle.Crypto;
     using Org.BouncyCastle.Crypto.Parameters;
@@ -201,34 +199,5 @@ namespace System.Security.Cryptography.X509Certificates {
                 new BigInteger(1, rsaParams.InverseQ));
             return keyParams;
         }
-
-
-        internal static X509SubjectAltNameExtension GetAltNameExtensionFromCSRInfo(
-            this CertificationRequestInfo info) {
-            try {
-                foreach (Asn1Encodable attribute in info.Attributes) {
-                    var sequence = Asn1Sequence.GetInstance(attribute.ToAsn1Object());
-                    var oid = DerObjectIdentifier.GetInstance(sequence[0].ToAsn1Object());
-                    if (oid.Equals(PkcsObjectIdentifiers.Pkcs9AtExtensionRequest)) {
-                        var extensionInstance = Asn1Set.GetInstance(sequence[1]);
-                        var extensionSequence = Asn1Sequence.GetInstance(extensionInstance[0]);
-                        var extensions = X509Extensions.GetInstance(extensionSequence);
-                        var extension = extensions.GetExtension(X509Extensions.SubjectAlternativeName);
-                        var asnEncodedAltNameExtension = new AsnEncodedData(
-                            X509Extensions.SubjectAlternativeName.ToString(),
-                            extension.Value.GetOctets());
-                        var altNameExtension = new X509SubjectAltNameExtension(
-                            asnEncodedAltNameExtension, extension.IsCritical);
-                        return altNameExtension;
-                    }
-                }
-            }
-            catch {
-                throw new ServiceResultException(StatusCodes.BadInvalidArgument,
-                    "CSR altNameExtension invalid.");
-            }
-            return null;
-        }
-
     }
 }

@@ -338,7 +338,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                     throw new ArgumentNullException(nameof(applicationName),
                         "Must specify a applicationName or a subjectName.");
                 }
-
                 // use the common name as the application name.
                 foreach (var entry in subjectNameEntries) {
                     if (entry.StartsWith("CN=", StringComparison.InvariantCulture)) {

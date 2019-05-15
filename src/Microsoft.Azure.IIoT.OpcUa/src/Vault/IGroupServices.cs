@@ -94,7 +94,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <returns>The new key pair</returns>
         Task<X509CertificatePrivateKeyPairModel> ProcessNewKeyPairRequestAsync(
             string groupId, string requestId, string applicationUri,
-            string subjectName, string[] domainNames, string privateKeyFormat,
+            string subjectName, string[] domainNames, PrivateKeyFormat privateKeyFormat,
             string password);
 
         /// <summary>
@@ -137,7 +137,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// key</param>
         /// <returns></returns>
         Task<byte[]> GetPrivateKeyAsync(string groupId, string requestId,
-            string privateKeyFormat);
+            PrivateKeyFormat privateKeyFormat);
 
         /// <summary>
         /// Accept and thus disable a private key.

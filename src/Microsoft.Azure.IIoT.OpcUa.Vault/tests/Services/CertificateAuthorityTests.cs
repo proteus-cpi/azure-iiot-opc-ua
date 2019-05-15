@@ -128,7 +128,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                         CertificateGroupId = group,
                         SubjectName = application.Subject,
                         DomainNames = application.DomainNames,
-                        PrivateKeyFormat = Enum.Parse<PrivateKeyFormat>(application.PrivateKeyFormat),
+                        PrivateKeyFormat = application.PrivateKeyFormat,
                         PrivateKeyPassword = application.PrivateKeyPassword
                     }, "unittest@opcvault.com");
                     Assert.NotNull(requestId);
@@ -141,7 +141,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     Assert.True(Opc.Ua.Utils.CompareDistinguishedName(application.Subject, request.SubjectName));
                     Assert.Equal(group, request.CertificateGroupId);
                     Assert.Equal(application.DomainNames.ToArray(), request.DomainNames);
-                    Assert.Equal(application.PrivateKeyFormat, request.PrivateKeyFormat.ToString());
+                    Assert.Equal(application.PrivateKeyFormat, request.PrivateKeyFormat);
 
                     // TODO: test all fields
                     application.RequestIds.Add(requestId);
@@ -463,7 +463,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     if (fetchResult.Request.State == CertificateRequestState.Approved ||
                         fetchResult.Request.State == CertificateRequestState.Accepted) {
                         if (fetchResult.PrivateKey != null) {
-                            Assert.Equal(application.PrivateKeyFormat, fetchResult.Request.PrivateKeyFormat.ToString());
+                            Assert.Equal(application.PrivateKeyFormat, fetchResult.Request.PrivateKeyFormat);
                         }
                         Assert.NotNull(fetchResult.SignedCertificate);
                         if (fetchResult.PrivateKey != null) {

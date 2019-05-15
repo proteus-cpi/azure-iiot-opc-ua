@@ -242,7 +242,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                             registration.Application.ApplicationUri,
                             request.SubjectName,
                             request.DomainNames,
-                            request.PrivateKeyFormat,
+                            Enum.Parse<PrivateKeyFormat>(request.PrivateKeyFormat),
                             request.PrivateKeyPassword);
                     }
                     catch (Exception e) {
@@ -611,7 +611,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 document.Value.PrivateKeyFormat != null) {
                 try {
                     privateKey = await _groups.GetPrivateKeyAsync(
-                        document.Value.CertificateGroupId, requestId, document.Value.PrivateKeyFormat);
+                        document.Value.CertificateGroupId, requestId,
+                            Enum.Parse<PrivateKeyFormat>(document.Value.PrivateKeyFormat));
                 }
                 catch {
                     // intentionally ignore error when reading private key
