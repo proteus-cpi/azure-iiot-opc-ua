@@ -9,12 +9,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Microsoft.Azure.IIoT.Storage;
     using Microsoft.Azure.IIoT.Exceptions;
+    using Microsoft.Azure.IIoT.Utils;
     using Microsoft.Azure.KeyVault;
     using Microsoft.Azure.KeyVault.Models;
     using Microsoft.Azure.KeyVault.WebKey;
     using Microsoft.Rest.Azure;
     using Opc.Ua;
-    using Org.BouncyCastle.Pkcs;
     using Serilog;
     using System;
     using System.Collections.Generic;
@@ -24,12 +24,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Azure.IIoT.Utils;
 
     /// <summary>
     /// A KeyVault service client.
     /// </summary>
-    public class KeyVaultServiceClient : IKeyVault, IKeyValueStore {
+    public class KeyVaultServiceClient : IKeyVault, IKeyValueStore, IPrivateKeyStore, 
+        IDigestSigner, ICrlStore, ITrustListStore {
 
         /// <summary>
         /// Create the service client for KeyVault, with user or service
@@ -52,17 +52,23 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
 
         /// <inheritdoc/>
         public async Task<string> GetKeyValueAsync(
-            string key, CancellationToken ct) {
+            string key, string contentType, CancellationToken ct) {
             var secret = await _keyVaultClient.GetSecretAsync(_vaultBaseUrl,
                 key, ct);
+            if (contentType != null) {
+                if (secret.ContentType == null ||
+                !secret.ContentType.EqualsIgnoreCase(contentType)) {
+                    throw new ResourceInvalidStateException("Content type mismatch");
+                }
+            }
             return secret.Value;
         }
 
         /// <inheritdoc/>
         public async Task SetKeyValueAsync(
-            string key, string value, CancellationToken ct) {
+            string key, string value, string contentType, CancellationToken ct) {
             var secret = await _keyVaultClient.SetSecretAsync(_vaultBaseUrl,
-                key, value, null, null, null, ct);
+                key, value, null, contentType, null, ct);
         }
 
         /// <inheritdoc/>
@@ -289,7 +295,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                         _vaultBaseUrl, certificateName, ct);
                 } while (operation.Status == "inProgress" && !ct.IsCancellationRequested);
                 if (operation.Status != "completed") {
-                    throw new ServiceResultException(StatusCodes.BadUnexpectedError,
+                    throw new CryptographicUnexpectedOperationException(
                         "Failed to create new key pair.");
                 }
                 var createdCertificateBundle = await _keyVaultClient.GetCertificateAsync(
@@ -306,26 +312,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                 var createResult = await _keyVaultClient.CreateCertificateAsync(
                     _vaultBaseUrl, certificateName, policyUnknownReuse, attributes, tags, ct);
                 if (createResult.Csr == null) {
-                    throw new ServiceResultException(StatusCodes.BadInvalidArgument,
+                    throw new CryptographicUnexpectedOperationException(
                         "Failed to read CSR from CreateCertificate.");
                 }
 
                 // decode the CSR and verify consistency
-                var pkcs10CertificationRequest = new Pkcs10CertificationRequest(createResult.Csr);
-                var info = pkcs10CertificationRequest.GetCertificationRequestInfo();
-                if (createResult.Csr == null ||
-                    pkcs10CertificationRequest == null ||
-                    !pkcs10CertificationRequest.Verify()) {
-                    throw new ServiceResultException(StatusCodes.BadInvalidArgument,
-                        "Invalid CSR.");
-                }
+                var info = createResult.Csr.ToCertificationRequestInfo();
 
                 // create the self signed root CA cert
                 var publicKey = CertUtils.GetRSAPublicKey(info.SubjectPublicKeyInfo);
                 var signedcert = await CertUtils.CreateSignedCertificate(
                     null, null, subject, null, (ushort)keySize, notBefore, notAfter,
-                    (ushort)hashSize, null, publicKey,
-                    new KeyVaultSignatureGenerator(this, caCertKeyIdentifier, null),
+                    (ushort)hashSize, null, publicKey, this, caCertKeyIdentifier,
                     true, crlDistributionPoint);
 
                 // merge Root CA cert with
@@ -334,7 +332,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                 return signedcert;
             }
             catch (KeyVaultErrorException kex) {
-                throw new ServiceResultException(StatusCodes.BadInternalError,
+                throw new ExternalDependencyException(
                     "Failed to create new Root CA certificate", kex);
             }
             finally {
@@ -354,7 +352,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
             string caCertId, X509Certificate2 issuerCert, string applicationUri,
             string applicationName, string subjectName, string[] domainNames,
             DateTime notBefore, DateTime notAfter, int keySize, int hashSize,
-            KeyVaultSignatureGenerator generator, string authorityInformationAccess,
+            string signingKeyId, string authorityInformationAccess,
             CancellationToken ct) {
             CertificateOperation createResult;
             var certificateName = GetKeyStoreName(caCertId, Guid.NewGuid().ToString());
@@ -369,27 +367,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                     _vaultBaseUrl, certificateName, policyUnknownNewExportable, attributes,
                     null, ct);
                 if (createResult.Csr == null) {
-                    throw new ServiceResultException(StatusCodes.BadInvalidArgument,
+                    throw new CryptographicUnexpectedOperationException(
                         "Failed to read CSR from CreateCertificate.");
                 }
 
                 // decode the CSR and verify consistency
-                var pkcs10CertificationRequest = new Pkcs10CertificationRequest(
-                    createResult.Csr);
-                var info = pkcs10CertificationRequest.GetCertificationRequestInfo();
-                if (createResult.Csr == null ||
-                    pkcs10CertificationRequest == null ||
-                    !pkcs10CertificationRequest.Verify()) {
-                    throw new ServiceResultException(StatusCodes.BadInvalidArgument,
-                        "Invalid CSR.");
-                }
+                var info = createResult.Csr.ToCertificationRequestInfo();
 
                 // create the self signed app cert
                 var publicKey = CertUtils.GetRSAPublicKey(info.SubjectPublicKeyInfo);
                 var signedcert = await CertUtils.CreateSignedCertificate(
                     applicationUri, applicationName, subjectName, domainNames,
                     (ushort)keySize, notBefore, notAfter, (ushort)hashSize,
-                    issuerCert, publicKey, generator, false, authorityInformationAccess);
+                    issuerCert, publicKey, this, signingKeyId, false, authorityInformationAccess);
 
                 // merge signed cert with keystore
                 var mergeResult = await _keyVaultClient.MergeCertificateAsync(
@@ -412,7 +402,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                 return keyPair;
             }
             catch {
-                throw new ServiceResultException(StatusCodes.BadInternalError,
+                throw new ExternalDependencyException(
                     "Failed to create new key pair certificate");
             }
             finally {
@@ -427,7 +417,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         public async Task ImportCrlAsync(string certificateName, string thumbPrint,
             X509CRL crl, CancellationToken ct) {
             try {
-                var secretIdentifier = GetCrlSecretName(certificateName, thumbPrint);
+                var crlId = GetCrlId(certificateName, thumbPrint);
                 var secretAttributes = new SecretAttributes {
                     Enabled = true,
                     NotBefore = crl.UpdateTime
@@ -435,7 +425,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
 
                 // do not set tag for a CRL, the CA cert is already tagged.
                 var result = await _keyVaultClient.SetSecretAsync(_vaultBaseUrl,
-                    secretIdentifier, Convert.ToBase64String(crl.RawData),
+                    crlId, Convert.ToBase64String(crl.RawData),
                     null, ContentEncodings.MimeTypeCrl, secretAttributes, ct);
             }
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
@@ -448,42 +438,37 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         /// <inheritdoc/>
         public async Task<X509CRL> GetCrlAsync(string certificateName, string thumbPrint,
             CancellationToken ct) {
-            var secretIdentifier = GetCrlSecretName(certificateName, thumbPrint);
-
-            var secret = await _keyVaultClient.GetSecretAsync(
-                _vaultBaseUrl, secretIdentifier, ct);
-            if (secret.ContentType.EqualsIgnoreCase(ContentEncodings.MimeTypeCrl)) {
-                var crlBlob = Convert.FromBase64String(secret.Value);
-                return new X509CRL(crlBlob);
-            }
-            return null;
+            var crlId = GetCrlId(certificateName, thumbPrint);
+            return await GetCrlSecretAsync(crlId, ct);
         }
 
-
-
         /// <inheritdoc/>
-        public async Task ImportKeyAsync(string groupId, string requestId, byte[] privateKey,
+        public async Task ImportKeyAsync(string keyId, byte[] privateKey,
             PrivateKeyFormat privateKeyFormat, CancellationToken ct) {
+            if (string.IsNullOrEmpty(keyId)) {
+                throw new ArgumentNullException(nameof(keyId));
+            }
             var contentType = PrivateKeyFormatToContentType(privateKeyFormat);
-            var secretIdentifier = GetKeySecretName(groupId, requestId);
             var now = DateTime.UtcNow;
             var secretAttributes = new SecretAttributes {
                 Enabled = true,
                 NotBefore = now
             };
-            var result = await _keyVaultClient.SetSecretAsync(_vaultBaseUrl, secretIdentifier,
+            var result = await _keyVaultClient.SetSecretAsync(_vaultBaseUrl, keyId,
                 contentType.EqualsIgnoreCase(ContentEncodings.MimeTypePfxCert) ?
                     Convert.ToBase64String(privateKey) : Encoding.ASCII.GetString(privateKey),
                 null, contentType, secretAttributes, ct);
         }
 
         /// <inheritdoc/>
-        public async Task<byte[]> GetKeyAsync(string groupId, string requestId,
-            PrivateKeyFormat privateKeyFormat, CancellationToken ct) {
+        public async Task<byte[]> GetKeyAsync(string keyId, PrivateKeyFormat privateKeyFormat, 
+            CancellationToken ct) {
+            if (string.IsNullOrEmpty(keyId)) {
+                throw new ArgumentNullException(nameof(keyId));
+            }
             var contentType = PrivateKeyFormatToContentType(privateKeyFormat);
-            var secretIdentifier = GetKeySecretName(groupId, requestId);
             var secret = await _keyVaultClient.GetSecretAsync(
-                _vaultBaseUrl, secretIdentifier, ct);
+                _vaultBaseUrl, keyId, ct);
             if (secret.ContentType.EqualsIgnoreCase(contentType)) {
                 if (secret.ContentType.EqualsIgnoreCase(ContentEncodings.MimeTypePfxCert)) {
                     return Convert.FromBase64String(secret.Value);
@@ -492,15 +477,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                     return Encoding.ASCII.GetBytes(secret.Value);
                 }
             }
+            // throw
             return null;
         }
 
         /// <inheritdoc/>
-        public async Task DisableKeyAsync(string groupId, string requestId,
-            CancellationToken ct) {
-            var secretIdentifier = GetKeySecretName(groupId, requestId);
+        public async Task DisableKeyAsync(string keyId, CancellationToken ct) {
+            if (string.IsNullOrEmpty(keyId)) {
+                throw new ArgumentNullException(nameof(keyId));
+            }
             var secretKeys = await _keyVaultClient.GetSecretVersionsAsync(
-                _vaultBaseUrl, secretIdentifier, null, ct);
+                _vaultBaseUrl, keyId, null, ct);
             while (secretKeys != null) {
                 foreach (var secret in secretKeys) {
                     var secretAttributes = new SecretAttributes {
@@ -521,17 +508,18 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task DeleteKeyAsync(string groupId, string requestId,
-            CancellationToken ct) {
-            var secretIdentifier = GetKeySecretName(groupId, requestId);
-            await _keyVaultClient.DeleteSecretAsync(_vaultBaseUrl, secretIdentifier, ct);
+        public async Task DeleteKeyAsync(string keyId, CancellationToken ct) {
+            if (string.IsNullOrEmpty(keyId)) {
+                throw new ArgumentNullException(nameof(keyId));
+            }
+            await _keyVaultClient.DeleteSecretAsync(_vaultBaseUrl, keyId, ct);
         }
 
         /// <inheritdoc/>
         public async Task<KeyVaultTrustListModel> GetTrustListAsync(
-            string groupId, int? maxResults, string nextPageLink, CancellationToken ct) {
+            string certificateName, int? maxResults, string nextPageLink, CancellationToken ct) {
 
-            var trustList = new KeyVaultTrustListModel(groupId);
+            var trustList = new KeyVaultTrustListModel(certificateName);
             if (maxResults == null) {
                 maxResults = kMaxResults;
             }
@@ -554,7 +542,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
             while (secretItems != null) {
                 foreach (var secretItem in secretItems.Where(s => s.Tags != null)) {
                     var tag = secretItem.Tags
-                        .FirstOrDefault(x => groupId.EqualsIgnoreCase(x.Key)).Value;
+                        .FirstOrDefault(x => certificateName.EqualsIgnoreCase(x.Key)).Value;
                     var issuer = tag == kTagIssuerList;
                     var trusted = tag == kTagTrustedList;
                     var certType = secretItem.ContentType.EqualsIgnoreCase(
@@ -600,12 +588,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
             }
             else {
                 certItems = await _keyVaultClient.GetCertificateVersionsAsync(
-                    _vaultBaseUrl, groupId, maxResults, ct);
+                    _vaultBaseUrl, certificateName, maxResults, ct);
             }
             while (certItems != null) {
                 foreach (var certItem in certItems.Where(c => c.Tags != null)) {
                     var tag = certItem.Tags
-                        .FirstOrDefault(x => groupId.EqualsIgnoreCase(x.Key)).Value;
+                        .FirstOrDefault(x => certificateName.EqualsIgnoreCase(x.Key)).Value;
                     var issuer = tag == kTagIssuerList;
                     var trusted = tag == kTagTrustedList;
 
@@ -613,7 +601,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                         var certBundle = await _keyVaultClient.GetCertificateAsync(
                             certItem.Id, ct);
                         var cert = new X509Certificate2(certBundle.Cer);
-                        var crl = await GetCrlAsync(groupId, cert.Thumbprint, ct);
+                        var crl = await GetCrlAsync(certificateName, cert.Thumbprint, ct);
                         if (issuer) {
                             trustList.IssuerCertificates.Add(cert);
                             trustList.IssuerCrls.Add(crl);
@@ -784,22 +772,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         }
 
         /// <summary>
-        /// Get key name
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="requestId"></param>
-        /// <returns></returns>
-        private static string GetKeySecretName(string id, string requestId) {
-            return id + "Key" + requestId;
-        }
-
-        /// <summary>
         /// Get crl name
         /// </summary>
         /// <param name="certificateName"></param>
         /// <param name="thumbprint"></param>
         /// <returns></returns>
-        private static string GetCrlSecretName(string certificateName, string thumbprint) {
+        private static string GetCrlId(string certificateName, string thumbprint) {
             return certificateName + "Crl" + thumbprint;
         }
 
@@ -830,7 +808,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
             CancellationToken ct) {
             var secret = await _keyVaultClient.GetSecretAsync(
                 _vaultBaseUrl, secretIdentifier, ct);
-            if (secret.ContentType.EqualsIgnoreCase(ContentEncodings.MimeTypeCrl)) {
+            if (secret.ContentType.EqualsIgnoreCase(ContentEncodings.MimeTypeCert)) {
                 var certBlob = Convert.FromBase64String(secret.Value);
                 return new X509Certificate2(certBlob);
             }

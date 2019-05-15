@@ -58,7 +58,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             Skip.If(!_fixture.KeyVaultInitOk);
             var groups = await _registry.ListGroupIdsAsync(null, null);
             foreach (var group in groups.Groups) {
-                var result = await _services.CreateIssuerCACertificateAsync(group);
+                var result = await _services.GenerateNewIssuerCACertificateAsync(group);
                 Assert.NotNull(result);
                 Assert.False(result.ToStackModel().HasPrivateKey);
                 Assert.True(Opc.Ua.Utils.CompareDistinguishedName(result.ToStackModel().Issuer, result.Subject));

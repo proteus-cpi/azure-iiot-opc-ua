@@ -7,7 +7,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     using Opc.Ua;
     using Org.BouncyCastle.Asn1;
     using Org.BouncyCastle.Asn1.X509;
-    using Org.BouncyCastle.Crypto;
     using Org.BouncyCastle.Crypto.Parameters;
     using Org.BouncyCastle.Math;
     using Org.BouncyCastle.Security;
@@ -30,13 +29,27 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     public static class CertUtils {
 
         /// <summary>
-        /// Creates a KeyVault signed certificate.
+        /// Creates a signed certificate
         /// </summary>
-        /// <returns>The signed certificate</returns>
+        /// <param name="applicationUri"></param>
+        /// <param name="applicationName"></param>
+        /// <param name="subjectName"></param>
+        /// <param name="domainNames"></param>
+        /// <param name="keySize"></param>
+        /// <param name="notBefore"></param>
+        /// <param name="notAfter"></param>
+        /// <param name="hashSizeInBits"></param>
+        /// <param name="issuerCAKeyCert"></param>
+        /// <param name="publicKey"></param>
+        /// <param name="signer"></param>
+        /// <param name="signingKey"></param>
+        /// <param name="caCert"></param>
+        /// <param name="extensionUrl"></param>
+        /// <returns></returns>
         public static Task<X509Certificate2> CreateSignedCertificate(string applicationUri,
             string applicationName, string subjectName, IList<string> domainNames,
             ushort keySize, DateTime notBefore, DateTime notAfter, ushort hashSizeInBits,
-            X509Certificate2 issuerCAKeyCert, RSA publicKey, X509SignatureGenerator generator,
+            X509Certificate2 issuerCAKeyCert, RSA publicKey, IDigestSigner signer, string signingKey,
             bool caCert = false, string extensionUrl = null) {
             if (publicKey == null) {
                 throw new NotSupportedException("Need a public key and a CA certificate.");
@@ -134,7 +147,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             }
 
             var issuerSubjectName = issuerCAKeyCert != null ? issuerCAKeyCert.SubjectName : subjectDN;
-            var signedCert = request.Create(issuerSubjectName, generator, notBefore, notAfter, serialNumber);
+            var signatureGenerator = new SignatureGenerator(signer, signingKey, issuerCAKeyCert);
+            var signedCert = request.Create(issuerSubjectName, signatureGenerator, notBefore, 
+                notAfter, serialNumber);
             return Task.FromResult(signedCert);
         }
 
@@ -142,27 +157,34 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// Revoke the certificate.
         /// The CRL number is increased by one and the new CRL is returned.
         /// </summary>
+        /// <param name="issuerCertificate"></param>
+        /// <param name="issuerCrls"></param>
+        /// <param name="revokedCertificates"></param>
+        /// <param name="thisUpdate"></param>
+        /// <param name="nextUpdate"></param>
+        /// <param name="signer"></param>
+        /// <param name="signingKey"></param>
+        /// <param name="hashSize"></param>
+        /// <returns></returns>
         public static X509CRL RevokeCertificate(X509Certificate2 issuerCertificate,
-            List<X509CRL> issuerCrls, X509Certificate2Collection revokedCertificates,
-            DateTime thisUpdate, DateTime nextUpdate, X509SignatureGenerator generator,
+            IEnumerable<X509CRL> issuerCrls, X509Certificate2Collection revokedCertificates,
+            DateTime thisUpdate, DateTime nextUpdate, IDigestSigner signer, string signingKey,
             uint hashSize) {
-            var crlSerialNumber = BigInteger.Zero;
+
             var bcCertCA = new X509CertificateParser().ReadCertificate(issuerCertificate.RawData);
-            ISignatureFactory signatureFactory =
-                    new KeyVaultSignatureFactory(GetRSAHashAlgorithmName(hashSize), generator);
 
             var crlGen = new X509V2CrlGenerator();
             crlGen.SetIssuerDN(bcCertCA.IssuerDN);
-
             if (thisUpdate == DateTime.MinValue) {
                 thisUpdate = DateTime.UtcNow;
             }
             crlGen.SetThisUpdate(thisUpdate);
-
             if (nextUpdate <= thisUpdate) {
                 nextUpdate = bcCertCA.NotAfter;
             }
             crlGen.SetNextUpdate(nextUpdate);
+
+            var crlSerialNumber = BigInteger.Zero;
             // merge all existing revocation list
             if (issuerCrls != null) {
                 var parser = new X509CrlParser();
@@ -175,7 +197,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                     }
                 }
             }
-
             if (revokedCertificates == null || revokedCertificates.Count == 0) {
                 // add a dummy revoked cert
                 crlGen.AddCrlEntry(BigInteger.One, thisUpdate, CrlReason.Unspecified);
@@ -197,6 +218,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                 new CrlNumber(crlSerialNumber));
 
             // generate updated CRL
+            var signatureGenerator = new SignatureGenerator(signer, signingKey, issuerCertificate);
+            var signatureFactory = new SignatureFactory(GetRSAHashAlgorithmName(hashSize),
+                signatureGenerator);
             var updatedCrl = crlGen.Generate(signatureFactory);
             return new X509CRL(updatedCrl.GetEncoded());
         }
@@ -247,12 +271,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             if (hashSizeInBits <= 256) {
                 return HashAlgorithmName.SHA256;
             }
-            else if (hashSizeInBits <= 384) {
+            if (hashSizeInBits <= 384) {
                 return HashAlgorithmName.SHA384;
             }
-            else {
-                return HashAlgorithmName.SHA512;
-            }
+            return HashAlgorithmName.SHA512;
         }
 
         /// <summary>
@@ -260,13 +282,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// </summary>
         private static BigInteger GetCrlNumber(X509Crl crl) {
             var crlNumber = BigInteger.One;
-            try {
-                var asn1Object = GetExtensionValue(crl, X509Extensions.CrlNumber);
-                if (asn1Object != null) {
-                    crlNumber = DerInteger.GetInstance(asn1Object).PositiveValue;
-                }
-            }
-            finally {
+            var asn1Object = GetExtensionValue(crl, X509Extensions.CrlNumber);
+            if (asn1Object != null) {
+                crlNumber = DerInteger.GetInstance(asn1Object).PositiveValue;
             }
             return crlNumber;
         }

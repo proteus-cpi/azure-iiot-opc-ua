@@ -67,7 +67,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
                 // Create services
                 _keyVaultCertificateGroup = new CertificateServices(Registry, 
-                    _keyVaultServiceClient, _serviceConfig, _logger);
+                    _keyVaultServiceClient, _keyVaultServiceClient, _serviceConfig, _logger);
                 _keyVaultServiceClient.PurgeAsync("groups", _groupId, CancellationToken.None).Wait();
                 Services = _keyVaultCertificateGroup;
 

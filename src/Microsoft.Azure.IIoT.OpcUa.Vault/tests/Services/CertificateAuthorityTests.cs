@@ -89,7 +89,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             }
             var groups = await _groupRegistry.ListGroupIdsAsync();
             foreach (var group in groups.Groups) {
-                await _groupServices.CreateIssuerCACertificateAsync(group);
+                await _groupServices.GenerateNewIssuerCACertificateAsync(group);
                 var chain = await _groupServices.GetIssuerCACertificateChainAsync(group);
                 Assert.NotNull(chain);
                 Assert.True(chain.Chain.Count > 0);

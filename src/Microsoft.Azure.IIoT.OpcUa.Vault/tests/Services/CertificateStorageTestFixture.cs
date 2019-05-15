@@ -61,7 +61,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     new AppAuthenticationProvider(_clientConfig), _logger);
 
                 // Create services
-                Services = new CertificateServices(Registry, _keyVaultServiceClient, _serviceConfig, _logger);
+                Services = new CertificateServices(Registry, _keyVaultServiceClient, 
+                    _keyVaultServiceClient, _serviceConfig, _logger);
 
                 // Clear
                 _keyVaultServiceClient.PurgeAsync("groups", GroupId, CancellationToken.None).Wait();

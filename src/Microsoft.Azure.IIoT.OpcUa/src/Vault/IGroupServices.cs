@@ -125,7 +125,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// </summary>
         /// <param name="groupId">The group groupId</param>
         /// <returns>The new Issuer CA cert</returns>
-        Task<X509CertificateModel> CreateIssuerCACertificateAsync(
+        Task<X509CertificateModel> GenerateNewIssuerCACertificateAsync(
             string groupId);
 
         /// <summary>

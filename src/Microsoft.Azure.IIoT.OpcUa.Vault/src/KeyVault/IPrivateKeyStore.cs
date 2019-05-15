@@ -14,46 +14,44 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     public interface IPrivateKeyStore {
 
         /// <summary>
-        /// Imports a Private Key for specified group and certificate.
+        /// Imports a Private Key under specified keyId
         /// </summary>
-        /// <param name="groupId"></param>
-        /// <param name="requestId"></param>
+        /// <param name="keyId"></param>
         /// <param name="privateKey"></param>
         /// <param name="privateKeyFormat"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task ImportKeyAsync(string groupId, string requestId, byte[] privateKey,
-            PrivateKeyFormat privateKeyFormat, CancellationToken ct = default);
-
-        /// <summary>
-        /// Load Private Key for certificate in group.
-        /// </summary>
-        /// <param name="groupId"></param>
-        /// <param name="requestId"></param>
-        /// <param name="privateKeyFormat"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task<byte[]> GetKeyAsync(string groupId, string requestId,
-            PrivateKeyFormat privateKeyFormat, CancellationToken ct = default);
-
-        /// <summary>
-        /// Accept Private Key for certificate in group.
-        /// </summary>
-        /// <param name="groupId"></param>
-        /// <param name="requestId"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task DisableKeyAsync(string groupId, string requestId,
+        Task ImportKeyAsync(string keyId, byte[] privateKey,
+            PrivateKeyFormat privateKeyFormat, 
             CancellationToken ct = default);
 
         /// <summary>
-        /// Delete Private Key for certificate in group.
+        /// Load Private Key Id
         /// </summary>
-        /// <param name="groupId"></param>
-        /// <param name="requestId"></param>
+        /// <param name="keyId"></param>
+        /// <param name="privateKeyFormat"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task DeleteKeyAsync(string groupId, string requestId,
+        Task<byte[]> GetKeyAsync(string keyId,
+            PrivateKeyFormat privateKeyFormat, 
+            CancellationToken ct = default);
+
+        /// <summary>
+        /// Accept Private Key with key Id
+        /// </summary>
+        /// <param name="keyId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task DisableKeyAsync(string keyId,
+            CancellationToken ct = default);
+
+        /// <summary>
+        /// Delete Private Key with key Id
+        /// </summary>
+        /// <param name="keyId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task DeleteKeyAsync(string keyId,
             CancellationToken ct = default);
     }
 }

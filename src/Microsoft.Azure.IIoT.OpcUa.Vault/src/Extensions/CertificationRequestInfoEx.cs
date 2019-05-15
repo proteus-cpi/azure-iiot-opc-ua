@@ -22,11 +22,13 @@ namespace System.Security.Cryptography.X509Certificates {
         /// <returns></returns>
         public static CertificationRequestInfo ToCertificationRequestInfo(
             this byte[] certificateRequest) {
+            if (certificateRequest == null) {
+                throw new ArgumentNullException(nameof(certificateRequest));
+            }
             var pkcs10CertificationRequest = new Pkcs10CertificationRequest(
                 certificateRequest);
             if (!pkcs10CertificationRequest.Verify()) {
-                throw new ArgumentException("CSR signature invalid.",
-                    nameof(certificateRequest));
+                throw new FormatException("CSR signature invalid.");
             }
             return pkcs10CertificationRequest.GetCertificationRequestInfo();
         }

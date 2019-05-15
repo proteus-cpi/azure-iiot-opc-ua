@@ -9,20 +9,22 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     using System.Security.Cryptography.X509Certificates;
 
     /// <summary>
-    /// The X509 signature generator to sign a digest with a KeyVault key.
+    /// The X509 signature generator to sign a digest using 
+    /// <see cref="IDigestSigner"/>
     /// </summary>
-    public class KeyVaultSignatureGenerator : X509SignatureGenerator {
+    internal sealed class SignatureGenerator : X509SignatureGenerator {
 
         /// <summary>
-        /// Create the KeyVault signature generator.
+        /// Create the digest signer signature generator.
         /// </summary>
-        /// <param name="keyVaultServiceClient">The KeyVault service client to use</param>
-        /// <param name="signingKey">The KeyVault signing key</param>
-        /// <param name="issuerCertificate">The issuer certificate used for signing</param>
-        public KeyVaultSignatureGenerator(IKeyVault keyVaultServiceClient,
-            string signingKey, X509Certificate2 issuerCertificate) {
+        /// <param name="signer">Digest signer to use</param>
+        /// <param name="signingKey">The signing key</param>
+        /// <param name="issuerCertificate">The issuer 
+        /// certificate used for signing</param>
+        public SignatureGenerator(IDigestSigner signer, string signingKey, 
+            X509Certificate2 issuerCertificate) {
             _issuerCert = issuerCertificate;
-            _keyVaultServiceClient = keyVaultServiceClient;
+            _signer = signer;
             _signingKey = signingKey;
         }
 
@@ -30,7 +32,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         public override byte[] SignData(byte[] data, HashAlgorithmName hashAlgorithm) {
             var hash = CreateHashAlgorithm(hashAlgorithm);
             var digest = hash.ComputeHash(data);
-            var resultKeyVaultPkcs = _keyVaultServiceClient.SignDigestAsync(
+            var resultKeyVaultPkcs = _signer.SignDigestAsync(
                 _signingKey, digest, hashAlgorithm, RSASignaturePadding.Pkcs1)
                 .GetAwaiter()
                 .GetResult();
@@ -40,7 +42,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             // to the internal signer
             //
             if (_issuerCert.HasPrivateKey) {
-                var resultKeyVaultPss = _keyVaultServiceClient.SignDigestAsync(
+                var resultKeyVaultPss = _signer.SignDigestAsync(
                     _signingKey, digest, hashAlgorithm, RSASignaturePadding.Pss)
                     .GetAwaiter()
                     .GetResult();
@@ -84,16 +86,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                     48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 12, 5, 0
                 };
             }
-            else if (hashAlgorithm == HashAlgorithmName.SHA512) {
+            if (hashAlgorithm == HashAlgorithmName.SHA512) {
                 // const string RsaPkcs1Sha512 = "1.2.840.113549.1.1.13";
                 return new byte[] {
                     48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 13, 5, 0
                 };
             }
-            else {
-                throw new ArgumentOutOfRangeException(nameof(hashAlgorithm),
-                    $"The hash algorithm {hashAlgorithm.Name} is not supported.");
-            }
+            throw new ArgumentOutOfRangeException(nameof(hashAlgorithm),
+                $"The hash algorithm {hashAlgorithm.Name} is not supported.");
         }
 
         /// <summary>
@@ -108,17 +108,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             if (hashAlgorithm == HashAlgorithmName.SHA384) {
                 return SHA384.Create();
             }
-            else if (hashAlgorithm == HashAlgorithmName.SHA512) {
+            if (hashAlgorithm == HashAlgorithmName.SHA512) {
                 return SHA512.Create();
             }
-            else {
-                throw new ArgumentOutOfRangeException(nameof(hashAlgorithm),
-                    $"The hash algorithm {hashAlgorithm.Name} is not supported.");
-            }
+            throw new ArgumentOutOfRangeException(nameof(hashAlgorithm),
+                $"The hash algorithm {hashAlgorithm.Name} is not supported.");
         }
 
+
         private readonly X509Certificate2 _issuerCert;
-        private readonly IKeyVault _keyVaultServiceClient;
+        private readonly IDigestSigner _signer;
         private readonly string _signingKey;
     }
 }

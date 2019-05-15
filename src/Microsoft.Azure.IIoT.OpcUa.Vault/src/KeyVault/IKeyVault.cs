@@ -8,29 +8,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     using Microsoft.Azure.IIoT.Storage;
     using System;
     using System.Collections.Generic;
-    using System.Security.Cryptography;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
-    using Opc.Ua;
 
     /// <summary>
     /// Key vault abstraction
     /// </summary>
-    public interface IKeyVault : IKeyValueStore, IPrivateKeyStore {
-
-        /// <summary>
-        /// Sign a digest with the signing key.
-        /// </summary>
-        /// <param name="signingKey"></param>
-        /// <param name="digest"></param>
-        /// <param name="hashAlgorithm"></param>
-        /// <param name="padding"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task<byte[]> SignDigestAsync(string signingKey, byte[] digest,
-            HashAlgorithmName hashAlgorithm, RSASignaturePadding padding,
-            CancellationToken ct = default);
+    public interface IKeyVault : IKeyValueStore, IDigestSigner, 
+        ICrlStore, ITrustListStore {
 
         /// <summary>
         /// Creates a new signed application certificate in specified group.
@@ -50,7 +36,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="notAfter"></param>
         /// <param name="keySize"></param>
         /// <param name="hashSize"></param>
-        /// <param name="generator"></param>
+        /// <param name="signingKeyId"></param>
         /// <param name="authorityInformationAccess"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
@@ -58,7 +44,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             string caCertId, X509Certificate2 issuerCert, string applicationUri,
             string applicationName, string subjectName, string[] domainNames,
             DateTime notBefore, DateTime notAfter, int keySize, int hashSize,
-            KeyVaultSignatureGenerator generator, string authorityInformationAccess,
+            string signingKeyId, string authorityInformationAccess,
             CancellationToken ct = default);
 
         /// <summary>
@@ -123,39 +109,5 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             string subject, DateTime notBefore, DateTime notAfter,
             int keySize, int hashSize, bool trusted,
             string crlDistributionPoint, CancellationToken ct = default);
-
-        /// <summary>
-        /// Imports a CRL for certificate.
-        /// </summary>
-        /// <param name="certificateName"></param>
-        /// <param name="thumbPrint"></param>
-        /// <param name="crl"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task ImportCrlAsync(string certificateName, string thumbPrint,
-            X509CRL crl, CancellationToken ct = default);
-
-        /// <summary>
-        /// Load CRL for CA cert in group.
-        /// </summary>
-        /// <param name="certificateName"></param>
-        /// <param name="thumbPrint"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task<X509CRL> GetCrlAsync(string certificateName, string thumbPrint,
-            CancellationToken ct = default);
-
-        /// <summary>
-        /// Creates a trust list with all certs and crls in issuer
-        /// and trusted list.
-        /// </summary>
-        /// <param name="groupId"></param>
-        /// <param name="maxResults"></param>
-        /// <param name="nextPageLink"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task<KeyVaultTrustListModel> GetTrustListAsync(
-            string groupId, int? maxResults, string nextPageLink,
-            CancellationToken ct = default);
     }
 }
