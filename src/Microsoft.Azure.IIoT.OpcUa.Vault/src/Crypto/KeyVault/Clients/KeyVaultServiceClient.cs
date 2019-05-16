@@ -28,7 +28,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
     /// <summary>
     /// A KeyVault service client.
     /// </summary>
-    public class KeyVaultServiceClient : IKeyVault, IKeyValueStore, IPrivateKeyStore, 
+    public class KeyVaultServiceClient : IKeyVault, IKeyValueStore, IPrivateKeyStore,
         IDigestSigner, ICertificateFactory {
 
         /// <summary>
@@ -344,7 +344,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                 // create the self signed root CA cert
                 var publicKey = info.SubjectPublicKeyInfo.GetRSAPublicKey();
                 var signedcert = await CertificateFactory2.CreateSignedRootCertificateAsync(
-                    subject, (ushort)keySize, notBefore, notAfter, (ushort)hashSize, 
+                    subject, (ushort)keySize, notBefore, notAfter, (ushort)hashSize,
                     publicKey, this, caCertKeyIdentifier, crlDistributionPoint);
 
                 // merge Root CA cert with
@@ -484,7 +484,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<byte[]> GetKeyAsync(string keyId, PrivateKeyFormat privateKeyFormat, 
+        public async Task<byte[]> GetKeyAsync(string keyId, PrivateKeyFormat privateKeyFormat,
             CancellationToken ct) {
             if (string.IsNullOrEmpty(keyId)) {
                 throw new ArgumentNullException(nameof(keyId));

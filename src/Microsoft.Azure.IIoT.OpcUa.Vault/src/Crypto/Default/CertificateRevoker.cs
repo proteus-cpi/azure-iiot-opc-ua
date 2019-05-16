@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
 
                 var bcCertCA = new X509CertificateParser().ReadCertificate(
                     issuerCertificate.Certificate.RawData);
-                var signatureGenerator = new SignatureGenerator(_signer, issuerCertificate);
+                var signatureGenerator = new SignatureGeneratorAdapter(_signer, issuerCertificate);
                 var signatureFactory = new SignatureFactory(CertUtils.GetRSAHashAlgorithmName(256),
                     signatureGenerator);
 
@@ -139,7 +139,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                 new CrlNumber(crlSerialNumber));
 
             // generate updated CRL
-            var signatureGenerator = new SignatureGenerator(_signer, issuerCertificate);
+            var signatureGenerator = new SignatureGeneratorAdapter(_signer, issuerCertificate);
             var signatureFactory = new SignatureFactory(CertUtils.GetRSAHashAlgorithmName(hashSize),
                 signatureGenerator);
             var updatedCrl = crlGen.Generate(signatureFactory);

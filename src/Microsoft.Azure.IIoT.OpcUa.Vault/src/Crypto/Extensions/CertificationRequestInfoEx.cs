@@ -4,9 +4,7 @@
 // ------------------------------------------------------------
 
 namespace System.Security.Cryptography.X509Certificates {
-    using Org.BouncyCastle.Asn1;
     using Org.BouncyCastle.Asn1.Pkcs;
-    using Org.BouncyCastle.Asn1.X509;
     using Org.BouncyCastle.Pkcs;
 
     /// <summary>

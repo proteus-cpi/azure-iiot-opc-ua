@@ -13,7 +13,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     /// The X509 signature generator to sign a digest using 
     /// <see cref="IDigestSigner"/>
     /// </summary>
-    internal sealed class SignatureGenerator : X509SignatureGenerator {
+    public sealed class SignatureGeneratorAdapter : X509SignatureGenerator {
 
         /// <summary>
         /// Create the digest signer signature generator.
@@ -21,7 +21,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="signer">Digest signer to use</param>
         /// <param name="issuerCertificate">The issuer 
         /// certificate used for signing</param>
-        public SignatureGenerator(IDigestSigner signer, X509CertificateKeyIdPair 
+        public SignatureGeneratorAdapter(IDigestSigner signer, X509CertificateKeyIdPair 
             issuerCertificate) {
             _issuerCert = issuerCertificate;
             _signer = signer;
