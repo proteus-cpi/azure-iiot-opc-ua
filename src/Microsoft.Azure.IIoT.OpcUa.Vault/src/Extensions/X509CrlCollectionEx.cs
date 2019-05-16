@@ -4,9 +4,9 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
-    using Opc.Ua;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Security.Cryptography.X509Certificates;
 
     /// <summary>
     /// Crl collection model
@@ -18,7 +18,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// </summary>
         /// <param name="crls"></param>
         /// <param name="nextPageLink"></param>
-        public static X509CrlCollectionModel ToServiceModel(this IEnumerable<X509CRL> crls,
+        public static X509CrlCollectionModel ToServiceModel(this IEnumerable<X509Crl2> crls,
             string nextPageLink = null) {
             return new X509CrlCollectionModel {
                 Chain = crls
@@ -32,7 +32,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// Create collection
         /// </summary>
         /// <param name="crls"></param>
-        public static IList<X509CRL> ToStackModel(this X509CrlCollectionModel crls) {
+        public static IList<X509Crl2> ToStackModel(this X509CrlCollectionModel crls) {
             return crls.Chain
                 .Select(c => c.ToStackModel())
                 .ToList();

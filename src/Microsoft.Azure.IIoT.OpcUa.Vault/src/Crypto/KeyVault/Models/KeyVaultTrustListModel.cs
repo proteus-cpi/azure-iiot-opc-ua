@@ -5,7 +5,6 @@
 
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
-    using Opc.Ua;
     using System.Collections.Generic;
     using System.Security.Cryptography.X509Certificates;
 
@@ -27,7 +26,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
         /// <summary>
         /// Issuer crls
         /// </summary>
-        public IList<X509CRL> IssuerCrls { get; set; }
+        public IList<X509Crl2> IssuerCrls { get; set; }
 
         /// <summary>
         /// Trusted certificates
@@ -37,7 +36,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
         /// <summary>
         /// Trusted crls
         /// </summary>
-        public IList<X509CRL> TrustedCrls { get; set; }
+        public IList<X509Crl2> TrustedCrls { get; set; }
 
         /// <summary>
         /// Next page
@@ -51,9 +50,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
         public KeyVaultTrustListModel(string groupId) {
             Group = groupId;
             IssuerCertificates = new X509Certificate2Collection();
-            IssuerCrls = new List<X509CRL>();
+            IssuerCrls = new List<X509Crl2>();
             TrustedCertificates = new X509Certificate2Collection();
-            TrustedCrls = new List<X509CRL>();
+            TrustedCrls = new List<X509Crl2>();
             NextPageLink = null;
         }
     }

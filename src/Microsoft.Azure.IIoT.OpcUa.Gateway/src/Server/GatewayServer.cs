@@ -1936,7 +1936,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Gateway.Server {
                 }
                 else {
                     var response = batchResponse.Results[0];
-                    var status = (response.ErrorInfo?.StatusCode ?? StatusCodes.Good);
+                    var status = response.ErrorInfo?.StatusCode ?? StatusCodes.Good;
                     if (status == StatusCodes.Good) {
                         // Authentication was also successful using the token.
                         var newIdentities = new List<IUserIdentity> {

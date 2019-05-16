@@ -123,7 +123,7 @@ namespace Alarms {
                     // enable/disable the alarm.
                     if (alarm.SetStateBits(UnderlyingSystemAlarmStates.Enabled, enabling)) {
                         alarm.Time = alarm.EnableTime = DateTime.UtcNow;
-                        alarm.Reason = "The alarm was " + ((enabling) ? "enabled." : "disabled.");
+                        alarm.Reason = "The alarm was " + (enabling ? "enabled." : "disabled.");
                         snapshots.Add(alarm.CreateSnapshot());
                     }
 
@@ -135,7 +135,7 @@ namespace Alarms {
 
                         if (record.SetStateBits(UnderlyingSystemAlarmStates.Enabled, enabling)) {
                             record.Time = alarm.EnableTime = DateTime.UtcNow;
-                            record.Reason = "The alarm was " + ((enabling) ? "enabled." : "disabled.");
+                            record.Reason = "The alarm was " + (enabling ? "enabled." : "disabled.");
                             snapshots.Add(alarm.CreateSnapshot());
                         }
                     }
@@ -287,7 +287,7 @@ namespace Alarms {
 
                     if (alarm.SetStateBits(UnderlyingSystemAlarmStates.Suppressed, offline)) {
                         alarm.Time = alarm.EnableTime = DateTime.UtcNow;
-                        alarm.Reason = "The alarm was " + ((offline) ? "suppressed." : "unsuppressed.");
+                        alarm.Reason = "The alarm was " + (offline ? "suppressed." : "unsuppressed.");
 
                         // check if the alarm change should be reported.
                         if ((alarm.State & UnderlyingSystemAlarmStates.Enabled) != 0) {
@@ -496,8 +496,8 @@ namespace Alarms {
         }
 
         private readonly object _lock = new object();
-        private List<UnderlyingSystemAlarm> _alarms;
-        private Dictionary<uint, UnderlyingSystemAlarm> _archive;
+        private readonly List<UnderlyingSystemAlarm> _alarms;
+        private readonly Dictionary<uint, UnderlyingSystemAlarm> _archive;
         private uint _nextRecordNumber;
     }
 

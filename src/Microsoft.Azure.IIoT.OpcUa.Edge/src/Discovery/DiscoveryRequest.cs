@@ -14,7 +14,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Discovery {
     /// <summary>
     /// Discovery request wrapper
     /// </summary>
-    sealed class DiscoveryRequest {
+    internal sealed class DiscoveryRequest {
 
         /// <summary>
         /// Original discovery request model
@@ -69,7 +69,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Discovery {
         /// <param name="configuration"></param>
         public DiscoveryRequest(DiscoveryMode? mode,
             DiscoveryConfigModel configuration) :
-            this (new DiscoveryRequestModel {
+            this(new DiscoveryRequestModel {
                 Configuration = configuration,
                 Discovery = mode
             }, NetworkClass.Wired) {
@@ -130,7 +130,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Discovery {
         /// </summary>
         /// <param name="options"></param>
         public DiscoveryRequest(DiscoveryRequest options) :
-            this (options.Request, options.NetworkClass) {
+            this(options.Request, options.NetworkClass) {
         }
 
         /// <summary>

@@ -465,7 +465,7 @@ namespace HistoricalEvents {
                 }
 
                 var pos = events.First;
-                var sizeLimited = (details.StartTime == DateTime.MinValue || details.EndTime == DateTime.MinValue);
+                var sizeLimited = details.StartTime == DateTime.MinValue || details.EndTime == DateTime.MinValue;
 
                 foreach (DataRowView row in view) {
                     // check if reached max results.
@@ -623,6 +623,6 @@ namespace HistoricalEvents {
 
         private readonly HistoricalEventsServerConfiguration _configuration;
         private Timer _simulationTimer;
-        private ReportGenerator _generator;
+        private readonly ReportGenerator _generator;
     }
 }

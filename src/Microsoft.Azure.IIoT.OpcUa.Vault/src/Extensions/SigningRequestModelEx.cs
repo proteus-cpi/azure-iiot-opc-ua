@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     /// <summary>
     /// Signing request
     /// </summary>
-    public static class CreateSigningRequestModelEx {
+    public static class SigningRequestModelEx {
 
         /// <summary>
         /// Convert to raw request

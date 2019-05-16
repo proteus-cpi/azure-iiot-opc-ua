@@ -637,7 +637,7 @@ namespace TestData {
         }
 #endif
 
-        private TestDataNodeManagerConfiguration _configuration;
+        private readonly TestDataNodeManagerConfiguration _configuration;
         private ushort _namespaceIndex;
         private ushort _typeNamespaceIndex;
         private TestDataSystem _system;

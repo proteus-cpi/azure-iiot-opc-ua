@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
     using System;
     using System.Security.Cryptography;
     using System.Security.Cryptography.X509Certificates;
@@ -18,14 +19,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// Create the digest signer signature generator.
         /// </summary>
         /// <param name="signer">Digest signer to use</param>
-        /// <param name="signingKey">The signing key</param>
         /// <param name="issuerCertificate">The issuer 
         /// certificate used for signing</param>
-        public SignatureGenerator(IDigestSigner signer, string signingKey, 
-            X509Certificate2 issuerCertificate) {
+        public SignatureGenerator(IDigestSigner signer, X509CertificateKeyIdPair 
+            issuerCertificate) {
             _issuerCert = issuerCertificate;
             _signer = signer;
-            _signingKey = signingKey;
         }
 
         /// <inheritdoc/>
@@ -33,7 +32,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             var hash = CreateHashAlgorithm(hashAlgorithm);
             var digest = hash.ComputeHash(data);
             var resultKeyVaultPkcs = _signer.SignDigestAsync(
-                _signingKey, digest, hashAlgorithm, RSASignaturePadding.Pkcs1)
+                _issuerCert?.KeyIdentifier, digest, hashAlgorithm, RSASignaturePadding.Pkcs1)
                 .GetAwaiter()
                 .GetResult();
 #if DEBUG
@@ -41,14 +40,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
             // for test and dev only, verify the KeyVault signer acts identical
             // to the internal signer
             //
-            if (_issuerCert.HasPrivateKey) {
+            if (_issuerCert.Certificate != null && _issuerCert.Certificate.HasPrivateKey) {
                 var resultKeyVaultPss = _signer.SignDigestAsync(
-                    _signingKey, digest, hashAlgorithm, RSASignaturePadding.Pss)
+                    _issuerCert?.KeyIdentifier, digest, hashAlgorithm, RSASignaturePadding.Pss)
                     .GetAwaiter()
                     .GetResult();
-                var resultLocalPkcs = _issuerCert.GetRSAPrivateKey().SignData(
+                var resultLocalPkcs = _issuerCert.Certificate.GetRSAPrivateKey().SignData(
                         data, hashAlgorithm, RSASignaturePadding.Pkcs1);
-                var resultLocalPss = _issuerCert.GetRSAPrivateKey().SignData(
+                var resultLocalPss = _issuerCert.Certificate.GetRSAPrivateKey().SignData(
                     data, hashAlgorithm, RSASignaturePadding.Pss);
                 for (var i = 0; i < resultKeyVaultPkcs.Length; i++) {
                     if (resultKeyVaultPkcs[i] != resultLocalPkcs[i]) {
@@ -69,7 +68,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
 
         /// <inheritdoc/>
         protected override PublicKey BuildPublicKey() {
-            return _issuerCert.PublicKey;
+            return _issuerCert.Certificate?.PublicKey;
         }
 
         /// <inheritdoc/>
@@ -116,8 +115,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         }
 
 
-        private readonly X509Certificate2 _issuerCert;
+        private readonly X509CertificateKeyIdPair _issuerCert;
         private readonly IDigestSigner _signer;
-        private readonly string _signingKey;
     }
 }

@@ -196,7 +196,7 @@ namespace Alarms {
         }
 
         private readonly object _lock = new object();
-        private Dictionary<string, UnderlyingSystemSource> _sources;
+        private readonly Dictionary<string, UnderlyingSystemSource> _sources;
         private Timer _simulationTimer;
         private long _simulationCounter;
     }

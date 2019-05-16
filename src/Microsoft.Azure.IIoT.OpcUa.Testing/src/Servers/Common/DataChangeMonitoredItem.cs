@@ -650,7 +650,7 @@ namespace Opc.Ua.Sample {
         }
 
         private readonly object _lock = new object();
-        private MonitoredNode _source;
+        private readonly MonitoredNode _source;
         private DataValue _lastValue;
         private ServiceResult _lastError;
         private TimestampsToReturn _timestampsToReturn;

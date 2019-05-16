@@ -99,7 +99,7 @@ namespace Opc.Ua.Aggregates {
                     var totMillis = MillisecondsToTicks((from - to).TotalMilliseconds);
                     var remMillis = totMillis % intMillis;
                     later = (remMillis > 0) ? to + new TimeSpan(remMillis) : to + new TimeSpan(intMillis);
-                    incomplete = (remMillis > 0);
+                    incomplete = remMillis > 0;
                 }
                 retval = new BackwardTimeSlice {
                     From = later,
@@ -241,7 +241,7 @@ namespace Opc.Ua.Aggregates {
         /// <param name="time"></param>
         /// <returns>true if the DateTime is within the TimeSlice</returns>
         public override bool ContainsTime(DateTime time) {
-            return ((time >= From) && (time < To));
+            return (time >= From) && (time < To);
         }
 
         /// <summary>
@@ -286,7 +286,7 @@ namespace Opc.Ua.Aggregates {
         /// <param name="time"></param>
         /// <returns>true if the DateTime is within the TimeSlice</returns>
         public override bool ContainsTime(DateTime time) {
-            return ((time <= From) && (time > To));
+            return (time <= From) && (time > To);
         }
 
         /// <summary>

@@ -1531,7 +1531,7 @@ namespace Reference {
                 var newPath = string.Format("{0}/Mass/{1}", path, newName);
                 itemsCreated.Add(CreateDataItemVariable(parent, newPath, newName, dataType, valueRank));
             }//for i
-            return (itemsCreated.ToArray());
+            return itemsCreated.ToArray();
         }
 
         private ServiceResult OnWriteDataItem(
@@ -1578,11 +1578,11 @@ namespace Reference {
         /// Creates a new variable.
         /// </summary>
         private AnalogItemState CreateAnalogItemVariable(NodeState parent, string path, string name, BuiltInType dataType, int valueRank) {
-            return (CreateAnalogItemVariable(parent, path, name, dataType, valueRank, null));
+            return CreateAnalogItemVariable(parent, path, name, dataType, valueRank, null);
         }
 
         private AnalogItemState CreateAnalogItemVariable(NodeState parent, string path, string name, BuiltInType dataType, int valueRank, object initialValues) {
-            return (CreateAnalogItemVariable(parent, path, name, dataType, valueRank, initialValues, null));
+            return CreateAnalogItemVariable(parent, path, name, dataType, valueRank, initialValues, null);
         }
 
         private AnalogItemState CreateAnalogItemVariable(NodeState parent, string path, string name, BuiltInType dataType, int valueRank, object initialValues, Range customRange) {
@@ -2055,7 +2055,7 @@ namespace Reference {
                 var newPath = string.Format("{0}_{1}", path, newName);
                 itemsCreated.Add(CreateVariable(newParentFolder, newPath, newName, dataType, valueRank));
             }
-            return (itemsCreated.ToArray());
+            return itemsCreated.ToArray();
         }
 
         /// <summary>
@@ -2090,7 +2090,7 @@ namespace Reference {
                 var newPath = string.Format("{0}_{1}", path, newName);
                 itemsCreated.Add(CreateDynamicVariable(newParentFolder, newPath, newName, dataType, valueRank));
             }//for i
-            return (itemsCreated.ToArray());
+            return itemsCreated.ToArray();
         }
 
         /// <summary>
@@ -2498,6 +2498,6 @@ namespace Reference {
         private Timer _simulationTimer;
         private ushort _simulationInterval = 1000;
         private bool _simulationEnabled = true;
-        private List<BaseDataVariableState> _dynamicNodes;
+        private readonly List<BaseDataVariableState> _dynamicNodes;
     }
 }

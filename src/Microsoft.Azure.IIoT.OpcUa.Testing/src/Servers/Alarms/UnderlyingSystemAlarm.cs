@@ -145,12 +145,12 @@ namespace Alarms {
         /// <returns>True if the state changed as a result of setting the bits.</returns>
         public bool SetStateBits(UnderlyingSystemAlarmStates bits, bool isSet) {
             if (isSet) {
-                var currentlySet = ((State & bits) == bits);
+                var currentlySet = (State & bits) == bits;
                 State |= bits;
                 return !currentlySet;
             }
 
-            var currentlyCleared = ((State & ~bits) == State);
+            var currentlyCleared = (State & ~bits) == State;
             State &= ~bits;
             return !currentlyCleared;
         }

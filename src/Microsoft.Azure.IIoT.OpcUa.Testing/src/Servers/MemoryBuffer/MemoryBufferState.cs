@@ -567,7 +567,7 @@ namespace MemoryBuffer {
             }
         }
 
-        private object _dataLock = new object();
+        private readonly object _dataLock = new object();
         private MemoryBufferMonitoredItem[][] _monitoringTable;
         private Dictionary<uint, MemoryBufferMonitoredItem> _nonValueMonitoredItems;
         private int _elementSize;

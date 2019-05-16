@@ -4,26 +4,27 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
-    using System.Security.Cryptography;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
+    using Microsoft.Azure.IIoT.Storage;
     using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Signs digest
+    /// Key vault abstraction
     /// </summary>
-    public interface IDigestSigner {
+    public interface IKeyVault : IKeyValueStore, IDigestSigner, ICertificateStore, ICertificateFactory {
 
         /// <summary>
-        /// Sign a digest with the signing key.
+        /// Retrieves a trust list with all certs and crls in issuer
+        /// and trusted list.
         /// </summary>
-        /// <param name="signingKey"></param>
-        /// <param name="digest"></param>
-        /// <param name="hashAlgorithm"></param>
-        /// <param name="padding"></param>
+        /// <param name="trustListId"></param>
+        /// <param name="maxResults"></param>
+        /// <param name="nextPageLink"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<byte[]> SignDigestAsync(string signingKey, byte[] digest,
-            HashAlgorithmName hashAlgorithm, RSASignaturePadding padding,
+        Task<KeyVaultTrustListModel> GetTrustListAsync(
+            string trustListId, int? maxResults, string nextPageLink,
             CancellationToken ct = default);
     }
 }

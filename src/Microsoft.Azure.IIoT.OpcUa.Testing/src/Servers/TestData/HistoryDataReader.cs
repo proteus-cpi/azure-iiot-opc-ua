@@ -223,7 +223,7 @@ namespace TestData {
             values.Add(value);
         }
 
-        private IHistoryDataSource _source;
+        private readonly IHistoryDataSource _source;
         private ReadRawModifiedDetails _request;
         private DateTime _startTime;
         private DateTime _endTime;

@@ -877,7 +877,7 @@ namespace System.Security.Cryptography.Asn1
                             _ruleSet);
 
                         bytesRead = headerLength;
-                        isIndefinite = (length == null);
+                        isIndefinite = length == null;
                     }
                     else
                     {
@@ -971,7 +971,7 @@ namespace System.Security.Cryptography.Asn1
                 }
 
                 unusedBitCount = 0;
-                value = default(ReadOnlyMemory<byte>);
+                value = default;
                 normalizedLastByte = 0;
                 return false;
             }
@@ -1032,7 +1032,7 @@ namespace System.Security.Cryptography.Asn1
                 if (value.Length != 0 && normalizedLastByte != value.Span[value.Length - 1])
                 {
                     unusedBitCount = 0;
-                    value = default(ReadOnlyMemory<byte>);
+                    value = default;
                     return false;
                 }
 
@@ -1326,7 +1326,7 @@ namespace System.Security.Cryptography.Asn1
                     throw new CryptographicException(SR.Cryptography_Der_Invalid_Encoding);
                 }
 
-                contents = default(ReadOnlyMemory<byte>);
+                contents = default;
                 return false;
             }
 
@@ -1509,7 +1509,7 @@ namespace System.Security.Cryptography.Asn1
                             _ruleSet);
 
                         bytesRead = headerLength;
-                        isIndefinite = (length == null);
+                        isIndefinite = length == null;
                     }
                     else
                     {
@@ -1834,7 +1834,7 @@ namespace System.Security.Cryptography.Asn1
             {
                 ReadSubIdentifier(contents, out bytesRead, out smallValue, out largeValue);
                 // Exactly one should be non-null.
-                Debug.Assert((smallValue == null) != (largeValue == null));
+                Debug.Assert(smallValue == null != (largeValue == null));
 
                 builder.Append('.');
 

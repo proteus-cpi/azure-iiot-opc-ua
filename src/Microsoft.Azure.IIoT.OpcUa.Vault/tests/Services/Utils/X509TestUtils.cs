@@ -160,7 +160,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         internal static async Task<CertificateTrustList> CreateTrustListAsync(
             string storePath,
             X509Certificate2Collection certCollection,
-            IList<X509CRL> crlCollection) {
+            IList<X509Crl2> crlCollection) {
             var certTrustList = new CertificateTrustList {
                 StoreType = CertificateStoreType.Directory,
                 StorePath = storePath
@@ -171,7 +171,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 }
                 if (store.SupportsCRLs) {
                     foreach (var crl in crlCollection) {
-                        store.AddCRL(crl);
+                        store.AddCRL(new X509CRL(crl.RawData));
                     }
                 }
             }

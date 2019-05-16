@@ -297,7 +297,7 @@ namespace HistoricalAccess {
         
         private Stage _stage;
         private int _position;
-        private ArchiveFolderState _source;
+        private readonly ArchiveFolderState _source;
         private ArchiveFolder[] _folders;
         private ArchiveItem[] _items;
         

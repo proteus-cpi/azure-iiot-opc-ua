@@ -2216,7 +2216,7 @@ namespace Opc.Ua.Sample {
                 samplingInterval = variable.MinimumSamplingInterval;
             }
 
-            if (Math.Abs((samplingInterval % _minimumSamplingInterval)) > 0.0) {
+            if (Math.Abs(samplingInterval % _minimumSamplingInterval) > 0.0) {
                 samplingInterval = Math.Truncate(samplingInterval / _minimumSamplingInterval);
                 samplingInterval += 1;
                 samplingInterval *= _minimumSamplingInterval;
@@ -2609,7 +2609,7 @@ namespace Opc.Ua.Sample {
         private IList<string> _namespaceUris;
         private ushort[] _namespaceIndexes;
         private Timer _samplingTimer;
-        private List<DataChangeMonitoredItem> _sampledItems;
+        private readonly List<DataChangeMonitoredItem> _sampledItems;
         private readonly double _minimumSamplingInterval;
     }
 }

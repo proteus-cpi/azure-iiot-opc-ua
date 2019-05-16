@@ -11,6 +11,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using Microsoft.Azure.IIoT.OpcUa.Registry;
     using Microsoft.Azure.IIoT.OpcUa.Registry.Tests;
     using Microsoft.Azure.IIoT.OpcUa.Vault;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Runtime;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
@@ -66,8 +67,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     new AppAuthenticationProvider(_clientConfig), _logger);
 
                 // Create services
-                _keyVaultCertificateGroup = new CertificateServices(Registry, 
-                    _keyVaultServiceClient, _keyVaultServiceClient, _serviceConfig, _logger);
+                _keyVaultCertificateGroup = new CertificateServices(Registry,
+                    _keyVaultServiceClient,
+                    _keyVaultServiceClient,
+                    new KeyValueCrlStore(_keyVaultServiceClient, _logger),
+                    new CertificateRevoker(_keyVaultServiceClient, _logger),
+                    new ApplicationCertificateFactory(_keyVaultServiceClient, _logger),
+                    _serviceConfig,
+                    _logger);
                 _keyVaultServiceClient.PurgeAsync("groups", _groupId, CancellationToken.None).Wait();
                 Services = _keyVaultCertificateGroup;
 

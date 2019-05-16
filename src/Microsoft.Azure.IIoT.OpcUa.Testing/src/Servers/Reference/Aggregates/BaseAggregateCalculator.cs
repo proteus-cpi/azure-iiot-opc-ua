@@ -206,12 +206,12 @@ namespace Opc.Ua.Aggregates {
         protected virtual StatusCode ComputeStatus(IAggregationContext context, int numGood, int numBad, TimeSlice bucket) {
             var total = numGood + numBad;
             if (total > 0) {
-                double pbad = (numBad * 100) / total;
+                double pbad = numBad * 100 / total;
                 if (pbad > context.PercentDataBad) {
                     return StatusCodes.Bad;
                 }
 
-                double pgood = (numGood * 100) / total;
+                double pgood = numGood * 100 / total;
                 if (pgood >= context.PercentDataGood) {
                     return StatusCodes.Good;
                 }

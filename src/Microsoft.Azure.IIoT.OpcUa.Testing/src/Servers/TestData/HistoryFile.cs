@@ -121,6 +121,6 @@ namespace TestData {
         }
 
         private readonly object _lock = new object();
-        private List<HistoryEntry> _entries;
+        private readonly List<HistoryEntry> _entries;
     }
 }

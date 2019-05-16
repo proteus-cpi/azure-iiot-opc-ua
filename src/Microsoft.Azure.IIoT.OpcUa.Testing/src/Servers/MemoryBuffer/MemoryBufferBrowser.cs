@@ -179,6 +179,6 @@ namespace MemoryBuffer {
 
         private Stage _stage;
         private uint _position;
-        private MemoryBufferState _buffer;
+        private readonly MemoryBufferState _buffer;
     }
 }

@@ -38,7 +38,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         public static X509Certificate2Collection ToStackModel(
             this X509CertificateCollectionModel certificateCollection) {
             return new X509Certificate2Collection(certificateCollection.Chain
-                .Select(c=> c.ToStackModel()).ToArray());
+                .Select(c => c.ToStackModel()).ToArray());
         }
     }
 }

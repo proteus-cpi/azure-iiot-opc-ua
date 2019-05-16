@@ -7,9 +7,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
     using System.Security.Cryptography.X509Certificates;
 
     /// <summary>
-    /// Certificate key info
+    /// A Certificate and private key handle
     /// </summary>
-    public struct KeyVaultCertificateModel {
+    public class X509CertificateKeyIdPair {
 
         /// <summary>
         /// Certificate
@@ -17,14 +17,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models {
         public X509Certificate2 Certificate { get; set; }
 
         /// <summary>
-        /// Key
+        /// Private key identifier to look up the private key
         /// </summary>
         public string KeyIdentifier { get; set; }
-
-        /// <summary>
-        /// Cert
-        /// </summary>
-        public string CertIdentifier { get; set; }
 
         /// <summary>
         /// Attributes

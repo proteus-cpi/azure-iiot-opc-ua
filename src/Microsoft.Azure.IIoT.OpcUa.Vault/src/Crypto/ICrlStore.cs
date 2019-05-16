@@ -4,9 +4,9 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
+    using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
-    using Opc.Ua;
 
     /// <summary>
     /// Crl store
@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="ct"></param>
         /// <returns></returns>
         Task ImportCrlAsync(string certificateName, string thumbPrint,
-            X509CRL crl, CancellationToken ct = default);
+            X509Crl2 crl, CancellationToken ct = default);
 
         /// <summary>
         /// Load CRL for CA cert in group.
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="thumbPrint"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<X509CRL> GetCrlAsync(string certificateName, string thumbPrint,
+        Task<X509Crl2> GetCrlAsync(string certificateName, string thumbPrint,
             CancellationToken ct = default);
     }
 }

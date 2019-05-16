@@ -226,7 +226,7 @@ namespace DataAccess {
 
         private Stage _stage;
         private int _position;
-        private SegmentState _source;
+        private readonly SegmentState _source;
         private IList<UnderlyingSystemSegment> _segments;
         private IList<string> _blocks;
     }

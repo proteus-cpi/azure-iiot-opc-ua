@@ -59,7 +59,7 @@ namespace Reference {
             public MonitoringMode MonitoringMode;
         }
 
-        private static Queue<Event> _events = new Queue<Event>();
+        private static readonly Queue<Event> _events = new Queue<Event>();
         private static bool _eventsEnabled;
 
         /// <summary>

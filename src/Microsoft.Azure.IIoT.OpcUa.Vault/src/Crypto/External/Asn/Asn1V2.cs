@@ -154,7 +154,7 @@ namespace System.Security.Cryptography.Asn1
 
         public static bool TryParse(ReadOnlySpan<byte> source, out Asn1Tag tag, out int bytesRead)
         {
-            tag = default(Asn1Tag);
+            tag = default;
             bytesRead = 0;
 
             if (source.IsEmpty)

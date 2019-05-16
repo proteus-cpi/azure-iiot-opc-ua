@@ -82,6 +82,6 @@ namespace HistoricalAccess {
         }
 
         private readonly ushort _namespaceIndex;
-        private HistoricalAccessServerConfiguration _configuration;
+        private readonly HistoricalAccessServerConfiguration _configuration;
     }
 }

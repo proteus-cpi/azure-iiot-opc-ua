@@ -348,7 +348,7 @@ namespace HistoricalAccess {
             {
                 var current = (Annotation)view[ii].Row[5];
 
-                replaced = (current.UserName == annotation.UserName);
+                replaced = current.UserName == annotation.UserName;
 
                 if (performUpdateType == PerformUpdateType.Insert)
                 {
@@ -769,8 +769,8 @@ namespace HistoricalAccess {
         /// </summary>
         public int SubscribeCount { get; set; }
 
-        private HistoricalDataConfigurationState _configuration;
-        private PropertyState<Annotation> _annotations;
+        private readonly HistoricalDataConfigurationState _configuration;
+        private readonly PropertyState<Annotation> _annotations;
         private List<DataValue> _pattern;
         private int _patternIndex;
         private DateTime _nextSampleTime;

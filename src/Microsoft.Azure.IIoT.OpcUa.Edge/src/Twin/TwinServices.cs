@@ -10,7 +10,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Edge.Twin {
     using Microsoft.Azure.IIoT.Module;
     using System;
     using System.Threading.Tasks;
-    using System.Collections.Generic;
 
     /// <summary>
     /// Manages the endpoint identity information in the twin and reports

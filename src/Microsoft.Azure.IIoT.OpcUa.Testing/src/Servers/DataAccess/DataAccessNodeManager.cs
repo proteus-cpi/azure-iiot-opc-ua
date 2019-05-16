@@ -331,8 +331,8 @@ namespace DataAccess {
             }
         }
 
-        private UnderlyingSystem _system;
+        private readonly UnderlyingSystem _system;
         private readonly DataAccessServerConfiguration _configuration;
-        private Dictionary<NodeId, BlockState> _blocks;
+        private readonly Dictionary<NodeId, BlockState> _blocks;
     }
 }

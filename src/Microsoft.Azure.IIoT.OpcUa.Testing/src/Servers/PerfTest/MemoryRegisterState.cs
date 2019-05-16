@@ -289,7 +289,7 @@ namespace PerfTest {
         
         private Stage _stage;
         private int _position;
-        private MemoryRegisterState _parent;
+        private readonly MemoryRegisterState _parent;
         
     }
 }

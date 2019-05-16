@@ -2594,7 +2594,7 @@ namespace Opc.Ua.Sample {
         private IList<string> _namespaceUris;
         private ushort[] _namespaceIndexes;
         private Timer _samplingTimer;
-        private List<DataChangeMonitoredItem> _sampledItems;
+        private readonly List<DataChangeMonitoredItem> _sampledItems;
         private readonly double _minimumSamplingInterval;
     }
 }

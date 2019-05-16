@@ -124,7 +124,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 Assert.NotNull(crlChain);
                 Assert.True(crlChain.Chain.Count >= 1);
                 for (var i = 0; i < caChain.Chain.Count; i++) {
-                    crlChain.Chain[i].ToStackModel().VerifySignature(caChain.Chain[i].ToStackModel(), true);
+                    crlChain.Chain[i].ToStackModel().Validate(caChain.Chain[i].ToStackModel());
                     Assert.True(Opc.Ua.Utils.CompareDistinguishedName(
                         crlChain.Chain[i].Issuer, caChain.Chain[i].ToStackModel().Issuer));
                 }
@@ -255,7 +255,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 Assert.NotNull(caChain);
                 var caCert = caChain.Chain[0];
                 Assert.False(caCert.ToStackModel().HasPrivateKey);
-                crl.ToStackModel().VerifySignature(caCert.ToStackModel(), true);
+                crl.ToStackModel().Validate(caCert.ToStackModel());
                 Assert.True(Opc.Ua.Utils.CompareDistinguishedName(crl.Issuer, caCert.ToStackModel().Issuer));
                 // disable and delete private key from KeyVault (requires set/delete rights)
                 await _services.AcceptPrivateKeyAsync(group, requestId.ToString());
@@ -370,8 +370,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     var crlChain = await _services.GetIssuerCACrlChainAsync(group, cert.Thumbprint);
                     Assert.NotNull(crlChain);
                     Assert.True(crlChain.Chain.Count >= 1);
-                    crlChain.Chain[0].ToStackModel().VerifySignature(cert.ToStackModel(), true);
-                    crlChain.Chain[0].ToStackModel().VerifySignature(certChain.Chain[0].ToStackModel(), true);
+                    crlChain.Chain[0].ToStackModel().Validate(cert.ToStackModel());
+                    crlChain.Chain[0].ToStackModel().Validate(certChain.Chain[0].ToStackModel());
 
                     // invalid parameter test
                     // invalid parameter test

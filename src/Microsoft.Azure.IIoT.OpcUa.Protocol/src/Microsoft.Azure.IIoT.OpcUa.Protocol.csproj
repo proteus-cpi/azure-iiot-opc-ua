@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>7.3</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Azure Industrial IoT OPC UA Protocol and Stack services</Description>
@@ -45,5 +44,58 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Microsoft.Azure.IIoT.OpcUa\src\Microsoft.Azure.IIoT.OpcUa.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Stack\Design\Schema\Extensions\DataTypeDesign.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\InstanceDesign.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\LocalizedText.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\MethodDesign.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\ModelDesign.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\Namespace.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\NodeDesign.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\Parameter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\Reference.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\TypeDesign.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\VariableDesign.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\Extensions\VariableTypeDesign.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Design\Schema\UA Model Design.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Nodeset\Schema\UANodeSet.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Types\Schema\Extensions\DataType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Types\Schema\Extensions\ImportDirective.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Stack\Types\Schema\UA Type Dictionary.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 </Project>

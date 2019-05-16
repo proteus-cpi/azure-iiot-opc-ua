@@ -3,7 +3,6 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
@@ -18,6 +17,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using System.Threading.Tasks;
     using Autofac;
     using Opc.Ua;
+    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
 
     /// <summary>
     /// Key Vault Certificate Group services
@@ -30,14 +30,21 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="registry"></param>
         /// <param name="keyVault"></param>
         /// <param name="privateKeys"></param>
+        /// <param name="crls"></param>
+        /// <param name="revoker"></param>
+        /// <param name="factory"></param>
         /// <param name="config"></param>
         /// <param name="logger"></param>
-        public CertificateServices(IGroupRegistry registry,
-            IKeyVault keyVault, IPrivateKeyStore privateKeys, 
-            IVaultConfig config, ILogger logger) {
+        public CertificateServices(IGroupRegistry registry, IKeyVault keyVault, 
+            IPrivateKeyStore privateKeys, ICrlStore crls, ICrlFactory revoker,
+            IApplicationCertificateFactory factory, IVaultConfig config, ILogger logger) {
+
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _keyVault = keyVault ?? throw new ArgumentNullException(nameof(keyVault));
+            _crls = crls ?? throw new ArgumentNullException(nameof(crls));
+            _revoker = revoker ?? throw new ArgumentNullException(nameof(revoker));
+            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
             _privateKeys = privateKeys ?? throw new ArgumentNullException(nameof(privateKeys));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -147,27 +154,25 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         public async Task<X509CertificateModel> GenerateNewIssuerCACertificateAsync(
             string groupId) {
             var group = await GetGroupAsync(groupId);
-            var success = await group.GenerateNewIssuerCACertificateAsync();
-            if (success) {
-                return group.Certificate.ToServiceModel();
+            var result = await group.GenerateNewIssuerCACertificateAsync();
+            if (result == null) {
+                throw new ResourceInvalidStateException("Failed to update root cert");
             }
-            return null;
+            return result.ToServiceModel();
         }
 
         /// <summary>
-        /// Start and init all groups
+        /// Start and init all groups  -- TODO Should be removed
         /// </summary>
         /// <returns></returns>
         private async Task InitializeAllGroupsAsync() {
-            var certificateGroupCollection = await _registry.ListGroupsAsync();
-            foreach (var groupInfo in certificateGroupCollection.Groups) {
+            var certificateGroupCollection = await _registry.ListGroupIdsAsync();
+            foreach (var groupId in certificateGroupCollection.Groups) {
                 CertificateGroup group = null;
                 try {
-                    group = new CertificateGroup(_keyVault, _privateKeys,
-                        groupInfo, _logger, _config.ServiceHost);
-
-                    _logger.Information("Initialize Certificate group {group} for subject {subject}",
-                        groupInfo.Id, groupInfo.GetSubjectName());
+                    group = await GetGroupAsync(groupId);
+                    _logger.Information("Initialize Certificate group {groupInfo}...",
+                        groupId);
                     await group.InitializeHandlesAndCreateCACertificateIfNotExistsAsync();  
                     // group is ok
                     continue;
@@ -180,7 +185,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 }
                 // Initialize group
                 _logger.Information("Create new issuer CA certificate for group. ", group);
-                if (!await group.GenerateNewIssuerCACertificateAsync()) {
+                if (null == await group.GenerateNewIssuerCACertificateAsync()) {
                     _logger.Error("Failed to create issuer CA certificate. ", group);
                 }
             }
@@ -196,7 +201,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             if (info == null) {
                 throw new ResourceNotFoundException("The certificate group doesn't exist.");
             }
-            var group = new CertificateGroup(_keyVault, _privateKeys, info, _logger, 
+            var group = new CertificateGroup(_keyVault, _privateKeys, _crls, _revoker, _factory, info, _logger, 
                 _config.ServiceHost);
             await group.InitializeHandlesAndCreateCACertificateIfNotExistsAsync();
             return group;
@@ -210,26 +215,27 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             /// <summary>
             /// The latest Crl of this cert group
             /// </summary>
-            public X509CRL Crl { get; set; }
-
-            /// <summary>
-            /// The group certificate
-            /// </summary>
-            public X509Certificate2 Certificate { get; set; }
+            public X509Crl2 Crl { get; set; }
 
             /// <summary>
             /// Create group
             /// </summary>
             /// <param name="keyVault"></param>
             /// <param name="privateKeys"></param>
+            /// <param name="crls"></param>
+            /// <param name="revoker"></param>
+            /// <param name="factory"></param>
             /// <param name="configuration"></param>
             /// <param name="logger"></param>
             /// <param name="serviceHost"></param>
             public CertificateGroup(IKeyVault keyVault, IPrivateKeyStore privateKeys,
-                CertificateGroupInfoModel configuration,
-                ILogger logger, string serviceHost) {
+                ICrlStore crls, ICrlFactory revoker, IApplicationCertificateFactory factory,
+                CertificateGroupInfoModel configuration, ILogger logger, string serviceHost) {
                 _logger = logger;
                 _keyVault = keyVault;
+                _factory = factory;
+                _revoker = revoker;
+                _crls = crls;
                 _serviceHost = serviceHost ?? "localhost";
                 _configuration = configuration;
                 _privateKeys = privateKeys;
@@ -240,8 +246,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             /// </summary>
             /// <returns></returns>
             private async Task LoadPublicAssetsAsync() {
-                if (Certificate == null || _caCertSecretIdentifier == null ||
-                    _caCertKeyIdentifier == null ||
+                if ( _caCertIdentifier == null ||
                     TimeSpan.FromHours(1) < (DateTime.UtcNow - _lastUpdate)) {
                     await InitializeHandlesAndCreateCACertificateIfNotExistsAsync();
                     _lastUpdate = DateTime.UtcNow;
@@ -259,18 +264,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     _logger.Verbose("Initialize Certificate group {group} for subject {subject}",
                         _configuration.Id, _configuration.GetSubjectName());
                     var result = await _keyVault.GetCertificateAsync(_configuration.Id);
-                    Certificate = result.Certificate;
-                    if (Utils.CompareDistinguishedName(Certificate.Subject, _configuration.GetSubjectName())) {
+                    if (Utils.CompareDistinguishedName(result.Certificate.Subject, _configuration.GetSubjectName())) {
 
                         // Set group handles
-                        _caCertSecretIdentifier = result.SecretIdentifier;
-                        _caCertKeyIdentifier = result.KeyIdentifier;
+                        _caCertIdentifier = result;
 
-                        Crl = await _keyVault.GetCrlAsync(_configuration.Id, Certificate.Thumbprint);
+                        Crl = await _crls.GetCrlAsync(_configuration.Id, result.Certificate.Thumbprint);
                     }
                     else {
                         throw new ResourceInvalidStateException(
-                            $"Key Vault certificate subject({Certificate.Subject}) does not match " +
+                            $"Key Vault certificate subject({result.Certificate.Subject}) does not match " +
                             $"cert group subject {_configuration.GetSubjectName()}");
                     }
                 }
@@ -278,7 +281,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     // Create new group certificate
                     _logger.Information("Create new issuer CA certificate for group. ", _configuration.Id);
 
-                    if (!await GenerateNewIssuerCACertificateAsync(false)) {
+                    if (null == await GenerateNewIssuerCACertificateAsync(false)) {
                         _logger.Error(ex, "Failed to create issuer CA certificate. ", _configuration.Id);
                         // TODO: Try again - might already be initlized
                     }
@@ -292,7 +295,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             /// Create CA certificate and Crl with new private key in KeyVault HSM.
             /// </summary>
             /// <returns></returns>
-            public async Task<bool> GenerateNewIssuerCACertificateAsync(bool locked = true) {
+            public async Task<X509Certificate2> GenerateNewIssuerCACertificateAsync(bool locked = true) {
                 if (locked) {
                     await _semaphoreSlim.WaitAsync();
                 }
@@ -304,30 +307,27 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     var crlDistributionPoint = _configuration.GetCrlDistributionPointUrl(_serviceHost);
 
                     // create new CA cert in HSM storage
-                    Certificate = await _keyVault.CreateCertificateAsync(
+                    var certificate = await _keyVault.CreateCertificateAsync(
                         _configuration.Id, _configuration.SubjectName, notBefore, notAfter,
                         _configuration.IssuerCACertificateKeySize,
                         _configuration.IssuerCACertificateHashSize, true, crlDistributionPoint);
 
                     // update keys, ready back latest version
-                    var result = await _keyVault.GetCertificateAsync(
-                        _configuration.Id);
-                    if (!result.Certificate.RawData.SequenceEqualsSafe(Certificate.RawData)) {
+                    var result = await _keyVault.GetCertificateAsync(_configuration.Id);
+                    if (!result.Certificate.RawData.SequenceEqualsSafe(certificate.RawData)) {
                         // something went utterly wrong...
-                        return false;
+                        return null;
                     }
 
-                    _caCertSecretIdentifier = result.SecretIdentifier;
-                    _caCertKeyIdentifier = result.KeyIdentifier;
+                    _caCertIdentifier = result;
 
                     // create default revocation list and sign with KeyVault
-                    Crl = CertUtils.RevokeCertificate(Certificate, null, null, notBefore,
-                        DateTime.MinValue, _keyVault, _caCertKeyIdentifier,
-                        _configuration.IssuerCACertificateHashSize);
+                    Crl = _revoker.RevokeCertificate(_caCertIdentifier, null, null, notBefore,
+                        DateTime.MinValue, _configuration.IssuerCACertificateHashSize);
 
                     // import crl
-                    await _keyVault.ImportCrlAsync(_configuration.Id, Certificate.Thumbprint, Crl);
-                    return true;
+                    await _crls.ImportCrlAsync(_configuration.Id, result.Certificate.Thumbprint, Crl);
+                    return result.Certificate;
                 }
                 finally {
                     if (locked) {
@@ -345,7 +345,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 await LoadPublicAssetsAsync();
 
                 var certificates = new X509Certificate2Collection { certificate };
-                var caCertKeyInfoCollection = await _keyVault.GetCertificateVersionsAsync(
+                var caCertKeyInfoCollection = await _keyVault.ListCertificatesAsync(
                     _configuration.Id);
 
                 var authorityKeyIdentifier = certificate.FindAuthorityKeyIdentifier();
@@ -360,19 +360,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                             .EqualsIgnoreCase(subjectKeyId.SubjectKeyIdentifier)) {
 
                         // Get current crl for this group
-                        var crl = await _keyVault.GetCrlAsync(_configuration.Id,
+                        var crl = await _crls.GetCrlAsync(_configuration.Id,
                             caCertKeyInfo.Certificate.Thumbprint);
 
                         // Revoke the certificate and update the crl
-                        var crls = new List<X509CRL> { crl };
-                        var newCrl = CertUtils.RevokeCertificate(caCertKeyInfo.Certificate, crls,
-                            certificates, now, DateTime.MinValue, _keyVault, caCertKeyInfo.KeyIdentifier, 
+                        var crls = new List<X509Crl2> { crl };
+                        var newCrl = _revoker.RevokeCertificate(caCertKeyInfo, crls,
+                            certificates, now, DateTime.MinValue, 
                             _configuration.IssuerCACertificateHashSize);
 
                         // Import updated crl and read back as new group crl
-                        await _keyVault.ImportCrlAsync(_configuration.Id,
+                        await _crls.ImportCrlAsync(_configuration.Id,
                             caCertKeyInfo.Certificate.Thumbprint, newCrl);
-                        Crl = await _keyVault.GetCrlAsync(_configuration.Id, Certificate.Thumbprint);
+                        Crl = await _crls.GetCrlAsync(_configuration.Id, _caCertIdentifier.Certificate.Thumbprint);
                     }
                 }
             }
@@ -390,7 +390,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 await LoadPublicAssetsAsync();
 
                 // Get all certificates in the group
-                var caCertKeyInfoCollection = await _keyVault.GetCertificateVersionsAsync(
+                var caCertKeyInfoCollection = await _keyVault.ListCertificatesAsync(
                     _configuration.Id);
                 var now = DateTime.UtcNow;
                 foreach (var caCertKeyInfo in caCertKeyInfoCollection) {
@@ -421,17 +421,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     }
 
                     // Get current crl
-                    var crl = await _keyVault.GetCrlAsync(_configuration.Id,
+                    var crl = await _crls.GetCrlAsync(_configuration.Id,
                         caCertKeyInfo.Certificate.Thumbprint);
 
                     // Revoke and update crl
-                    var crls = new List<X509CRL> { crl };
-                    var newCrl = CertUtils.RevokeCertificate(caCertKeyInfo.Certificate, crls,
-                        caRevokeCollection, now, DateTime.MinValue, _keyVault, caCertKeyInfo.KeyIdentifier,
+                    var crls = new List<X509Crl2> { crl };
+                    var newCrl = _revoker.RevokeCertificate(_caCertIdentifier, crls,
+                        caRevokeCollection, now, DateTime.MinValue, 
                         _configuration.IssuerCACertificateHashSize);
 
                     // Re-import crl
-                    await _keyVault.ImportCrlAsync(_configuration.Id, caCertKeyInfo.Certificate.Thumbprint,
+                    await _crls.ImportCrlAsync(_configuration.Id, caCertKeyInfo.Certificate.Thumbprint,
                         newCrl);
 
                     foreach (var cert in caRevokeCollection) {
@@ -440,7 +440,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 }
 
                 // Re-read crl
-                Crl = await _keyVault.GetCrlAsync(_configuration.Id, Certificate.Thumbprint);
+                Crl = await _crls.GetCrlAsync(_configuration.Id, _caCertIdentifier.Certificate.Thumbprint);
                 return remainingCertificates;
             }
 
@@ -462,16 +462,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 // create public/private key pair
                 using (var keyPair = RSA.Create(_configuration.DefaultCertificateKeySize)) {
                     await LoadPublicAssetsAsync();
+
+                    // Get crl endpoint url
                     var authorityInformationAccess = _configuration.GetAuthorityInformationAccessUrl(
                         _serviceHost);
 
-                    // sign public key with KeyVault
-                    var signedCert = await CertUtils.CreateSignedCertificate(
-                        application.ApplicationUri, application.GetApplicationName(), subjectName,
-                        domainNames, _configuration.DefaultCertificateKeySize,
-                        notBefore, notBefore.AddMonths(_configuration.DefaultCertificateLifetime),
-                        _configuration.DefaultCertificateHashSize, Certificate, keyPair,
-                         _keyVault, _caCertKeyIdentifier, false, authorityInformationAccess);
+                    // Create new signed application certificate
+                    var signedCert = await _factory.CreateSignedCertificate(_caCertIdentifier, keyPair,
+                        application.ApplicationUri, application.GetApplicationName(), subjectName, 
+                        domainNames, _configuration.DefaultCertificateKeySize, notBefore,
+                        notBefore.AddMonths(_configuration.DefaultCertificateLifetime),
+                        _configuration.DefaultCertificateHashSize, authorityInformationAccess);
 
                     // Create a PEM or PFX
                     var certWithPrivateKey = signedCert.CreateCertificateWithPrivateKey(keyPair);
@@ -499,7 +500,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 }
             }
 
-#if !UNUSED
+#if UNUSED
             /// <summary>
             /// Creates a new key pair as KeyVault certificate and signs it with KeyVault.
             /// </summary>
@@ -509,7 +510,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             /// <param name="privateKeyFormat"></param>
             /// <param name="privateKeyPassword"></param>
             /// <returns></returns>
-            public async Task<X509CertificatePrivateKeyPairModel> ProcessNewKeyPairRequestKeyVaultAsync(
+            public async Task<X509CertificatePrivateKeyPairModel> ProcessNewKeyPairRequestWithKeyVaultAsync(
                 ApplicationInfoModel application, string subjectName, string[] domainNames,
                 PrivateKeyFormat privateKeyFormat, string privateKeyPassword) {
 
@@ -521,11 +522,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
                 // create new cert with KeyVault
                 var certWithPrivateKey = await _keyVault.CreateSignedKeyPairCertAsync(
-                    _configuration.Id, Certificate, application.ApplicationUri,
-                    application.GetApplicationName(), subjectName, domainNames,
-                    notBefore, notBefore.AddMonths(_configuration.DefaultCertificateLifetime),
-                    _configuration.DefaultCertificateKeySize,
-                    _configuration.DefaultCertificateHashSize, _caCertKeyIdentifier,
+                    _configuration.Id, _caCertIdentifier,
+                    application.ApplicationUri, application.GetApplicationName(), subjectName,
+                    domainNames, notBefore,
+                    notBefore.AddMonths(_configuration.DefaultCertificateLifetime),
+                    _configuration.DefaultCertificateKeySize, _configuration.DefaultCertificateHashSize,
                     authorityInformationAccess);
 
                 using (certWithPrivateKey) {
@@ -548,43 +549,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         PrivateKeyFormat = privateKeyFormat,
                         PrivateKey = privateKey
                     };
-                }
-            }
-
-            /// <summary>
-            /// Create issuer CA cert and default Crl offline, then import in KeyVault.
-            /// Note: Sample only for reference, importing the private key is unsecure!
-            /// </summary>
-            /// <returns></returns>
-            public async Task<bool> CreateImportedIssuerCACertificateAsync() {
-                await _semaphoreSlim.WaitAsync();
-                try {
-                    var notBefore = TrimmedNotBeforeDate();
-                    using (var caCert = CertificateFactory.CreateCertificate(null,
-                        null, null, null, null, _configuration.SubjectName, null,
-                        _configuration.IssuerCACertificateKeySize, notBefore,
-                        _configuration.IssuerCACertificateLifetime,
-                        _configuration.IssuerCACertificateHashSize, true, null, null)) {
-
-                        // save only public key
-                        Certificate = new X509Certificate2(caCert.RawData);
-
-                        // initialize revocation list
-                        Crl = CertificateFactory.RevokeCertificate(caCert, null, null);
-                        if (Crl == null) {
-                            return false;
-                        }
-
-                        // upload ca cert with private key
-                        await _keyVault.ImportCertificateAsync(_configuration.Id,
-                            new X509Certificate2Collection(caCert), true);
-                        await _keyVault.ImportCrlAsync(_configuration.Id,
-                            Certificate.Thumbprint, Crl);
-                    }
-                    return true;
-                }
-                finally {
-                    _semaphoreSlim.Release();
                 }
             }
 #endif
@@ -669,18 +633,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 var notBefore = DateTime.UtcNow.AddDays(-1);
                 await LoadPublicAssetsAsync();
 
-                // Create Key vault signer
-                var signatureGenerator = new SignatureGenerator(
-                    _keyVault, _caCertKeyIdentifier, Certificate);
-
-                // Create certificate locally
-                var publicKey = CertUtils.GetRSAPublicKey(info.SubjectPublicKeyInfo);
-                return await CertUtils.CreateSignedCertificate(application.ApplicationUri,
-                    application.GetApplicationName(), info.Subject.ToString(), domainNames,
+                // Create application certificate
+                var publicKey = info.SubjectPublicKeyInfo.GetRSAPublicKey();
+                return await _factory.CreateSignedCertificate(_caCertIdentifier,
+                    publicKey, application.ApplicationUri, application.GetApplicationName(),
+                    info.Subject.ToString(), domainNames,
                     _configuration.DefaultCertificateKeySize, notBefore,
-                    notBefore.AddMonths(_configuration.DefaultCertificateLifetime),
-                    _configuration.DefaultCertificateHashSize, Certificate,
-                    publicKey, _keyVault, _caCertKeyIdentifier, false, 
+                    notBefore.AddMonths(_configuration.DefaultCertificateLifetime), _configuration.DefaultCertificateHashSize,
                     _configuration.GetAuthorityInformationAccessUrl(_serviceHost));
             }
 
@@ -695,12 +654,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             public async Task<X509CertificateCollectionModel> GetIssuerCACertificateChainAsync(
                 string thumbprint, string nextPageLink, int? pageSize) {
                 await LoadPublicAssetsAsync();
-                var certificate = Certificate;
+                var certificate = _caCertIdentifier.Certificate;
                 if (thumbprint != null &&
-                    !thumbprint.EqualsIgnoreCase(Certificate.Thumbprint)) {
+                    !thumbprint.EqualsIgnoreCase(certificate.Thumbprint)) {
                     try {
                         var (collection, nextLink) =
-                            await _keyVault.ListCertificatesAsync(
+                            await _keyVault.QueryCertificatesAsync(
                                 _configuration.Id, thumbprint, pageSize: 1);
                         if (collection.Count == 1) {
                             certificate = collection[0];
@@ -724,7 +683,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             /// <returns></returns>
             public async Task<X509CertificateCollectionModel> ListIssuerCACertificateVersionsAsync(
                 bool? withCertificates, string nextPageLink, int? pageSize) {
-                var (result, nextLink) = await _keyVault.ListCertificatesAsync(
+                var (result, nextLink) = await _keyVault.QueryCertificatesAsync(
                     _configuration.Id, null, nextPageLink, pageSize);
                 if (withCertificates ?? false) {
                     // TODO: implement withCertificates
@@ -744,10 +703,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 string nextPageLink, int? pageSize) {
                 await LoadPublicAssetsAsync();
                 var crl = Crl;
-                if (thumbprint != null && !thumbprint.EqualsIgnoreCase(Certificate.Thumbprint)) {
+                if (thumbprint != null && 
+                    !thumbprint.EqualsIgnoreCase(_caCertIdentifier.Certificate.Thumbprint)) {
                     // TODO: implement paging (low priority, only when long chains are expected)
                     try {
-                        crl = await _keyVault.GetCrlAsync(_configuration.Id, thumbprint);
+                        crl = await _crls.GetCrlAsync(_configuration.Id, thumbprint);
                     }
                     catch (Exception ex) {
                         throw new ResourceNotFoundException("A CRL for this thumbprint was not found.", ex);
@@ -798,20 +758,25 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 return _configuration.Id + "Key" + requestId;
             }
 
-            private string _caCertSecretIdentifier;
-            private string _caCertKeyIdentifier;
+            private X509CertificateKeyIdPair _caCertIdentifier;
             private DateTime _lastUpdate;
 
+            private readonly IApplicationCertificateFactory _factory;
+            private readonly ICrlFactory _revoker;
             private readonly ILogger _logger;
             private readonly IKeyVault _keyVault;
             private readonly string _serviceHost;
             private readonly CertificateGroupInfoModel _configuration;
             private readonly IPrivateKeyStore _privateKeys;
+            private readonly ICrlStore _crls;
             private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
         }
 
         private readonly IVaultConfig _config;
         private readonly IKeyVault _keyVault;
+        private readonly ICrlStore _crls;
+        private readonly ICrlFactory _revoker;
+        private readonly IApplicationCertificateFactory _factory;
         private readonly IPrivateKeyStore _privateKeys;
         private readonly ILogger _logger;
         private readonly IGroupRegistry _registry;

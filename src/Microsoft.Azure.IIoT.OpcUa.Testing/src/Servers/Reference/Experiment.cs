@@ -52,14 +52,14 @@ namespace Reference {
             _endTime = endTime;
             _configuration = configuration;
             _processingInterval = processingInterval;
-            _timeFlowsBackward = (endTime < startTime);
+            _timeFlowsBackward = endTime < startTime;
             _values = new LinkedList<DataValue>();
-            _lastRawTimestamp = (_timeFlowsBackward) ? DateTime.MaxValue : DateTime.MinValue;
+            _lastRawTimestamp = _timeFlowsBackward ? DateTime.MaxValue : DateTime.MinValue;
 
             var slice = new TimeSlice {
                 StartTime = startTime
             };
-            slice.EndTime = slice.StartTime.AddMilliseconds((_timeFlowsBackward) ? -_processingInterval : _processingInterval);
+            slice.EndTime = slice.StartTime.AddMilliseconds(_timeFlowsBackward ? -_processingInterval : _processingInterval);
             slice.EarlyBound = null;
             slice.LateBound = null;
             slice.Complete = false;
@@ -123,7 +123,7 @@ namespace Reference {
             var slice = new TimeSlice {
                 StartTime = _nextSlice.EndTime
             };
-            slice.EndTime = slice.StartTime.AddMilliseconds((_timeFlowsBackward) ? -_processingInterval : _processingInterval);
+            slice.EndTime = slice.StartTime.AddMilliseconds(_timeFlowsBackward ? -_processingInterval : _processingInterval);
             slice.EarlyBound = FindEarlyBound(slice.StartTime);
             slice.LateBound = FindLateBound(slice.EarlyBound, slice.EndTime);
             slice.Complete = slice.LateBound != null;
@@ -215,12 +215,12 @@ namespace Reference {
             // use stepped interpolation/extrapolation if a bound is missing.
             if (!_configuration.UseSlopedExtrapolation || lastBound == null || firstBound == null) {
                 if (_timeFlowsBackward) {
-                    StatusCode statusCode = (lastBoundBad) ? StatusCodes.UncertainDataSubNormal : StatusCodes.Good;
+                    StatusCode statusCode = lastBoundBad ? StatusCodes.UncertainDataSubNormal : StatusCodes.Good;
                     statusCode = statusCode.SetAggregateBits(AggregateBits.Interpolated);
                     return new DataValue(lastBound.Value.WrappedValue, statusCode, timestamp, timestamp);
                 }
                 else {
-                    StatusCode statusCode = (firstBoundBad) ? StatusCodes.UncertainDataSubNormal : StatusCodes.Good;
+                    StatusCode statusCode = firstBoundBad ? StatusCodes.UncertainDataSubNormal : StatusCodes.Good;
                     statusCode = statusCode.SetAggregateBits(AggregateBits.Interpolated);
                     return new DataValue(firstBound.Value.WrappedValue, statusCode, timestamp, timestamp);
                 }

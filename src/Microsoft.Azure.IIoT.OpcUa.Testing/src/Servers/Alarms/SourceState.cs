@@ -670,11 +670,11 @@ namespace Alarms {
             return null;
         }
 
-        private CustomNodeManager2 _nodeManager;
-        private UnderlyingSystemSource _source;
-        private Dictionary<string, AlarmConditionState> _alarms;
-        private Dictionary<string, AlarmConditionState> _events;
-        private Dictionary<NodeId, AlarmConditionState> _branches;
-        private DialogConditionState _dialog;
+        private readonly CustomNodeManager2 _nodeManager;
+        private readonly UnderlyingSystemSource _source;
+        private readonly Dictionary<string, AlarmConditionState> _alarms;
+        private readonly Dictionary<string, AlarmConditionState> _events;
+        private readonly Dictionary<NodeId, AlarmConditionState> _branches;
+        private readonly DialogConditionState _dialog;
     }
 }

@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
     /// A KeyVault service client.
     /// </summary>
     public class KeyVaultServiceClient : IKeyVault, IKeyValueStore, IPrivateKeyStore, 
-        IDigestSigner, ICrlStore, ITrustListStore {
+        IDigestSigner, ICertificateFactory {
 
         /// <summary>
         /// Create the service client for KeyVault, with user or service
@@ -53,6 +53,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         /// <inheritdoc/>
         public async Task<string> GetKeyValueAsync(
             string key, string contentType, CancellationToken ct) {
+            if (string.IsNullOrEmpty(key)) {
+                throw new ArgumentNullException(nameof(key));
+            }
             var secret = await _keyVaultClient.GetSecretAsync(_vaultBaseUrl,
                 key, ct);
             if (contentType != null) {
@@ -65,14 +68,33 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task SetKeyValueAsync(
-            string key, string value, string contentType, CancellationToken ct) {
+        public async Task SetKeyValueAsync(string key, string value, DateTime? notBefore,
+            DateTime? notAfter, string contentType, CancellationToken ct) {
+            if (string.IsNullOrEmpty(key)) {
+                throw new ArgumentNullException(nameof(key));
+            }
+            if (string.IsNullOrEmpty(value)) {
+                throw new ArgumentNullException(nameof(value));
+            }
+            var secretAttributes = new SecretAttributes {
+                Enabled = true,
+                NotBefore = notBefore,
+                Expires = notAfter
+            };
             var secret = await _keyVaultClient.SetSecretAsync(_vaultBaseUrl,
-                key, value, null, contentType, null, ct);
+                key, value, null, contentType, secretAttributes, ct);
         }
 
         /// <inheritdoc/>
-        public async Task<KeyVaultCertificateModel> GetCertificateAsync(
+        public async Task DeleteKeyValueAsync(string key, CancellationToken ct) {
+            if (string.IsNullOrEmpty(key)) {
+                throw new ArgumentNullException(nameof(key));
+            }
+            await _keyVaultClient.DeleteSecretAsync(_vaultBaseUrl, key, ct);
+        }
+
+        /// <inheritdoc/>
+        public async Task<X509CertificateKeyIdPair> GetCertificateAsync(
             string certificateName, CancellationToken ct) {
             var certBundle = await _keyVaultClient.GetCertificateAsync(_vaultBaseUrl,
                 certificateName, ct);
@@ -80,7 +102,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<(X509Certificate2Collection, string)> ListCertificatesAsync(
+        public async Task<(X509Certificate2Collection, string)> QueryCertificatesAsync(
             string certificateName, string thumbprint, string nextPageLink, int? pageSize,
             CancellationToken ct) {
 
@@ -131,9 +153,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<IList<KeyVaultCertificateModel>> GetCertificateVersionsAsync(
+        public async Task<IList<X509CertificateKeyIdPair>> ListCertificatesAsync(
             string certificateName, CancellationToken ct) {
-            var result = new List<KeyVaultCertificateModel>();
+            var result = new List<X509CertificateKeyIdPair>();
             try {
                 var certItems = await _keyVaultClient.GetCertificateVersionsAsync(
                     _vaultBaseUrl, certificateName, kMaxResults, ct);
@@ -320,11 +342,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                 var info = createResult.Csr.ToCertificationRequestInfo();
 
                 // create the self signed root CA cert
-                var publicKey = CertUtils.GetRSAPublicKey(info.SubjectPublicKeyInfo);
-                var signedcert = await CertUtils.CreateSignedCertificate(
-                    null, null, subject, null, (ushort)keySize, notBefore, notAfter,
-                    (ushort)hashSize, null, publicKey, this, caCertKeyIdentifier,
-                    true, crlDistributionPoint);
+                var publicKey = info.SubjectPublicKeyInfo.GetRSAPublicKey();
+                var signedcert = await CertificateFactory2.CreateSignedRootCertificateAsync(
+                    subject, (ushort)keySize, notBefore, notAfter, (ushort)hashSize, 
+                    publicKey, this, caCertKeyIdentifier, crlDistributionPoint);
 
                 // merge Root CA cert with
                 var mergeResult = await _keyVaultClient.MergeCertificateAsync(_vaultBaseUrl,
@@ -347,12 +368,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
             }
         }
 
+#if UNUSED
         /// <inheritdoc/>
         public async Task<X509Certificate2> CreateSignedKeyPairCertAsync(
-            string caCertId, X509Certificate2 issuerCert, string applicationUri,
-            string applicationName, string subjectName, string[] domainNames,
-            DateTime notBefore, DateTime notAfter, int keySize, int hashSize,
-            string signingKeyId, string authorityInformationAccess,
+            string caCertId, X509Certificate2 issuerCert, string signingKeyId,
+            string applicationUri, string applicationName, string subjectName,
+            string[] domainNames, DateTime notBefore, DateTime notAfter, int keySize,
+            int hashSize, string authorityInformationAccess,
             CancellationToken ct) {
             CertificateOperation createResult;
             var certificateName = GetKeyStoreName(caCertId, Guid.NewGuid().ToString());
@@ -375,7 +397,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                 var info = createResult.Csr.ToCertificationRequestInfo();
 
                 // create the self signed app cert
-                var publicKey = CertUtils.GetRSAPublicKey(info.SubjectPublicKeyInfo);
+                var publicKey = info.SubjectPublicKeyInfo.GetRSAPublicKey();
                 var signedcert = await CertUtils.CreateSignedCertificate(
                     applicationUri, applicationName, subjectName, domainNames,
                     (ushort)keySize, notBefore, notAfter, (ushort)hashSize,
@@ -412,6 +434,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
                     _vaultBaseUrl, certificateName, ct));
             }
         }
+#endif
 
         /// <inheritdoc/>
         public async Task ImportCrlAsync(string certificateName, string thumbPrint,
@@ -436,7 +459,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         }
 
         /// <inheritdoc/>
-        public async Task<X509CRL> GetCrlAsync(string certificateName, string thumbPrint,
+        public async Task<X509Crl2> GetCrlAsync(string certificateName, string thumbPrint,
             CancellationToken ct) {
             var crlId = GetCrlId(certificateName, thumbPrint);
             return await GetCrlSecretAsync(crlId, ct);
@@ -787,13 +810,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients {
         /// <param name="secretIdentifier"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        private async Task<X509CRL> GetCrlSecretAsync(string secretIdentifier,
+        private async Task<X509Crl2> GetCrlSecretAsync(string secretIdentifier,
             CancellationToken ct) {
             var secret = await _keyVaultClient.GetSecretAsync(
                 _vaultBaseUrl, secretIdentifier, ct);
             if (secret.ContentType.EqualsIgnoreCase(ContentEncodings.MimeTypeCrl)) {
                 var crlBlob = Convert.FromBase64String(secret.Value);
-                return new X509CRL(crlBlob);
+                return new X509Crl2(crlBlob);
             }
             return null;
         }

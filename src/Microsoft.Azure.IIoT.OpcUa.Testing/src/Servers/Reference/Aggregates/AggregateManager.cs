@@ -204,7 +204,7 @@ namespace Opc.Ua.Aggregates {
         private readonly object _lock = new object();
         private readonly IServerInternal _server;
         private AggregateConfiguration _defaultConfiguration;
-        private Dictionary<NodeId, AggregatorFactory> _factories;
+        private readonly Dictionary<NodeId, AggregatorFactory> _factories;
         private double _minimumProcessingInterval;
     }
 }

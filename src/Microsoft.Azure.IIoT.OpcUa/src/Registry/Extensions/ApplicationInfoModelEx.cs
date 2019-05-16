@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
             }
             applicationUri = applicationUri.ToLowerInvariant();
             var type = applicationType ?? ApplicationType.Server;
-            var id =$"{siteOrSupervisorId ?? ""}-{type}-{applicationUri}";
+            var id = $"{siteOrSupervisorId ?? ""}-{type}-{applicationUri}";
             var prefix = applicationType == ApplicationType.Client ? "uac" : "uas";
             return prefix + id.ToSha1Hash();
         }

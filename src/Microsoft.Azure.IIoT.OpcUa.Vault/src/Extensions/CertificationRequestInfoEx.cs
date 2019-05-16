@@ -16,24 +16,6 @@ namespace System.Security.Cryptography.X509Certificates {
     public static class CertificationRequestInfoEx {
 
         /// <summary>
-        /// Convert buffer to request info
-        /// </summary>
-        /// <param name="certificateRequest"></param>
-        /// <returns></returns>
-        public static CertificationRequestInfo ToCertificationRequestInfo(
-            this byte[] certificateRequest) {
-            if (certificateRequest == null) {
-                throw new ArgumentNullException(nameof(certificateRequest));
-            }
-            var pkcs10CertificationRequest = new Pkcs10CertificationRequest(
-                certificateRequest);
-            if (!pkcs10CertificationRequest.Verify()) {
-                throw new FormatException("CSR signature invalid.");
-            }
-            return pkcs10CertificationRequest.GetCertificationRequestInfo();
-        }
-
-        /// <summary>
         /// Get alt name extension from info
         /// </summary>
         /// <param name="info"></param>
@@ -58,9 +40,8 @@ namespace System.Security.Cryptography.X509Certificates {
                     }
                 }
             }
-            catch {
-                throw new ServiceResultException(StatusCodes.BadInvalidArgument,
-                    "CSR altNameExtension invalid.");
+            catch (Exception ex) {
+                throw new ArgumentException("CSR altNameExtension invalid.", ex);
             }
             return null;
         }

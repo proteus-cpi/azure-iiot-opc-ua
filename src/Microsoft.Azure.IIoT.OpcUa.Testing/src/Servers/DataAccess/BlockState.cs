@@ -352,7 +352,7 @@ namespace DataAccess {
         }
 
         private readonly string _blockId;
-        private CustomNodeManager2 _nodeManager;
+        private readonly CustomNodeManager2 _nodeManager;
         private int _monitoringCount;
     }
 }

@@ -429,9 +429,9 @@ namespace Alarms {
         }
 
         private UnderlyingSystem _system;
-        private AlarmConditionServerConfiguration _configuration;
-        private Dictionary<string, AreaState> _areas;
-        private Dictionary<string, SourceState> _sources;
+        private readonly AlarmConditionServerConfiguration _configuration;
+        private readonly Dictionary<string, AreaState> _areas;
+        private readonly Dictionary<string, SourceState> _sources;
         private Timer _simulationTimer;
     }
 }

@@ -11,18 +11,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     /// <summary>
     /// Trust list model extensions
     /// </summary>
-    public static class KeyVaultCertificateModelEx {
+    public static class X509CertificateKeyIdPairEx {
 
         /// <summary>
         /// Convert to stack model
         /// </summary>
         /// <param name="certBundle"></param>
         /// <returns></returns>
-        public static KeyVaultCertificateModel ToStackModel(
+        public static X509CertificateKeyIdPair ToStackModel(
             this CertificateBundle certBundle) {
-            return new KeyVaultCertificateModel {
+            return new X509CertificateKeyIdPair {
                 Certificate = new X509Certificate2(certBundle.Cer),
-                CertIdentifier = certBundle.CertificateIdentifier.Identifier,
                 SecretIdentifier = certBundle.SecretIdentifier.Identifier,
                 KeyIdentifier = certBundle.KeyIdentifier.Identifier
             };

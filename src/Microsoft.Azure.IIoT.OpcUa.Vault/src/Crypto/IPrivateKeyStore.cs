@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Manages private keys
+    /// Manages private keys by id
     /// </summary>
     public interface IPrivateKeyStore {
 

@@ -5,8 +5,8 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using Newtonsoft.Json.Linq;
-    using Opc.Ua;
     using System;
+    using System.Security.Cryptography.X509Certificates;
 
     /// <summary>
     /// A X509 certificate revocation list extensions
@@ -17,7 +17,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// Create crl
         /// </summary>
         /// <param name="crl"></param>
-        public static X509CrlModel ToServiceModel(this X509CRL crl) {
+        public static X509CrlModel ToServiceModel(this X509Crl2 crl) {
             return new X509CrlModel {
                 Crl = crl.RawData,
                 Issuer = crl.Issuer
@@ -28,8 +28,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// Convert to service model
         /// </summary>
         /// <returns></returns>
-        public static X509CRL ToStackModel(this X509CrlModel model) {
-            return new X509CRL(model.ToRawData());
+        public static X509Crl2 ToStackModel(this X509CrlModel model) {
+            return new X509Crl2(model.ToRawData());
         }
 
         /// <summary>

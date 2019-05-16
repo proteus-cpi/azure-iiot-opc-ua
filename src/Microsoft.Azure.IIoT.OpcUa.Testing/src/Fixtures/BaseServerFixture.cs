@@ -82,7 +82,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Testing.Fixtures {
             }
         }
 
-        private static Random _rand = new Random();
+        private static readonly Random _rand = new Random();
         private static volatile int _nextPort = _rand.Next(53000, 58000);
         private readonly IServerHost _serverHost;
     }

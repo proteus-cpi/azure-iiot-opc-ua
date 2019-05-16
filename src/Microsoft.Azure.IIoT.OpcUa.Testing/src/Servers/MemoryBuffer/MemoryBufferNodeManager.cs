@@ -490,7 +490,7 @@ namespace MemoryBuffer {
             return ServiceResult.Good;
         }
 
-        private MemoryBufferConfiguration _configuration;
+        private readonly MemoryBufferConfiguration _configuration;
         private Dictionary<string, MemoryBufferState> _buffers;
     }
 }

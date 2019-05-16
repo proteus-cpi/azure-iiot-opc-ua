@@ -278,9 +278,7 @@ namespace HistoricalAccess {
                 }
 
                 // report any tag changes after releasing the lock.
-                if (onTagsChanged != null) {
-                    onTagsChanged(snapshots);
-                }
+                onTagsChanged?.Invoke(snapshots);
             }
             catch (Exception e) {
                 Utils.Trace(e, "Unexpected error running simulation for block {0}", Name);
@@ -458,7 +456,7 @@ namespace HistoricalAccess {
         }
 
         private readonly object _lock = new object();
-        private List<UnderlyingSystemTag> _tags;
+        private readonly List<UnderlyingSystemTag> _tags;
         private TagsChangedEventHandler OnTagsChanged;
     }
 

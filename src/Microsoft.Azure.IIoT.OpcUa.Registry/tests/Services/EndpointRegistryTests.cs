@@ -131,7 +131,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         [Fact]
         public void QueryTwinsByDeactivation() {
             CreateEndpointFixtures(out var site, out var super, out var endpoints, out var devices);
-            var count = endpoints.Count(x => !(x.IsTwinActivated()));
+            var count = endpoints.Count(x => !x.IsTwinActivated());
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
@@ -168,7 +168,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         [Fact]
         public void QueryTwinsByDisconnectivity() {
             CreateEndpointFixtures(out var site, out var super, out var endpoints, out var devices);
-            var count = endpoints.Count(x => !(x.IsTwinConnected()));
+            var count = endpoints.Count(x => !x.IsTwinConnected());
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
                 var service = mock.Create<RegistryServices>();

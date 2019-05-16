@@ -148,7 +148,7 @@ namespace PerfTest {
                     };
 
                     for (var ii = _start; ii < delta + _start && ii < _values.Length; ii++) {
-                        _values[ii] += (ii + 1);
+                        _values[ii] += ii + 1;
 
                         var monitoredItems = _monitoredItems[ii];
 

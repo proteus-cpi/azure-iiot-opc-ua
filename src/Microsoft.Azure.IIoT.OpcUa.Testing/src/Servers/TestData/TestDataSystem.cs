@@ -706,8 +706,8 @@ namespace TestData {
 
 
         private readonly object _lock = new object();
-        private ITestDataSystemCallback _callback;
-        private Opc.Ua.Test.DataGenerator _generator;
+        private readonly ITestDataSystemCallback _callback;
+        private readonly Opc.Ua.Test.DataGenerator _generator;
         private int _minimumSamplingInterval;
         private Dictionary<uint, BaseVariableState> _monitoredNodes;
         private Timer _timer;

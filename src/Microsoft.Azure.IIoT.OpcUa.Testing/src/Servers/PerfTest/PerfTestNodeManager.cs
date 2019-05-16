@@ -215,7 +215,7 @@ namespace PerfTest {
         }
 
         private readonly PerfTestServerConfiguration _configuration;
-        private UnderlyingSystem _system;
+        private readonly UnderlyingSystem _system;
 
     }
 }
