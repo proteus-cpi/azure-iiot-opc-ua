@@ -450,15 +450,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var application in _applicationTestSet) {
                 foreach (var requestId in application.RequestIds) {
                     var appModel = application.Model;
-                    var applicationId = application.Model.ApplicationId;
                     if (purged) {
                         await Assert.ThrowsAsync<ResourceNotFoundException>(
-                            () => _ca.FetchResultAsync(requestId, applicationId));
+                            () => _ca.FetchResultAsync(requestId));
                         continue;
                     }
-                    var fetchResult = await _ca.FetchResultAsync(requestId, applicationId);
+                    var fetchResult = await _ca.FetchResultAsync(requestId);
                     Assert.Equal(requestId, fetchResult.Request.RequestId);
-                    Assert.Equal(applicationId, fetchResult.Request.ApplicationId);
+                    Assert.Equal(application.Model.ApplicationId, fetchResult.Request.ApplicationId);
                     if (fetchResult.Request.State == CertificateRequestState.Approved ||
                         fetchResult.Request.State == CertificateRequestState.Accepted) {
                         if (fetchResult.PrivateKey != null) {

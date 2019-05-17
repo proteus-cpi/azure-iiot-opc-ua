@@ -45,16 +45,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <summary>
         /// Query the certificate request database.
         /// </summary>
-        /// <param name="appId">Filter by ApplicationId</param>
-        /// <param name="state">Filter by state, default null</param>
+        /// <param name="query">Optional: Filter info</param>
         /// <param name="nextPageLink">The next page</param>
         /// <param name="maxResults">max number of requests in a query
         /// </param>
         /// <returns>Array of certificate requests, next page link
         /// </returns>
         Task<CertificateRequestQueryResultModel> QueryRequestsAsync(
-            string appId, CertificateRequestState? state,
-            string nextPageLink, int? maxResults = null);
+            CertificateRequestQueryRequestModel query = null,
+            string nextPageLink = null, int? maxResults = null);
 
         /// <summary>
         /// Delete a certificate request.
@@ -82,6 +81,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="allVersions">false to revoke only the lates
         /// Issuer CA cert</param>
         Task RevokeAllRequestsAsync(string groupId,
-            bool? allVersions);
+            bool? allVersions = null);
     }
 }

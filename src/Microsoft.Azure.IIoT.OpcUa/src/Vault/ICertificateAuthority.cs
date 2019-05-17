@@ -42,9 +42,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// issued certificate with a private key.
         /// </summary>
         /// <param name="requestId">The request Id</param>
-        /// <param name="applicationId">The application Id</param>
         /// <returns>The request</returns>
         Task<FetchCertificateRequestResultModel> FetchResultAsync(
-            string requestId, string applicationId);
+            string requestId);
     }
 }

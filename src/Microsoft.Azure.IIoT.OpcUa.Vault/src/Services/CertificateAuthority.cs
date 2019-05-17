@@ -569,19 +569,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<FetchCertificateRequestResultModel> FetchResultAsync(string requestId,
-            string applicationId) {
+        public async Task<FetchCertificateRequestResultModel> FetchResultAsync(string requestId) {
             if (string.IsNullOrEmpty(requestId)) {
                 throw new ArgumentNullException(nameof(requestId), "The request id must be provided");
             }
-            var registration = await _registry.GetApplicationAsync(applicationId);
             var document = await _requests.GetAsync<CertificateRequestDocument>(
                 requestId);
             if (document == null) {
                 throw new ResourceNotFoundException("Request not found");
-            }
-            if (document.Value.ApplicationId != registration.Application.ApplicationId) {
-                throw new ArgumentException("The recordId does not match the applicationId.");
             }
 
             switch (document.Value.CertificateRequestState) {
@@ -593,7 +588,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     return new FetchCertificateRequestResultModel {
                         Request = new CertificateRequestRecordModel {
                             State = document.Value.CertificateRequestState,
-                            ApplicationId = applicationId,
+                            ApplicationId = document.Value.ApplicationId,
                             RequestId = requestId
                         }
                     };
@@ -657,13 +652,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<CertificateRequestQueryResultModel> QueryRequestsAsync(string appId,
-            CertificateRequestState? state, string nextPageLink, int? maxResults) {
+        public async Task<CertificateRequestQueryResultModel> QueryRequestsAsync(
+            CertificateRequestQueryRequestModel query, string nextPageLink, int? maxResults) {
             var client = _requests.OpenSqlClient();
             var results = nextPageLink != null ?
                 client.Continue<CertificateRequestDocument>(nextPageLink, maxResults) :
                 client.Query<CertificateRequestDocument>(
-                    CreateQuery(appId, state, out var queryParameters),
+                    CreateQuery(query?.ApplicationId, query?.State, out var queryParameters),
                     queryParameters, maxResults);
             if (!results.HasMore()) {
                 return new CertificateRequestQueryResultModel();
@@ -723,8 +718,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         private async Task DeleteAllApplicationRequests(string applicationId) {
             string nextPageLink = null;
             do {
-                var result = await QueryRequestsAsync(applicationId, null,
-                    nextPageLink, null);
+                var result = await QueryRequestsAsync(new CertificateRequestQueryRequestModel {
+                    ApplicationId = applicationId
+                }, nextPageLink, null);
                 foreach (var request in result.Requests) {
                     if (request.State < CertificateRequestState.Deleted) {
                         await Try.Async(() => DeleteRequestAsync(request.RequestId));

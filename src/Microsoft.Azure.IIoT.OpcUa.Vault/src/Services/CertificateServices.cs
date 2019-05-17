@@ -37,7 +37,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="config"></param>
         /// <param name="logger"></param>
         public CertificateServices(IGroupRegistry registry, IKeyVaultService keyVault, 
-            IPrivateKeyStore privateKeys, ICrlStore crls, ICrlFactory revoker,
+            IPrivateKeyStore privateKeys, ICrlStore crls, ICertificateRevoker revoker,
             IApplicationCertificateFactory factory, IVaultConfig config, ILogger logger) {
 
             _config = config ?? throw new ArgumentNullException(nameof(config));
@@ -138,8 +138,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         public async Task<X509CrlModel> RevokeSingleCertificateAsync(
             string groupId, X509CertificateModel certificate) {
             var group = await GetGroupAsync(groupId);
-            await group.RevokeSingleCertificateAsync(certificate.ToStackModel());
-            return group.Crl.ToServiceModel();
+            var result = await group.RevokeSingleCertificateAsync(certificate.ToStackModel());
+            return result.ToServiceModel();
         }
 
         /// <inheritdoc/>
@@ -212,10 +212,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// </summary>
         private sealed class CertificateGroup {
 
-            /// <summary>
-            /// The latest Crl of this cert group
-            /// </summary>
-            public X509Crl2 Crl { get; set; }
+
+            // TODO: remove
+            private X509Crl2 _crl;
 
             /// <summary>
             /// Create group
@@ -229,7 +228,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             /// <param name="logger"></param>
             /// <param name="serviceHost"></param>
             public CertificateGroup(IKeyVaultService keyVault, IPrivateKeyStore privateKeys,
-                ICrlStore crls, ICrlFactory revoker, IApplicationCertificateFactory factory,
+                ICrlStore crls, ICertificateRevoker revoker, IApplicationCertificateFactory factory,
                 CertificateGroupInfoModel configuration, ILogger logger, string serviceHost) {
                 _logger = logger;
                 _keyVault = keyVault;
@@ -269,7 +268,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         // Set group handles
                         _caCertIdentifier = result;
 
-                        Crl = await _crls.GetCrlAsync(_configuration.Id, result.Certificate.Thumbprint);
+                        _crl = await _crls.GetCrlAsync(_configuration.Id, result.Certificate.Thumbprint);
                     }
                     else {
                         throw new ResourceInvalidStateException(
@@ -322,11 +321,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     _caCertIdentifier = result;
 
                     // create default revocation list and sign with KeyVault
-                    Crl = _revoker.RevokeCertificate(_caCertIdentifier, null, null, notBefore,
-                        DateTime.MinValue, _configuration.IssuerCACertificateHashSize);
-
+                    // TODO: Needs to be atomic
+                    _crl = _revoker.CreateCrl(_caCertIdentifier, notBefore,
+                        DateTime.MinValue);
                     // import crl
-                    await _crls.ImportCrlAsync(_configuration.Id, result.Certificate.Thumbprint, Crl);
+                    await _crls.SetCrlAsync(_configuration.Id, result.Certificate.Thumbprint, _crl);
+
                     return result.Certificate;
                 }
                 finally {
@@ -341,7 +341,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             /// </summary>
             /// <param name="certificate"></param>
             /// <returns></returns>
-            public async Task RevokeSingleCertificateAsync(X509Certificate2 certificate) {
+            public async Task<X509Crl2> RevokeSingleCertificateAsync(X509Certificate2 certificate) {
                 await LoadPublicAssetsAsync();
 
                 var certificates = new X509Certificate2Collection { certificate };
@@ -359,6 +359,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         authorityKeyIdentifier.KeyId
                             .EqualsIgnoreCase(subjectKeyId.SubjectKeyIdentifier)) {
 
+                        // TODO: Needs to be atomic
+
                         // Get current crl for this group
                         var crl = await _crls.GetCrlAsync(_configuration.Id,
                             caCertKeyInfo.Certificate.Thumbprint);
@@ -368,13 +370,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         var newCrl = _revoker.RevokeCertificate(caCertKeyInfo, crls,
                             certificates, now, DateTime.MinValue, 
                             _configuration.IssuerCACertificateHashSize);
-
                         // Import updated crl and read back as new group crl
-                        await _crls.ImportCrlAsync(_configuration.Id,
+                        await _crls.SetCrlAsync(_configuration.Id,
                             caCertKeyInfo.Certificate.Thumbprint, newCrl);
-                        Crl = await _crls.GetCrlAsync(_configuration.Id, _caCertIdentifier.Certificate.Thumbprint);
+                        _crl = await _crls.GetCrlAsync(_configuration.Id, _caCertIdentifier.Certificate.Thumbprint);
+
+                        // end TODO
                     }
                 }
+
+                return _crl; // TODO get result
             }
 
             /// <summary>
@@ -420,19 +425,21 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         continue;
                     }
 
+                    // TODO: Needs to be atomic
+
                     // Get current crl
                     var crl = await _crls.GetCrlAsync(_configuration.Id,
                         caCertKeyInfo.Certificate.Thumbprint);
-
                     // Revoke and update crl
                     var crls = new List<X509Crl2> { crl };
                     var newCrl = _revoker.RevokeCertificate(_caCertIdentifier, crls,
                         caRevokeCollection, now, DateTime.MinValue, 
                         _configuration.IssuerCACertificateHashSize);
-
                     // Re-import crl
-                    await _crls.ImportCrlAsync(_configuration.Id, caCertKeyInfo.Certificate.Thumbprint,
+                    await _crls.SetCrlAsync(_configuration.Id, caCertKeyInfo.Certificate.Thumbprint,
                         newCrl);
+
+                    // end TODO
 
                     foreach (var cert in caRevokeCollection) {
                         remainingCertificates.Remove(cert);
@@ -440,7 +447,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 }
 
                 // Re-read crl
-                Crl = await _crls.GetCrlAsync(_configuration.Id, 
+                _crl = await _crls.GetCrlAsync(_configuration.Id, 
                     _caCertIdentifier.Certificate.Thumbprint);
                 return remainingCertificates;
             }
@@ -707,7 +714,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             public async Task<X509CrlCollectionModel> GetIssuerCACrlChainAsync(string thumbprint,
                 string nextPageLink, int? pageSize) {
                 await LoadPublicAssetsAsync();
-                var crl = Crl;
+                var crl = _crl;
                 if (thumbprint != null && 
                     !thumbprint.EqualsIgnoreCase(_caCertIdentifier.Certificate.Thumbprint)) {
                     // TODO: implement paging (low priority, only when long chains are expected)
@@ -767,7 +774,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             private DateTime _lastUpdate;
 
             private readonly IApplicationCertificateFactory _factory;
-            private readonly ICrlFactory _revoker;
+            private readonly ICertificateRevoker _revoker;
             private readonly ILogger _logger;
             private readonly IKeyVaultService _keyVault;
             private readonly string _serviceHost;
@@ -780,7 +787,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         private readonly IVaultConfig _config;
         private readonly IKeyVaultService _keyVault;
         private readonly ICrlStore _crls;
-        private readonly ICrlFactory _revoker;
+        private readonly ICertificateRevoker _revoker;
         private readonly IApplicationCertificateFactory _factory;
         private readonly IPrivateKeyStore _privateKeys;
         private readonly ILogger _logger;
