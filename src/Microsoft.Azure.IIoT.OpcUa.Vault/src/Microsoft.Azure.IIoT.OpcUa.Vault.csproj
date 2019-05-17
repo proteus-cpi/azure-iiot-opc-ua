@@ -8,27 +8,18 @@
     <VersionSuffix>prerelease001</VersionSuffix>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Services\Storage\**" />
-    <EmbeddedResource Remove="Services\Storage\**" />
-    <None Remove="Services\Storage\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="2.1.3" />
-    <PackageReference Include="Microsoft.Azure.KeyVault" Version="3.0.3" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\Microsoft.Azure.IIoT.OpcUa\src\Microsoft.Azure.IIoT.OpcUa.csproj" />
   </ItemGroup>
   <Choose>
     <When Condition="Exists('..\..\..\..\..\common')">
       <ItemGroup>
-        <ProjectReference Include="..\..\..\..\..\common\src\Microsoft.Azure.IIoT.Auth\src\Microsoft.Azure.IIoT.Auth.csproj" />
         <ProjectReference Include="..\..\..\..\..\common\src\Microsoft.Azure.IIoT.Storage\src\Microsoft.Azure.IIoT.Storage.csproj" />
+        <ProjectReference Include="..\..\..\..\..\common\src\Microsoft.Azure.IIoT.Crypto\src\Microsoft.Azure.IIoT.Crypto.csproj" />
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Microsoft.Azure.IIoT.Auth" Version="$(CommonVersion)" />
+        <PackageReference Include="Microsoft.Azure.IIoT.Crypto" Version="$(CommonVersion)" />
         <PackageReference Include="Microsoft.Azure.IIoT.Storage" Version="$(CommonPrereleaseVersion)" />
       </ItemGroup>
     </Otherwise>

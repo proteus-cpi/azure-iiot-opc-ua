@@ -6,7 +6,8 @@
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using System;
 
-    public static class X509CRLExtension {
+    public static class Extensions {
+
         internal static void AddRange(this X509CertificateCollectionModel list,
             X509CertificateCollectionModel items) {
             if (list == null || items == null) {

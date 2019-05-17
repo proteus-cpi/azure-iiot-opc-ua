@@ -16,15 +16,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// Get all Issuer certificate versions in a pageable call.
         /// </summary>
         /// <param name="groupId">The group Id</param>
-        /// <param name="withCertificates">true to return the
-        /// base64 encoded certificates</param>
         /// <param name="nextPageLink">The next page</param>
         /// <param name="pageSize">max number of versions per call
         /// </param>
         /// <returns></returns>
         Task<X509CertificateCollectionModel> ListIssuerCACertificateVersionsAsync(
-            string groupId, bool? withCertificates, string nextPageLink = null,
-            int? pageSize = null);
+            string groupId, string nextPageLink = null, int? pageSize = null);
 
         /// <summary>
         /// Get all certificates in the chain of the Issuer CA.

@@ -20,20 +20,5 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// Auto approve applications
         /// </summary>
         bool ApplicationsAutoApprove { get; }
-
-        /// <summary>
-        /// Keyvault base url
-        /// </summary>
-        string KeyVaultBaseUrl { get; }
-
-        /// <summary>
-        /// Keyvault resource id
-        /// </summary>
-        string KeyVaultResourceId { get; }
-
-        /// <summary>
-        /// Is hsm key vault
-        /// </summary>
-        bool KeyVaultIsHsm { get; }
     }
 }

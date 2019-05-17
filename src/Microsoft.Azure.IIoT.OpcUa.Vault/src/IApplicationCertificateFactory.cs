@@ -3,8 +3,8 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
+namespace Microsoft.Azure.IIoT.OpcUa.Vault {
+    using Microsoft.Azure.IIoT.Crypto.Models;
     using System;
     using System.Collections.Generic;
     using System.Security.Cryptography;
@@ -21,9 +21,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// </summary>
         /// <param name="issuerCAKeyCert"></param>
         /// <param name="publicKey"></param>
+        /// <param name="subjectName"></param>
         /// <param name="applicationUri"></param>
         /// <param name="applicationName"></param>
-        /// <param name="subjectName"></param>
         /// <param name="domainNames"></param>
         /// <param name="keySize"></param>
         /// <param name="notBefore"></param>
@@ -31,8 +31,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         /// <param name="hashSizeInBits"></param>
         /// <param name="extensionUrl"></param>
         /// <returns></returns>
-        Task<X509Certificate2> CreateSignedCertificate(X509CertificateKeyIdPair issuerCAKeyCert,
-            RSA publicKey, string applicationUri, string applicationName, string subjectName,
+        Task<X509Certificate2> CreateSignedCertificateAsync(X509CertificateKeyIdPair issuerCAKeyCert,
+            RSA publicKey, string subjectName, string applicationUri, string applicationName,
             IList<string> domainNames, ushort keySize, DateTime notBefore, DateTime notAfter,
             ushort hashSizeInBits, string extensionUrl = null);
 

@@ -8,11 +8,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using Microsoft.Azure.IIoT.Auth.Clients;
     using Microsoft.Azure.IIoT.Auth.Clients.Default;
     using Microsoft.Azure.IIoT.Auth.Runtime;
+    using Microsoft.Azure.IIoT.Crypto.Default;
+    using Microsoft.Azure.IIoT.Crypto.KeyVault.Clients;
+    using Microsoft.Azure.IIoT.Crypto.KeyVault.Runtime;
     using Microsoft.Azure.IIoT.OpcUa.Registry;
     using Microsoft.Azure.IIoT.OpcUa.Registry.Tests;
     using Microsoft.Azure.IIoT.OpcUa.Vault;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Clients;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Runtime;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
     using Microsoft.Azure.IIoT.Storage.CosmosDb.Services;
@@ -63,7 +64,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 }).Result.Id;
 
                 // Create client
-                _keyVaultServiceClient = new KeyVaultServiceClient(_serviceConfig,
+                _vaultConfig = new KeyVaultConfig(configuration);
+                _keyVaultServiceClient = new KeyVaultServiceClient(_vaultConfig,
                     new AppAuthenticationProvider(_clientConfig), _logger);
 
                 // Create services
@@ -102,8 +104,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
         private bool InvalidConfiguration() {
             return
-                string.IsNullOrEmpty(_serviceConfig.KeyVaultBaseUrl) ||
-                string.IsNullOrEmpty(_serviceConfig.KeyVaultResourceId) ||
+                string.IsNullOrEmpty(_vaultConfig.KeyVaultBaseUrl) ||
+                string.IsNullOrEmpty(_vaultConfig.KeyVaultResourceId) ||
                 string.IsNullOrEmpty(_clientConfig.AppId) ||
                 string.IsNullOrEmpty(_clientConfig.AppSecret) ||
                 string.IsNullOrEmpty(_serviceConfig.ContainerName) ||
@@ -114,6 +116,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
         private readonly IClientConfig _clientConfig;
         private readonly VaultConfig _serviceConfig;
+        private readonly KeyVaultConfig _vaultConfig;
         private readonly KeyVaultServiceClient _keyVaultServiceClient;
         private readonly CertificateServices _keyVaultCertificateGroup;
         private readonly ILogger _logger;

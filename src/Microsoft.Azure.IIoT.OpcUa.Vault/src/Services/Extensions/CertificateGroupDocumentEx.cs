@@ -6,7 +6,6 @@
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using Microsoft.Azure.IIoT.OpcUa.Vault.Services.Models;
     using System;
-    using System.Linq;
 
     /// <summary>
     /// Certificate group extensions

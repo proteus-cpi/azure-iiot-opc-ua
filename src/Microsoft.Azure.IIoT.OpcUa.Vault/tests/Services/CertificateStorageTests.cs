@@ -4,9 +4,9 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
+    using Microsoft.Azure.IIoT.Crypto.Models;
     using Microsoft.Azure.IIoT.Exceptions;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Tests.Helpers;
     using Microsoft.Azure.KeyVault.Models;
     using Serilog;
@@ -197,7 +197,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     certificateGroupConfiguration.DefaultCertificateLifetime,
                     certificateGroupConfiguration.DefaultCertificateHashSize
                     );
-                var certificateRequest = CertificateFactory.CreateSigningRequest(csrCertificate, randomApp.DomainNames);
+                var certificateRequest = CertificateFactory.CreateSigningRequest(
+                    csrCertificate, randomApp.DomainNames);
 
                 var newCert = await _services.ProcessSigningRequestAsync(
                     group,
@@ -207,8 +208,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 var issuerCerts = await _services.GetIssuerCACertificateChainAsync(group);
 #if WRITECERT
                 // save cert for debugging
-                using (var store = Opc.Ua.CertificateStoreIdentifier.CreateStore(Opc.Ua.CertificateStoreType.Directory))
-                {
+                using (var store = Opc.Ua.CertificateStoreIdentifier.CreateStore(
+                    Opc.Ua.CertificateStoreType.Directory)) {
                     Assert.NotNull(store);
                     store.Open("d:\\unittest");
                     await store.Add(newCert.ToStackModel());
@@ -217,7 +218,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 #endif
                 Assert.NotNull(issuerCerts);
                 Assert.True(issuerCerts.Chain.Count >= 1);
-                X509TestUtils.VerifySignedApplicationCert(randomApp, newCert.ToStackModel(), issuerCerts.ToStackModel());
+                X509TestUtils.VerifySignedApplicationCert(
+                    randomApp, newCert.ToStackModel(), issuerCerts.ToStackModel());
                 certCollection.Add(newCert.ToStackModel());
             }
             return certCollection;
@@ -287,7 +289,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     );
                 Assert.NotNull(newKeyPair);
                 Assert.False(newKeyPair.Certificate.ToStackModel().HasPrivateKey);
-                Assert.True(Opc.Ua.Utils.CompareDistinguishedName(randomApp.Subject, newKeyPair.Certificate.Subject));
+                Assert.True(Opc.Ua.Utils.CompareDistinguishedName(randomApp.Subject,
+                    newKeyPair.Certificate.Subject));
                 Assert.False(Opc.Ua.Utils.CompareDistinguishedName(
                     newKeyPair.Certificate.ToStackModel().Issuer, newKeyPair.Certificate.Subject));
 
@@ -330,7 +333,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 await _services.GetPrivateKeyAsync(group, requestId.ToString(), randomApp.PrivateKeyFormat));
                 await _services.AcceptPrivateKeyAsync(group, requestId.ToString());
                 await _services.DeletePrivateKeyAsync(group, requestId.ToString());
-                await Assert.ThrowsAsync<KeyVaultErrorException>(() => _services.DeletePrivateKeyAsync(group, requestId.ToString()));
+                await Assert.ThrowsAsync<KeyVaultErrorException>(() => 
+                    _services.DeletePrivateKeyAsync(group, requestId.ToString()));
                 await Assert.ThrowsAsync<KeyVaultErrorException>(async () => privateKey =
                 await _services.GetPrivateKeyAsync(group, requestId.ToString(), randomApp.PrivateKeyFormat));
             }
@@ -346,10 +350,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var group in groups.Groups) {
                 // read all certs
                 var certCollection = await _services.ListIssuerCACertificateVersionsAsync(
-                    group, true, null, 2);
+                    group, null, 2);
                 while (certCollection.NextPageLink != null) {
                     var next = await _services.ListIssuerCACertificateVersionsAsync(
-                        group, true, certCollection.NextPageLink, 2);
+                        group, certCollection.NextPageLink, 2);
                     certCollection.AddRange(next);
                     certCollection.NextPageLink = next.NextPageLink;
                 }
@@ -362,7 +366,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 Assert.NotNull(chainId);
                 Assert.True(chainId.Chain.Count >= 1);
                 foreach (var cert in certCollection.Chain) {
-                    var certChain = await _services.GetIssuerCACertificateChainAsync(group, cert.Thumbprint);
+                    var certChain = await _services.GetIssuerCACertificateChainAsync(
+                        group, cert.Thumbprint);
                     Assert.NotNull(certChain);
                     Assert.True(certChain.Chain.Count >= 1);
                     Assert.Equal(cert.Thumbprint, certChain.Chain[0].Thumbprint);
@@ -375,14 +380,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
                     // invalid parameter test
                     // invalid parameter test
-                    await Assert.ThrowsAsync<ResourceNotFoundException>(() => _services.GetIssuerCACrlChainAsync(group, cert.Thumbprint + "a"));
-                    await Assert.ThrowsAsync<ResourceNotFoundException>(() => _services.GetIssuerCACrlChainAsync("abc", cert.Thumbprint));
+                    await Assert.ThrowsAsync<ResourceNotFoundException>(() =>
+                        _services.GetIssuerCACrlChainAsync(group, cert.Thumbprint + "a"));
+                    await Assert.ThrowsAsync<ResourceNotFoundException>(() =>
+                        _services.GetIssuerCACrlChainAsync("abc", cert.Thumbprint));
                 }
 
                 // invalid parameters
-                await Assert.ThrowsAsync<ResourceNotFoundException>(() => _services.GetIssuerCACrlChainAsync(group, "abcd"));
-                await Assert.ThrowsAsync<ResourceNotFoundException>(() => _services.GetIssuerCACertificateChainAsync("abc"));
-                await Assert.ThrowsAsync<ResourceNotFoundException>(() => _services.GetIssuerCACrlChainAsync("abc"));
+                await Assert.ThrowsAsync<ResourceNotFoundException>(() => 
+                    _services.GetIssuerCACrlChainAsync(group, "abcd"));
+                await Assert.ThrowsAsync<ResourceNotFoundException>(() => 
+                    _services.GetIssuerCACertificateChainAsync("abc"));
+                await Assert.ThrowsAsync<ResourceNotFoundException>(() =>
+                    _services.GetIssuerCACrlChainAsync("abc"));
             }
         }
 

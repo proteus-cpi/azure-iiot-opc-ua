@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
+    using Microsoft.Azure.IIoT.Crypto.Models;
     using Microsoft.Azure.IIoT.OpcUa.Registry.Tests;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Opc.Ua;

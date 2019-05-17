@@ -3,19 +3,21 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
+namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
+    using Microsoft.Azure.IIoT.OpcUa.Vault;
+    using Microsoft.Azure.IIoT.Crypto;
+    using Microsoft.Azure.IIoT.Crypto.BouncyCastle;
+    using Microsoft.Azure.IIoT.Crypto.Models;
+    using Microsoft.Azure.IIoT.Crypto.Utils;
+    using Opc.Ua;
     using Serilog;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Net;
     using System.Security.Cryptography;
-    using System.Security.Cryptography.Asn1;
     using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading.Tasks;
-    using Opc.Ua;
 
     /// <summary>
     /// OPC UA Application certificate factory
@@ -33,23 +35,24 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
         }
 
         /// <inheritdoc/>
-        public Task<X509Certificate2> CreateSignedCertificate(X509CertificateKeyIdPair issuerCAKeyCert,
-            RSA publicKey, string applicationUri, string applicationName, string subjectName,
+        public Task<X509Certificate2> CreateSignedCertificateAsync(X509CertificateKeyIdPair issuerCAKeyCert,
+            RSA publicKey, string subjectName, string applicationUri, string applicationName,
             IList<string> domainNames, ushort keySize, DateTime notBefore, DateTime notAfter,
             ushort hashSizeInBits, string extensionUrl) {
+
+            if (issuerCAKeyCert?.Certificate == null) {
+                throw new ArgumentNullException(nameof(issuerCAKeyCert), "Need a root cert.");
+            }
 
             if (publicKey == null) {
                 throw new ArgumentNullException(nameof(publicKey), "Need a public key.");
             }
-            if (issuerCAKeyCert == null) {
-                throw new ArgumentNullException(nameof(issuerCAKeyCert), "Need a root cert.");
-            }
-
             if (publicKey.KeySize != keySize) {
                 throw new NotSupportedException(
                     string.Format("Public key size {0} does not match expected key size {1}",
                     publicKey.KeySize, keySize));
             }
+
             // new serial number
             var serialNumber = new byte[kSerialNumberLength];
             RandomNumberGenerator.Fill(serialNumber);
@@ -78,15 +81,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                 X509ExtensionEx.BuildAuthorityKeyIdentifier(issuerCAKeyCert.Certificate));
 
             // Key Usage
-            var defaultFlags =
-                X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.DataEncipherment |
-                    X509KeyUsageFlags.NonRepudiation | X509KeyUsageFlags.KeyEncipherment;
-            if (issuerCAKeyCert == null) {
-                // self signed case
-                defaultFlags |= X509KeyUsageFlags.KeyCertSign;
-            }
             request.CertificateExtensions.Add(
-                new X509KeyUsageExtension(defaultFlags, true));
+                new X509KeyUsageExtension(
+                    X509KeyUsageFlags.DigitalSignature | 
+                    X509KeyUsageFlags.DataEncipherment |
+                    X509KeyUsageFlags.NonRepudiation |
+                    X509KeyUsageFlags.KeyEncipherment, true));
 
             // Enhanced key usage
             request.CertificateExtensions.Add(
@@ -96,7 +96,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                         new Oid("1.3.6.1.5.5.7.3.2") }, true));
 
             // Subject Alternative Name
-            var subjectAltName = X509ExtensionEx.BuildSubjectAlternativeName(applicationUri, domainNames);
+            var subjectAltName = BuildSubjectAlternativeName(applicationUri, domainNames);
             request.CertificateExtensions.Add(new X509Extension(subjectAltName, false));
 
             if (extensionUrl != null) {   // add Authority Information Access, if available
@@ -106,18 +106,43 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault {
                     }));
             }
 
+            // Adjust validity to issuer cert
             if (notAfter > issuerCAKeyCert.Certificate.NotAfter) {
                 notAfter = issuerCAKeyCert.Certificate.NotAfter;
             }
             if (notBefore < issuerCAKeyCert.Certificate.NotBefore) {
                 notBefore = issuerCAKeyCert.Certificate.NotBefore;
             }
-            var issuerSubjectName = issuerCAKeyCert != null ?
-                issuerCAKeyCert.Certificate.SubjectName : subjectDN;
+
+            var issuerSubjectName = issuerCAKeyCert.Certificate.SubjectName;
             var signatureGenerator = new SignatureGeneratorAdapter(_signer, issuerCAKeyCert);
             var signedCert = request.Create(issuerSubjectName, signatureGenerator, notBefore,
                 notAfter, serialNumber);
             return Task.FromResult(signedCert);
+        }
+
+        /// <summary>
+        /// Build the Subject Alternative name extension (for OPC UA application certs)
+        /// </summary>
+        /// <param name="applicationUri">The application Uri</param>
+        /// <param name="domainNames">The domain names.
+        /// DNS Hostnames, IPv4 or IPv6 addresses</param>
+        public static X509Extension BuildSubjectAlternativeName(string applicationUri,
+            IList<string> domainNames) {
+            var sanBuilder = new SubjectAlternativeNameBuilder();
+            sanBuilder.AddUri(new Uri(applicationUri));
+            foreach (var domainName in domainNames) {
+                if (string.IsNullOrWhiteSpace(domainName)) {
+                    continue;
+                }
+                if (IPAddress.TryParse(domainName, out var ipAddr)) {
+                    sanBuilder.AddIpAddress(ipAddr);
+                }
+                else {
+                    sanBuilder.AddDnsName(domainName);
+                }
+            }
+            return sanBuilder.Build();
         }
 
         /// <summary>

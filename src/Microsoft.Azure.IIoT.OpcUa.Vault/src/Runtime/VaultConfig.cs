@@ -27,25 +27,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Runtime {
             GetBoolOrDefault("OPC_VAULT_AUTOAPPROVE", true));
 
         /// <summary>
-        /// Key Vault configuration
-        /// </summary>
-        private const string kOpcVault_KeyVaultBaseUrlKey = "OpcVault:KeyVaultBaseUrl";
-        private const string kOpcVault_KeyVaultResourceIdKey = "OpcVault:KeyVaultResourceId";
-        private const string kOpcVault_KeyVaultIsHsmKey = "OpcVault:KeyVaultIsHsm";
-
-        /// <inheritdoc/>
-        public string KeyVaultBaseUrl => GetStringOrDefault(kOpcVault_KeyVaultBaseUrlKey,
-            GetStringOrDefault("OPC_VAULT_KEYVAULT_URI",
-                GetStringOrDefault("PCS_KEYVAULT_CONFIGURATION_URI"))).Trim();
-        /// <inheritdoc/>
-        public string KeyVaultResourceId => GetStringOrDefault(kOpcVault_KeyVaultResourceIdKey,
-            GetStringOrDefault("OPC_VAULT_KEYVAULT_RESOURCE_ID",
-                "https://vault.azure.net")).Trim();
-        /// <inheritdoc/>
-        public bool KeyVaultIsHsm => GetBoolOrDefault(
-            kOpcVault_KeyVaultIsHsmKey, true);
-
-        /// <summary>
         /// Cosmos db configuration
         /// </summary>
         private const string kOpcVault_DbConnectionStringKey = "OpcVault:CosmosDBConnectionString";

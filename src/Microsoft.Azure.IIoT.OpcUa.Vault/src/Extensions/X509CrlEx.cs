@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
+    using Microsoft.Azure.IIoT.Crypto.Models;
     using Newtonsoft.Json.Linq;
     using System;
     using System.Security.Cryptography.X509Certificates;
@@ -29,7 +30,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// </summary>
         /// <returns></returns>
         public static X509Crl2 ToStackModel(this X509CrlModel model) {
-            return new X509Crl2(model.ToRawData());
+            return X509Crl2Ex.Parse(model.ToRawData());
         }
 
         /// <summary>

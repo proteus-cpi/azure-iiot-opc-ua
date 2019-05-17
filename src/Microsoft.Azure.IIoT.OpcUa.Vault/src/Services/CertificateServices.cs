@@ -4,10 +4,14 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
-    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Models;
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
+    using Microsoft.Azure.IIoT.Crypto;
+    using Microsoft.Azure.IIoT.Crypto.KeyVault;
+    using Microsoft.Azure.IIoT.Crypto.Models;
     using Microsoft.Azure.IIoT.Exceptions;
+    using Autofac;
+    using Opc.Ua;
     using Serilog;
     using System;
     using System.Collections.Generic;
@@ -15,9 +19,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
-    using Autofac;
-    using Opc.Ua;
-    using Microsoft.Azure.IIoT.OpcUa.Vault.KeyVault.Models;
 
     /// <summary>
     /// Key Vault Certificate Group services
@@ -35,7 +36,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="factory"></param>
         /// <param name="config"></param>
         /// <param name="logger"></param>
-        public CertificateServices(IGroupRegistry registry, IKeyVault keyVault, 
+        public CertificateServices(IGroupRegistry registry, IKeyVaultService keyVault, 
             IPrivateKeyStore privateKeys, ICrlStore crls, ICrlFactory revoker,
             IApplicationCertificateFactory factory, IVaultConfig config, ILogger logger) {
 
@@ -86,10 +87,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
         /// <inheritdoc/>
         public async Task<X509CertificateCollectionModel> ListIssuerCACertificateVersionsAsync(
-            string groupId, bool? withCertificates, string nextPageLink, int? pageSize) {
+            string groupId, string nextPageLink, int? pageSize) {
             var group = await GetGroupAsync(groupId);
-            return await group.ListIssuerCACertificateVersionsAsync(withCertificates,
-                nextPageLink, pageSize);
+            return await group.ListIssuerCACertificateVersionsAsync(nextPageLink, pageSize);
         }
 
         /// <inheritdoc/>
@@ -228,7 +228,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             /// <param name="configuration"></param>
             /// <param name="logger"></param>
             /// <param name="serviceHost"></param>
-            public CertificateGroup(IKeyVault keyVault, IPrivateKeyStore privateKeys,
+            public CertificateGroup(IKeyVaultService keyVault, IPrivateKeyStore privateKeys,
                 ICrlStore crls, ICrlFactory revoker, IApplicationCertificateFactory factory,
                 CertificateGroupInfoModel configuration, ILogger logger, string serviceHost) {
                 _logger = logger;
@@ -314,7 +314,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
                     // update keys, ready back latest version
                     var result = await _keyVault.GetCertificateAsync(_configuration.Id);
-                    if (!result.Certificate.RawData.SequenceEqualsSafe(certificate.RawData)) {
+                    if (!result.Certificate.RawData.SequenceEqualsSafe(certificate.Certificate.RawData)) {
                         // something went utterly wrong...
                         return null;
                     }
@@ -440,7 +440,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 }
 
                 // Re-read crl
-                Crl = await _crls.GetCrlAsync(_configuration.Id, _caCertIdentifier.Certificate.Thumbprint);
+                Crl = await _crls.GetCrlAsync(_configuration.Id, 
+                    _caCertIdentifier.Certificate.Thumbprint);
                 return remainingCertificates;
             }
 
@@ -457,8 +458,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 ApplicationInfoModel application, string subjectName, string[] domainNames,
                 PrivateKeyFormat privateKeyFormat, string privateKeyPassword) {
 
-                var notBefore = DateTime.UtcNow.AddDays(-1);
-
                 // create public/private key pair
                 using (var keyPair = RSA.Create(_configuration.DefaultCertificateKeySize)) {
                     await LoadPublicAssetsAsync();
@@ -468,10 +467,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                         _serviceHost);
 
                     // Create new signed application certificate
-                    var signedCert = await _factory.CreateSignedCertificate(_caCertIdentifier, keyPair,
-                        application.ApplicationUri, application.GetApplicationName(), subjectName, 
-                        domainNames, _configuration.DefaultCertificateKeySize, notBefore,
-                        notBefore.AddMonths(_configuration.DefaultCertificateLifetime),
+                    var notBefore = DateTime.UtcNow.AddDays(-1);
+                    var signedCert = await _factory.CreateSignedCertificateAsync(_caCertIdentifier,
+                        keyPair, subjectName, 
+                        application.ApplicationUri, application.GetApplicationName(), domainNames, 
+                        _configuration.DefaultCertificateKeySize,
+                        notBefore, notBefore.AddMonths(_configuration.DefaultCertificateLifetime),
                         _configuration.DefaultCertificateHashSize, authorityInformationAccess);
 
                     // Create a PEM or PFX
@@ -500,7 +501,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 }
             }
 
-#if UNUSED
+#if !UNUSED
             /// <summary>
             /// Creates a new key pair as KeyVault certificate and signs it with KeyVault.
             /// </summary>
@@ -515,37 +516,44 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 PrivateKeyFormat privateKeyFormat, string privateKeyPassword) {
 
                 var notBefore = TrimmedNotBeforeDate();
+                var notAfter = notBefore.AddMonths(_configuration.DefaultCertificateLifetime);
                 await LoadPublicAssetsAsync();
 
                 var authorityInformationAccess = _configuration.GetAuthorityInformationAccessUrl(
                     _serviceHost);
 
                 // create new cert with KeyVault
-                var certWithPrivateKey = await _keyVault.CreateSignedKeyPairCertAsync(
-                    _configuration.Id, _caCertIdentifier,
-                    application.ApplicationUri, application.GetApplicationName(), subjectName,
-                    domainNames, notBefore,
-                    notBefore.AddMonths(_configuration.DefaultCertificateLifetime),
-                    _configuration.DefaultCertificateKeySize, _configuration.DefaultCertificateHashSize,
-                    authorityInformationAccess);
-
-                using (certWithPrivateKey) {
+                var certificateName = GetPrivateKeyId(Guid.NewGuid().ToString());
+                var certKeyPair = await _keyVault.CreateCertificateAsync(
+                    certificateName, subjectName, notBefore, notAfter,
+                    _configuration.DefaultCertificateKeySize, publicKey => 
+                        // Create signed application certificate
+                        _factory.CreateSignedCertificateAsync(_caCertIdentifier, publicKey,
+                            subjectName, application.ApplicationUri,
+                            application.GetApplicationName(), domainNames,
+                            _configuration.DefaultCertificateKeySize, notBefore, notAfter,
+                            _configuration.DefaultCertificateHashSize, authorityInformationAccess)
+                    );
+                if (certKeyPair?.Certificate == null) {
+                    throw new CryptographicUnexpectedOperationException("Failed to create cert");
+                }
+                using (certKeyPair.Certificate) {
                     byte[] privateKey;
                     switch (privateKeyFormat) {
                         case PrivateKeyFormat.PFX:
-                            privateKey = certWithPrivateKey.Export(X509ContentType.Pfx,
+                            privateKey = certKeyPair.Certificate.Export(X509ContentType.Pfx,
                                 privateKeyPassword);
                             break;
                         case PrivateKeyFormat.PEM:
                             privateKey = CertificateFactory.ExportPrivateKeyAsPEM(
-                                certWithPrivateKey);
+                                certKeyPair.Certificate);
                             break;
                         default:
                             throw new ArgumentNullException(nameof(privateKeyFormat),
                                 "Invalid private key format");
                     }
                     return new X509CertificatePrivateKeyPairModel {
-                        Certificate = new X509Certificate2(certWithPrivateKey.RawData).ToServiceModel(),
+                        Certificate = new X509Certificate2(certKeyPair.Certificate.RawData).ToServiceModel(),
                         PrivateKeyFormat = privateKeyFormat,
                         PrivateKey = privateKey
                     };
@@ -564,7 +572,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             public async Task ImportPrivateKeyAsync(string requestId, byte[] privateKey,
                 PrivateKeyFormat privateKeyFormat, CancellationToken ct = default) {
                 await _privateKeys.ImportKeyAsync(
-                    GetPrivateKeyId(requestId), privateKey, privateKeyFormat, ct);
+                    GetPrivateKeyId(requestId), privateKey, (PrivateKeyEncoding)privateKeyFormat, ct);
             }
 
             /// <summary>
@@ -577,7 +585,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             public async Task<byte[]> GetPrivateKeyAsync(string requestId,
                 PrivateKeyFormat privateKeyFormat, CancellationToken ct = default) {
                 return await _privateKeys.GetKeyAsync(GetPrivateKeyId(requestId),
-                    privateKeyFormat, ct);
+                    (PrivateKeyEncoding)privateKeyFormat, ct);
             }
 
             /// <summary>
@@ -635,11 +643,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
                 // Create application certificate
                 var publicKey = info.SubjectPublicKeyInfo.GetRSAPublicKey();
-                return await _factory.CreateSignedCertificate(_caCertIdentifier,
-                    publicKey, application.ApplicationUri, application.GetApplicationName(),
-                    info.Subject.ToString(), domainNames,
+                return await _factory.CreateSignedCertificateAsync(_caCertIdentifier,
+                    publicKey, info.Subject.ToString(), application.ApplicationUri,
+                    application.GetApplicationName(), domainNames,
                     _configuration.DefaultCertificateKeySize, notBefore,
-                    notBefore.AddMonths(_configuration.DefaultCertificateLifetime), _configuration.DefaultCertificateHashSize,
+                    notBefore.AddMonths(_configuration.DefaultCertificateLifetime), 
+                    _configuration.DefaultCertificateHashSize,
                     _configuration.GetAuthorityInformationAccessUrl(_serviceHost));
             }
 
@@ -677,17 +686,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             /// <summary>
             /// List certificate versions
             /// </summary>
-            /// <param name="withCertificates"></param>
             /// <param name="nextPageLink"></param>
             /// <param name="pageSize"></param>
             /// <returns></returns>
             public async Task<X509CertificateCollectionModel> ListIssuerCACertificateVersionsAsync(
-                bool? withCertificates, string nextPageLink, int? pageSize) {
+                string nextPageLink, int? pageSize) {
                 var (result, nextLink) = await _keyVault.QueryCertificatesAsync(
                     _configuration.Id, null, nextPageLink, pageSize);
-                if (withCertificates ?? false) {
-                    // TODO: implement withCertificates
-                }
                 return result.ToServiceModel(nextLink);
             }
 
@@ -764,7 +769,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             private readonly IApplicationCertificateFactory _factory;
             private readonly ICrlFactory _revoker;
             private readonly ILogger _logger;
-            private readonly IKeyVault _keyVault;
+            private readonly IKeyVaultService _keyVault;
             private readonly string _serviceHost;
             private readonly CertificateGroupInfoModel _configuration;
             private readonly IPrivateKeyStore _privateKeys;
@@ -773,7 +778,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         private readonly IVaultConfig _config;
-        private readonly IKeyVault _keyVault;
+        private readonly IKeyVaultService _keyVault;
         private readonly ICrlStore _crls;
         private readonly ICrlFactory _revoker;
         private readonly IApplicationCertificateFactory _factory;
