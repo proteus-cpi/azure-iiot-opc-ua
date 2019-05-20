@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     /// <summary>
     /// Cosmos db certificate request management workflow service
     /// </summary>
-    public sealed class CertificateAuthority : ICertificateAuthority,
+    public sealed class CertificateManager : ICertificateManager,
         IRequestManagement, IApplicationChangeListener {
 
         /// <summary>
@@ -36,8 +36,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="groups"></param>
         /// <param name="db"></param>
         /// <param name="logger"></param>
-        public CertificateAuthority(IApplicationRegistry registry,
-            IGroupServices groups, IItemContainerFactory db,
+        public CertificateManager(IApplicationRegistry registry,
+            ICertificateDirectory groups, IItemContainerFactory db,
             ILogger logger) {
 
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
@@ -53,7 +53,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<string> SubmitSigningRequestAsync(
+        public async Task<string> StartSigningRequestAsync(
             SigningRequestModel request, string authorityId) {
             if (request == null) {
                 throw new ArgumentNullException(nameof(request));
@@ -99,7 +99,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<string> SubmitNewKeyPairRequestAsync(
+        public async Task<string> StartNewKeyPairRequestAsync(
             NewKeyPairRequestModel request, string authorityId) {
 
             if (request == null) {
@@ -216,7 +216,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 X509CertificateModel certificate;
                 if (request.SigningRequest != null) {
                     try {
-                        certificate = await _groups.ProcessSigningRequestAsync(
+                        certificate = await _groups.StartSigningRequestAsync(
                             request.CertificateGroupId, registration.Application.ApplicationUri,
                             request.SigningRequest);
                         request.Certificate = certificate.ToRawData();
@@ -236,7 +236,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 else {
                     X509CertificatePrivateKeyPairModel newKeyPair;
                     try {
-                        newKeyPair = await _groups.ProcessNewKeyPairRequestAsync(
+                        newKeyPair = await _groups.StartNewKeyPairRequestAsync(
                             request.CertificateGroupId,
                             requestId,
                             registration.Application.ApplicationUri,
@@ -569,7 +569,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<FetchCertificateRequestResultModel> FetchResultAsync(string requestId) {
+        public async Task<FinishCertificateRequestResultModel> FinishRequestAsync(string requestId) {
             if (string.IsNullOrEmpty(requestId)) {
                 throw new ArgumentNullException(nameof(requestId), "The request id must be provided");
             }
@@ -585,7 +585,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 case CertificateRequestState.Revoked:
                 case CertificateRequestState.Deleted:
                 case CertificateRequestState.Removed:
-                    return new FetchCertificateRequestResultModel {
+                    return new FinishCertificateRequestResultModel {
                         Request = new CertificateRequestRecordModel {
                             State = document.Value.CertificateRequestState,
                             ApplicationId = document.Value.ApplicationId,
@@ -616,7 +616,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     privateKey = null;
                 }
             }
-            return new FetchCertificateRequestResultModel {
+            return new FinishCertificateRequestResultModel {
                 Request = document.Value.ToServiceModel(),
                 SignedCertificate = document.Value.Certificate,
                 PrivateKey = privateKey,
@@ -731,7 +731,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         private readonly IApplicationRegistry _registry;
-        private readonly IGroupServices _groups;
+        private readonly ICertificateDirectory _groups;
         private readonly ILogger _logger;
         private readonly IDocuments _requests;
         private readonly IContainerIndex _index;

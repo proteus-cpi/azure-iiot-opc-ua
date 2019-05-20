@@ -122,7 +122,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 var groups = await _groupRegistry.ListGroupIdsAsync();
                 foreach (var group in groups.Groups) {
                     var applicationId = application.Model.ApplicationId;
-                    var requestId = await _ca.SubmitNewKeyPairRequestAsync(new NewKeyPairRequestModel {
+                    var requestId = await _ca.StartNewKeyPairRequestAsync(new NewKeyPairRequestModel {
                         ApplicationId = applicationId,
                         CertificateGroupId = group,
                         SubjectName = application.Subject,
@@ -176,7 +176,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     var csr = CertificateFactory.CreateSigningRequest(
                         csrCertificate,
                         application.DomainNames);
-                    var requestId = await _ca.SubmitSigningRequestAsync(new SigningRequestModel {
+                    var requestId = await _ca.StartSigningRequestAsync(new SigningRequestModel {
                             ApplicationId = applicationId,
                             CertificateGroupId = group,
                             CertificateRequest = csr,
@@ -452,10 +452,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     var appModel = application.Model;
                     if (purged) {
                         await Assert.ThrowsAsync<ResourceNotFoundException>(
-                            () => _ca.FetchResultAsync(requestId));
+                            () => _ca.FinishRequestAsync(requestId));
                         continue;
                     }
-                    var fetchResult = await _ca.FetchResultAsync(requestId);
+                    var fetchResult = await _ca.FinishRequestAsync(requestId);
                     Assert.Equal(requestId, fetchResult.Request.RequestId);
                     Assert.Equal(application.Model.ApplicationId, fetchResult.Request.ApplicationId);
                     if (fetchResult.Request.State == CertificateRequestState.Approved ||
@@ -494,9 +494,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         private readonly ILogger _logger;
         private readonly IApplicationRegistry2 _applicationsDatabase;
         private readonly IGroupRegistry _groupRegistry;
-        private readonly IGroupServices _groupServices;
+        private readonly ICertificateDirectory _groupServices;
         private readonly IRequestManagement _requests;
-        private readonly ICertificateAuthority _ca;
+        private readonly ICertificateManager _ca;
         private readonly IList<ApplicationTestData> _applicationTestSet;
         private readonly RandomSource _randomSource;
     }

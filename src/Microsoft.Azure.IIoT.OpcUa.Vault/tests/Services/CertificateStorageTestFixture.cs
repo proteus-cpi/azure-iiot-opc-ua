@@ -28,7 +28,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
         public ApplicationTestDataGenerator RandomGenerator { get; set; }
         public GroupDatabase Registry { get; set; }
-        public CertificateServices Services { get; set; }
+        public CertificateDirectory Services { get; set; }
         public bool KeyVaultInitOk { get; set; }
         public string GroupId { get; }
 
@@ -56,7 +56,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 GroupId = Registry.CreateGroupAsync(new CertificateGroupCreateRequestModel {
                     Name = "GroupTestIssuerCA" + timeid.ToString(),
                     SubjectName = "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT",
-                    CertificateType = CertificateType.RsaSha256ApplicationCertificateType
+                    CertificateType = CertificateType.ApplicationInstanceCertificateType
                 }).Result.Id;
 
                 // Create client
@@ -65,12 +65,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     new AppAuthenticationProvider(_clientConfig), _logger);
 
                 // Create services
-                Services = new CertificateServices(Registry, 
+                Services = new CertificateDirectory(Registry, 
                     _keyVaultServiceClient, 
                     _keyVaultServiceClient, 
                     new KeyValueCrlStore(_keyVaultServiceClient, _logger),
                     new CertificateRevoker(_keyVaultServiceClient, _logger),
-                    new ApplicationCertificateFactory(_keyVaultServiceClient, _logger),
+                    new CertificateFactory(_keyVaultServiceClient, _logger),
                     _serviceConfig, 
                     _logger);
 

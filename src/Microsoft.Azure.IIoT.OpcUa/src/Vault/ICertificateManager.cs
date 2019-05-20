@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     /// <summary>
     /// Represents the interface to a certificate authority
     /// </summary>
-    public interface ICertificateAuthority {
+    public interface ICertificateManager {
 
         /// <summary>
         /// Create a new certificate request with CSR.
@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// request
         /// </param>
         /// <returns></returns>
-        Task<string> SubmitSigningRequestAsync(
+        Task<string> StartSigningRequestAsync(
             SigningRequestModel request, string authorityId);
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="authorityId">The authority Id adding the
         /// request</param>
         /// <returns>The request Id</returns>
-        Task<string> SubmitNewKeyPairRequestAsync(
+        Task<string> StartNewKeyPairRequestAsync(
             NewKeyPairRequestModel request, string authorityId);
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// </summary>
         /// <param name="requestId">The request Id</param>
         /// <returns>The request</returns>
-        Task<FetchCertificateRequestResultModel> FetchResultAsync(
+        Task<FinishCertificateRequestResultModel> FinishRequestAsync(
             string requestId);
     }
 }

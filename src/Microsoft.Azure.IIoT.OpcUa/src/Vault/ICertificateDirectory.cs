@@ -8,9 +8,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Certificate group services
+    /// Certificate directory services
     /// </summary>
-    public interface IGroupServices {
+    public interface ICertificateDirectory {
 
         /// <summary>
         /// Get all Issuer certificate versions in a pageable call.
@@ -70,7 +70,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="applicationUri">The application Uri</param>
         /// <param name="certificateRequest">The binary CSR</param>
         /// <returns></returns>
-        Task<X509CertificateModel> ProcessSigningRequestAsync(
+        Task<X509CertificateModel> StartSigningRequestAsync(
             string groupId, string applicationUri, byte[] certificateRequest);
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
         /// <param name="password">The password for the private key
         /// </param>
         /// <returns>The new key pair</returns>
-        Task<X509CertificatePrivateKeyPairModel> ProcessNewKeyPairRequestAsync(
+        Task<X509CertificatePrivateKeyPairModel> StartNewKeyPairRequestAsync(
             string groupId, string requestId, string applicationUri,
             string subjectName, string[] domainNames, PrivateKeyFormat privateKeyFormat,
             string password);

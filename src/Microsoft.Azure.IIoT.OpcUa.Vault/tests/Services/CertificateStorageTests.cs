@@ -142,7 +142,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var group in groups.Groups) {
                 var randomApp = _fixture.RandomGenerator.RandomApplicationTestData();
                 var requestId = Guid.NewGuid();
-                var newKeyPair = await _services.ProcessNewKeyPairRequestAsync(
+                var newKeyPair = await _services.StartNewKeyPairRequestAsync(
                     group,
                     requestId.ToString(),
                     randomApp.ApplicationRecord.ApplicationUri,
@@ -200,7 +200,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 var certificateRequest = CertificateFactory.CreateSigningRequest(
                     csrCertificate, randomApp.DomainNames);
 
-                var newCert = await _services.ProcessSigningRequestAsync(
+                var newCert = await _services.StartSigningRequestAsync(
                     group,
                     randomApp.ApplicationRecord.ApplicationUri,
                     certificateRequest);
@@ -236,7 +236,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var group in groups.Groups) {
                 var randomApp = _fixture.RandomGenerator.RandomApplicationTestData();
                 var requestId = Guid.NewGuid();
-                var newCert = await _services.ProcessNewKeyPairRequestAsync(
+                var newCert = await _services.StartNewKeyPairRequestAsync(
                     group,
                     requestId.ToString(),
                     randomApp.ApplicationRecord.ApplicationUri,
@@ -278,7 +278,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             foreach (var group in groups.Groups) {
                 var randomApp = _fixture.RandomGenerator.RandomApplicationTestData();
                 var requestId = Guid.NewGuid();
-                var newKeyPair = await _services.ProcessNewKeyPairRequestAsync(
+                var newKeyPair = await _services.StartNewKeyPairRequestAsync(
                     group,
                     requestId.ToString(),
                     randomApp.ApplicationRecord.ApplicationUri,
@@ -482,7 +482,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
         }
 
         private readonly CertificateStorageTestFixture _fixture;
-        private readonly IGroupServices _services;
+        private readonly ICertificateDirectory _services;
         private readonly IGroupRegistry _registry;
         private readonly ILogger _logger;
     }

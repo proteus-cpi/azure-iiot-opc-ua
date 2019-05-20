@@ -16,17 +16,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Application certificate
         /// </summary>
-        ApplicationCertificateType,
-
-        /// <summary>
-        /// Application certificate type
-        /// </summary>
-        RsaSha256ApplicationCertificateType,
-
-        /// <summary>
-        /// Applciation certificate type
-        /// </summary>
-        RsaMinApplicationCertificateType,
+        ApplicationInstanceCertificateType,
 
         /// <summary>
         /// Https certificate type

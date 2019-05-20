@@ -14,7 +14,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
 
         /// <summary>
         /// Create a new certificate group with default settings.
-        /// Default settings depend on certificate type.
+        /// Default settings depend on the chosen certificate type.
         /// </summary>
         /// <param name="request">Create request</param>
         Task<CertificateGroupCreateResultModel> CreateGroupAsync(

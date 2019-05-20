@@ -22,14 +22,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     /// <summary>
     /// OPC UA Application certificate factory
     /// </summary>
-    public class ApplicationCertificateFactory : IApplicationCertificateFactory {
+    public class CertificateFactory : IApplicationCertificateFactory {
 
         /// <summary>
         /// Create factory
         /// </summary>
         /// <param name="signer"></param>
         /// <param name="logger"></param>
-        public ApplicationCertificateFactory(IDigestSigner signer, ILogger logger) {
+        public CertificateFactory(IDigestSigner signer, ILogger logger) {
             _signer = signer ?? throw new ArgumentNullException(nameof(signer));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }

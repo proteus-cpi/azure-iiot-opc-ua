@@ -23,7 +23,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     /// <summary>
     /// Key Vault Certificate Group services
     /// </summary>
-    public sealed class CertificateServices : IGroupServices, IStartable {
+    public sealed class CertificateDirectory : ICertificateDirectory, IStartable {
 
         /// <summary>
         /// Create services
@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="factory"></param>
         /// <param name="config"></param>
         /// <param name="logger"></param>
-        public CertificateServices(IGroupRegistry registry, IKeyVaultService keyVault, 
+        public CertificateDirectory(IGroupRegistry registry, IKeyVaultService keyVault, 
             IPrivateKeyStore privateKeys, ICrlStore crls, ICertificateRevoker revoker,
             IApplicationCertificateFactory factory, IVaultConfig config, ILogger logger) {
 
@@ -56,7 +56,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<X509CertificateModel> ProcessSigningRequestAsync(
+        public async Task<X509CertificateModel> StartSigningRequestAsync(
             string groupId, string applicationUri, byte[] certificateRequest) {
             var group = await GetGroupAsync(groupId);
 
@@ -68,7 +68,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public async Task<X509CertificatePrivateKeyPairModel> ProcessNewKeyPairRequestAsync(
+        public async Task<X509CertificatePrivateKeyPairModel> StartNewKeyPairRequestAsync(
             string groupId, string requestId, string applicationUri, string subjectName,
             string[] domainNames, PrivateKeyFormat privateKeyFormat,
             string privateKeyPassword) {
@@ -492,7 +492,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                                     privateKeyPassword);
                                 break;
                             case PrivateKeyFormat.PEM:
-                                privateKey = CertificateFactory.ExportPrivateKeyAsPEM(
+                                privateKey = global::CertificateFactory.ExportPrivateKeyAsPEM(
                                     certWithPrivateKey);
                                 break;
                             default:
@@ -552,7 +552,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                                 privateKeyPassword);
                             break;
                         case PrivateKeyFormat.PEM:
-                            privateKey = CertificateFactory.ExportPrivateKeyAsPEM(
+                            privateKey = global::CertificateFactory.ExportPrivateKeyAsPEM(
                                 certKeyPair.Certificate);
                             break;
                         default:
