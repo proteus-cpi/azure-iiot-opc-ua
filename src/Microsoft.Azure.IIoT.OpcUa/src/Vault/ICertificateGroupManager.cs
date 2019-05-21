@@ -8,9 +8,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Certificate group registry
+    /// Certificate group manager - create and delete certificate
+    /// authorities (i.e. groups) that can be used to create new 
+    /// certificates.
     /// </summary>
-    public interface IGroupRegistry {
+    public interface ICertificateGroupManager {
 
         /// <summary>
         /// Create a new certificate group with default settings.

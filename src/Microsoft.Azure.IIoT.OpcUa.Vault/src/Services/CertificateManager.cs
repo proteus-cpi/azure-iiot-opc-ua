@@ -671,13 +671,32 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         }
 
         /// <inheritdoc/>
-        public Task OnEventAsync(ApplicationEvent eventType, ApplicationInfoModel application) {
-            if (eventType == ApplicationEvent.Unregistered) {
-                // When the application is deleted, we shall delete all its requests
-                return DeleteAllApplicationRequests(application.ApplicationId);
-            }
-            return Task.CompletedTask;
-        }
+        public Task OnApplicationNewAsync(ApplicationInfoModel application) =>
+            Task.CompletedTask;
+
+        /// <inheritdoc/>
+        public Task OnApplicationUpdatedAsync(ApplicationInfoModel application) => 
+            Task.CompletedTask;
+
+        /// <inheritdoc/>
+        public Task OnApplicationApprovedAsync(ApplicationInfoModel application) => 
+            Task.CompletedTask;
+
+        /// <inheritdoc/>
+        public Task OnApplicationRejectedAsync(ApplicationInfoModel application) => 
+            Task.CompletedTask;
+
+        /// <inheritdoc/>
+        public Task OnApplicationEnabledAsync(ApplicationInfoModel application) => 
+            Task.CompletedTask;
+
+        /// <inheritdoc/>
+        public Task OnApplicationDisabledAsync(ApplicationInfoModel application) => 
+            Task.CompletedTask;
+
+        /// <inheritdoc/>
+        public Task OnApplicationDeletedAsync(ApplicationInfoModel application) =>
+            DeleteAllApplicationRequests(application.ApplicationId);
 
         /// <summary>
         /// Create query string from parameters

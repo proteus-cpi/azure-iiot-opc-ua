@@ -53,10 +53,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
             // enforce proper formatting for the subject name string
             model.SubjectName = string.Join(", ", subjectList);
             switch (model.CertificateType) {
-                case CertificateType.ApplicationInstanceCertificateType:
+                case CertificateType.ApplicationInstanceCertificate:
                     break;
-                case CertificateType.HttpsCertificateType:
-                case CertificateType.UserCredentialCertificateType:
+                case CertificateType.HttpsCertificate:
+                case CertificateType.UserCredentialCertificate:
                     // only allow specific cert types for now
                     throw new NotSupportedException(
                         "Certificate type not supported");

@@ -20,9 +20,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
         /// <param name="supervisorId"></param>
         /// <param name="result"></param>
         /// <param name="events"></param>
-        /// <param name="hardDelete"></param>
         /// <returns></returns>
         Task ProcessDiscoveryAsync(string supervisorId, DiscoveryResultModel result,
-            IEnumerable<DiscoveryEventModel> events, bool hardDelete);
+            IEnumerable<DiscoveryEventModel> events);
     }
 }

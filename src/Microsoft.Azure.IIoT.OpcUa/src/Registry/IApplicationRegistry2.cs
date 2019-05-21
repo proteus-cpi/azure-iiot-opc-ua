@@ -5,6 +5,7 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -21,7 +22,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
         Task DisableApplicationAsync(string applicationId);
 
         /// <summary>
-        /// Enable a potentially disabled application.
+        /// Re-enable a potentially disabled application.
         /// </summary>
         /// <param name="applicationId">The applicationId</param>
         /// <returns></returns>
@@ -36,5 +37,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
         /// <returns></returns>
         Task<QueryApplicationsByIdResultModel> QueryApplicationsByIdAsync(
             QueryApplicationsByIdRequestModel request);
+
+        /// <summary>
+        /// Merge applications and endpoints
+        /// </summary>
+        /// <param name="siteId"></param>
+        /// <param name="supervisorId"></param>
+        /// <param name="result"></param>
+        /// <param name="events"></param>
+        /// <returns></returns>
+        Task ProcessDiscoveryEventsAsync(string siteId, string supervisorId,
+            DiscoveryResultModel result, IEnumerable<DiscoveryEventModel> events);
     }
 }

@@ -120,7 +120,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Handlers {
                     try {
                         // Process discoveries
                         await _registry.ProcessDiscoveryAsync(supervisorId,
-                            queue.Result, queue.Events, false);
+                            queue.Result, queue.Events);
                     }
                     catch (Exception ex) {
                         _logger.Error(ex,

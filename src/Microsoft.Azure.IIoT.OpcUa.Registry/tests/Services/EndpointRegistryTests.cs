@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var t = service.GetEndpointAsync("test", false);
@@ -48,7 +48,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var result = service.GetEndpointAsync(id, false).Result;
@@ -64,7 +64,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var records = service.ListEndpointsAsync(null, false, null).Result;
@@ -80,7 +80,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var records = service.QueryEndpointsAsync(null, false, null).Result;
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var records = service.QueryEndpointsAsync(new EndpointRegistrationQueryModel {
@@ -116,7 +116,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var records = service.QueryEndpointsAsync(new EndpointRegistrationQueryModel {
@@ -135,7 +135,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var records = service.QueryEndpointsAsync(new EndpointRegistrationQueryModel {
@@ -153,7 +153,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             var count = endpoints.Count(x => x.IsTwinConnected());
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var records = service.QueryEndpointsAsync(new EndpointRegistrationQueryModel {
@@ -171,7 +171,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             var count = endpoints.Count(x => !x.IsTwinConnected());
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var records = service.QueryEndpointsAsync(new EndpointRegistrationQueryModel {
@@ -189,7 +189,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var records = service.QueryEndpointsAsync(new EndpointRegistrationQueryModel {
@@ -208,7 +208,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var records = service.QueryEndpointsAsync(new EndpointRegistrationQueryModel {
@@ -226,7 +226,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(devices));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<EndpointRegistry>();
 
                 // Run
                 var records = service.QueryEndpointsAsync(new EndpointRegistrationQueryModel {

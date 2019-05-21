@@ -56,7 +56,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 GroupId = Registry.CreateGroupAsync(new CertificateGroupCreateRequestModel {
                     Name = "GroupTestIssuerCA" + timeid.ToString(),
                     SubjectName = "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT",
-                    CertificateType = CertificateType.ApplicationInstanceCertificateType
+                    CertificateType = CertificateType.ApplicationInstanceCertificate
                 }).Result.Id;
 
                 // Create client

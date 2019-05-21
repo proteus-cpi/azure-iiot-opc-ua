@@ -28,7 +28,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
     public class CertificateAuthorityTestFixture : IDisposable {
         public IApplicationRegistry2 ApplicationsDatabase { get; set; }
-        public IGroupRegistry Registry { get; set; }
+        public ICertificateGroupManager Registry { get; set; }
         public ICertificateDirectory Services { get; set; }
         public ICertificateManager CertificateAuthority { get; set; }
         public IRequestManagement RequestManagement { get; set; }
@@ -60,7 +60,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 _groupId = Registry.CreateGroupAsync(new Models.CertificateGroupCreateRequestModel {
                     Name = "CertReqConfig" + timeid.ToString(),
                     SubjectName = "CN=OPC Vault Cert Request Test CA, O=Microsoft, OU=Azure IoT",
-                    CertificateType = Models.CertificateType.ApplicationInstanceCertificateType
+                    CertificateType = Models.CertificateType.ApplicationInstanceCertificate
                 }).Result.Id;
 
                 // Create client

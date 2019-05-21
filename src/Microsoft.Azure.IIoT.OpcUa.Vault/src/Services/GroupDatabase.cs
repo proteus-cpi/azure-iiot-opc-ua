@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     /// <summary>
     /// Certificate Group database
     /// </summary>
-    public sealed class GroupDatabase : IGroupRegistry {
+    public sealed class GroupDatabase : ICertificateGroupManager {
 
         /// <summary>
         /// Create groups database

@@ -8,7 +8,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
     using Newtonsoft.Json.Converters;
 
     /// <summary>
-    /// Certificate types
+    /// Certificate and trust list types
     /// </summary>
     [JsonConverter(typeof(StringEnumConverter))]
     public enum CertificateType {
@@ -16,16 +16,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Models {
         /// <summary>
         /// Application certificate
         /// </summary>
-        ApplicationInstanceCertificateType,
+        ApplicationInstanceCertificate,
 
         /// <summary>
         /// Https certificate type
         /// </summary>
-        HttpsCertificateType,
+        HttpsCertificate,
 
         /// <summary>
         /// User credential certificate type
         /// </summary>
-        UserCredentialCertificateType,
+        UserCredentialCertificate
     }
 }

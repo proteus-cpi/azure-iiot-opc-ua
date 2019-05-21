@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="factory"></param>
         /// <param name="config"></param>
         /// <param name="logger"></param>
-        public CertificateDirectory(IGroupRegistry registry, IKeyVaultService keyVault, 
+        public CertificateDirectory(ICertificateGroupManager registry, IKeyVaultService keyVault, 
             IPrivateKeyStore privateKeys, ICrlStore crls, ICertificateRevoker revoker,
             IApplicationCertificateFactory factory, IVaultConfig config, ILogger logger) {
 
@@ -791,6 +791,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         private readonly IApplicationCertificateFactory _factory;
         private readonly IPrivateKeyStore _privateKeys;
         private readonly ILogger _logger;
-        private readonly IGroupRegistry _registry;
+        private readonly ICertificateGroupManager _registry;
     }
 }

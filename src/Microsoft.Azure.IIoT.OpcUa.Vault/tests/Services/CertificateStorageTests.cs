@@ -483,7 +483,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
 
         private readonly CertificateStorageTestFixture _fixture;
         private readonly ICertificateDirectory _services;
-        private readonly IGroupRegistry _registry;
+        private readonly ICertificateGroupManager _registry;
         private readonly ILogger _logger;
     }
 }

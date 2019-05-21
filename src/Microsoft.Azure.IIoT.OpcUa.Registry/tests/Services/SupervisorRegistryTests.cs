@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(modules));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<SupervisorRegistry>();
 
                 // Run
                 var t = service.GetSupervisorAsync("test", false);
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(modules));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<SupervisorRegistry>();
 
                 // Run
                 var result = service.GetSupervisorAsync(supervisors.First().Id, false).Result;
@@ -60,7 +60,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(modules));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<SupervisorRegistry>();
 
                 // Run
                 var records = service.ListSupervisorsAsync(null, false, null).Result;
@@ -76,7 +76,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(modules));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<SupervisorRegistry>();
 
                 // Run
                 var records = service.QuerySupervisorsAsync(null, false, null).Result;
@@ -92,7 +92,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(modules));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<SupervisorRegistry>();
 
                 // Run
                 var records = service.QuerySupervisorsAsync(new SupervisorQueryModel {
@@ -110,7 +110,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(modules));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<SupervisorRegistry>();
 
                 // Run
                 var records = service.QuerySupervisorsAsync(new SupervisorQueryModel {
@@ -128,7 +128,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             using (var mock = AutoMock.GetLoose()) {
                 mock.Provide<IIoTHubTwinServices>(new IoTHubServices(modules));
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<SupervisorRegistry>();
 
                 // Run
                 var records = service.QuerySupervisorsAsync(new SupervisorQueryModel {

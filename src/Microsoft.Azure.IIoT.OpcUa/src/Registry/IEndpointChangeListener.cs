@@ -8,17 +8,48 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Endpoint change listener
+    /// Notified when an endpoint configuration changes
     /// </summary>
     public interface IEndpointChangeListener {
 
         /// <summary>
-        /// Called when endpoint registry changes
+        /// New endpoint
         /// </summary>
-        /// <param name="eventType"></param>
         /// <param name="endpoint"></param>
         /// <returns></returns>
-        Task OnEventAsync(EndpointEvent eventType,
-            EndpointRegistrationModel endpoint);
+        Task OnEndpointNewAsync(
+            EndpointInfoModel endpoint);
+
+        /// <summary>
+        /// New endpoint
+        /// </summary>
+        /// <param name="endpoint"></param>
+        /// <returns></returns>
+        Task OnEndpointActivatedAsync(
+            EndpointInfoModel endpoint);
+
+        /// <summary>
+        /// New endpoint
+        /// </summary>
+        /// <param name="endpoint"></param>
+        /// <returns></returns>
+        Task OnEndpointDeactivatedAsync(
+            EndpointInfoModel endpoint);
+
+        /// <summary>
+        /// New endpoint
+        /// </summary>
+        /// <param name="endpoint"></param>
+        /// <returns></returns>
+        Task OnEndpointUpdatedAsync(
+            EndpointInfoModel endpoint);
+
+        /// <summary>
+        /// New endpoint
+        /// </summary>
+        /// <param name="endpoint"></param>
+        /// <returns></returns>
+        Task OnEndpointDeletedAsync(
+            EndpointInfoModel endpoint);
     }
 }

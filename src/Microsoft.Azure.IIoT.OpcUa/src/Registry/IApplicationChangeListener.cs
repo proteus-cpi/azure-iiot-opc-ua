@@ -13,12 +13,59 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     public interface IApplicationChangeListener {
 
         /// <summary>
-        /// Called when application state changes
+        /// Called when application is added
         /// </summary>
-        /// <param name="eventType"></param>
         /// <param name="application"></param>
         /// <returns></returns>
-        Task OnEventAsync(ApplicationEvent eventType,
+        Task OnApplicationNewAsync(
+            ApplicationInfoModel application);
+
+        /// <summary>
+        /// Called when application is updated
+        /// </summary>
+        /// <param name="application"></param>
+        /// <returns></returns>
+        Task OnApplicationUpdatedAsync(
+            ApplicationInfoModel application);
+
+        /// <summary>
+        /// Called when application is activated
+        /// </summary>
+        /// <param name="application"></param>
+        /// <returns></returns>
+        Task OnApplicationApprovedAsync(
+            ApplicationInfoModel application);
+
+        /// <summary>
+        /// Called when application is rejected
+        /// </summary>
+        /// <param name="application"></param>
+        /// <returns></returns>
+        Task OnApplicationRejectedAsync(
+            ApplicationInfoModel application);
+
+        /// <summary>
+        /// Called when application is enabled
+        /// </summary>
+        /// <param name="application"></param>
+        /// <returns></returns>
+        Task OnApplicationEnabledAsync(
+            ApplicationInfoModel application);
+
+        /// <summary>
+        /// Called when application is disabled
+        /// </summary>
+        /// <param name="application"></param>
+        /// <returns></returns>
+        Task OnApplicationDisabledAsync(
+            ApplicationInfoModel application);
+
+        /// <summary>
+        /// Called when application is unregistered
+        /// </summary>
+        /// <param name="application"></param>
+        /// <returns></returns>
+        Task OnApplicationDeletedAsync(
             ApplicationInfoModel application);
     }
 }

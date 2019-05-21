@@ -41,10 +41,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
                 Assert.Empty(registry.Devices);
@@ -59,10 +59,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
                 Assert.True(ApplicationsIn(registry).IsSameAs(existing));
@@ -77,10 +77,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
                 Assert.True(ApplicationsIn(registry).IsSameAs(created));
@@ -96,10 +96,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                var t = service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false);
+                var t = service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found);
 
                 // Assert
                 Assert.NotNull(t.Exception);
@@ -116,10 +116,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
                 Assert.True(ApplicationsIn(registry).IsSameAs(created));
@@ -144,10 +144,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
                 Assert.True(ApplicationsIn(registry).IsSameAs(existing));
@@ -174,10 +174,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
                 Assert.True(ApplicationsIn(registry).IsSameAs(existing));
@@ -203,10 +203,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
                 var inreg = ApplicationsIn(registry);
@@ -239,10 +239,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
                 var inreg = ApplicationsIn(registry);
@@ -274,10 +274,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
 
@@ -298,10 +298,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
                 var inreg = ApplicationsIn(registry);
@@ -327,10 +327,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             using (var mock = AutoMock.GetLoose()) {
                 // Setup
                 mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
+                var service = mock.Create<DiscoveryProcessor>();
 
                 // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, false).Wait();
+                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found).Wait();
 
                 // Assert
                 var inreg = ApplicationsIn(registry);
@@ -338,29 +338,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                 Assert.Equal(count, registry.Devices.Count());
                 var disabled = registry.Devices.Count(d => (bool?)d.Twin.Tags["IsDisabled"] == true);
                 Assert.Equal(count - (inreg.Count * 2), disabled);
-            }
-        }
-
-        [Fact]
-        public void ProcessDiscoveryWithNoResultsAndExistingAndHardDelete() {
-            CreateFixtures(out var site, out var super, out var existing,
-                out var found, out var registry);
-
-            // Found nothing
-            found = new List<DiscoveryEventModel>();
-            var count = registry.Devices.Count();
-            // Assert there is still the same content as originally but now disabled
-
-            using (var mock = AutoMock.GetLoose()) {
-                // Setup
-                mock.Provide<IIoTHubTwinServices>(registry);
-                var service = mock.Create<RegistryServices>();
-
-                // Run
-                service.ProcessDiscoveryAsync(super, new DiscoveryResultModel(), found, true).Wait();
-
-                // Assert
-                Assert.Empty(ApplicationsIn(registry));
             }
         }
 

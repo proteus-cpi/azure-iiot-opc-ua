@@ -65,13 +65,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
                 var result = await _applications.AddAsync(document);
 
-                await SendEventAsync(ApplicationEvent.New, result.Value.ToServiceModel());
-                // TODO:  Add authority id from context
-                await SendEventAsync(ApplicationEvent.Enabled, result.Value.ToServiceModel());
-                // TODO:  Add authority id from context
+                var app = result.Value.ToServiceModel();
+                await NotifyAllAsync(l => l.OnApplicationNewAsync(app)); // TODO:  Add authority id from context
+                await NotifyAllAsync(l => l.OnApplicationEnabledAsync(app)); // TODO:  Add authority id from context
                 if (autoApprove) {
-                    await SendEventAsync(ApplicationEvent.Approved,
-                        result.Value.ToServiceModel()); // TODO:  Add authority id from context
+                    await NotifyAllAsync(l => l.OnApplicationApprovedAsync(app)); // TODO:  Add authority id from context
                 }
 
                 return new ApplicationRegistrationResultModel {
@@ -104,8 +102,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 application.Patch(request);
                 try {
                     var result = await _applications.ReplaceAsync(document, application);
-                    await SendEventAsync(ApplicationEvent.Updated, result.Value.ToServiceModel());
-                    // TODO:  Add authority id from context
+                    var app = result.Value.ToServiceModel();
+                    await NotifyAllAsync(l => l.OnApplicationUpdatedAsync(app)); // TODO:  Add authority id from context
                     break;
                 }
                 catch (ResourceOutOfDateException) {
@@ -118,14 +116,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         public async Task ApproveApplicationAsync(string applicationId, bool force) {
             var app = await UpdateApplicationStateAsync(applicationId, ApplicationState.Approved,
                 s => s == ApplicationState.New || force);
-            await SendEventAsync(ApplicationEvent.Approved, app); // TODO:  Add authority id from context
+            await NotifyAllAsync(l => l.OnApplicationApprovedAsync(app)); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
         public async Task RejectApplicationAsync(string applicationId, bool force) {
             var app = await UpdateApplicationStateAsync(applicationId, ApplicationState.Rejected,
                 s => s == ApplicationState.New || force);
-            await SendEventAsync(ApplicationEvent.Approved, app); // TODO:  Add authority id from context
+            await NotifyAllAsync(l => l.OnApplicationRejectedAsync(app)); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
@@ -145,9 +143,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     // Try delete
                     await _applications.DeleteAsync(document);
 
-                    // Success -- Notify others to clean upo
-                    await SendEventAsync(ApplicationEvent.Unregistered,
-                        document.Value.ToServiceModel()); // TODO:  Add authority id from context
+                    // Success -- Notify others to clean up
+                    var app = document.Value.ToServiceModel();
+                    await NotifyAllAsync(l => l.OnApplicationDeletedAsync(app)); // TODO:  Add authority id from context
 
                     // Try free record id
                     await Try.Async(() => _index.FreeAsync(document.Value.ID));
@@ -162,13 +160,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <inheritdoc/>
         public async Task DisableApplicationAsync(string applicationId) {
             var app = await UpdateEnabledDisabledAsync(applicationId, false);
-            await SendEventAsync(ApplicationEvent.Disabled, app); // TODO:  Add authority id from context
+            await NotifyAllAsync(l => l.OnApplicationDisabledAsync(app)); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
         public async Task EnableApplicationAsync(string applicationId) {
             var app = await UpdateEnabledDisabledAsync(applicationId, true);
-            await SendEventAsync(ApplicationEvent.Enabled, app); // TODO:  Add authority id from context
+            await NotifyAllAsync(l => l.OnApplicationEnabledAsync(app)); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
@@ -367,6 +365,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             };
         }
 
+        /// <inheritdoc/>
+        public Task ProcessDiscoveryEventsAsync(string siteId, string supervisorId, 
+            DiscoveryResultModel result, IEnumerable<DiscoveryEventModel> events) => 
+            throw new NotImplementedException();
+
         /// <summary>
         /// Helper to create a SQL query for CosmosDB.
         /// </summary>
@@ -498,12 +501,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <summary>
         /// Call listeners
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="application"></param>
+        /// <param name="evt"></param>
         /// <returns></returns>
-        private Task SendEventAsync(ApplicationEvent type, ApplicationInfoModel application) {
+        private Task NotifyAllAsync(Func<IApplicationChangeListener, Task> evt) {
             return Task
-                .WhenAll(_listeners.Select(l => l.OnEventAsync(type, application)).ToArray())
+                .WhenAll(_listeners.Select(l => evt(l)).ToArray())
                 .ContinueWith(t => Task.CompletedTask);
         }
 

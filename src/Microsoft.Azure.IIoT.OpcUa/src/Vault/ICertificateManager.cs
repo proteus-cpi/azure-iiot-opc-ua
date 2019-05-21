@@ -8,7 +8,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents the interface to a certificate authority
+    /// Represents a server side certificate manager
     /// </summary>
     public interface ICertificateManager {
 
