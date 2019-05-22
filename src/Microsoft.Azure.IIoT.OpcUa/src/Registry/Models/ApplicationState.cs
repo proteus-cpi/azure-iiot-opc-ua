@@ -14,12 +14,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Models {
     public enum ApplicationState {
 
         /// <summary>
-        /// New
+        /// Newly registered
         /// </summary>
         New,
 
         /// <summary>
-        /// Activated
+        /// Approved and ready to use
         /// </summary>
         Approved,
 

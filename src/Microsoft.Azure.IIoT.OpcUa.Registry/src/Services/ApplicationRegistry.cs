@@ -60,6 +60,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                     Capabilities = request.Capabilities,
                     GatewayServerUri = request.GatewayServerUri,
                     SiteId = request.SiteId,
+                    Created = new RegistryOperationModel {
+                        AuthorityId = null, // TODO: Add authority Id
+                        Time = DateTime.UtcNow
+                    },
                     HostAddresses = null,
                 });
 
@@ -80,15 +84,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         }
 
         /// <inheritdoc/>
-        public Task ApproveApplicationAsync(string applicationId, bool force) {
-            throw new NotImplementedException();
-            // await _broker.NotifyAllAsync(l => l.OnApplicationApprovedAsync(application)); // TODO:  Add authority id from context
+        public async Task ApproveApplicationAsync(string applicationId, bool force) {
+            var app = await UpdateApplicationStateAsync(applicationId, ApplicationState.Approved,
+                s => s == null || s == ApplicationState.New || force, null); // TODO: Add authority id
+            await _broker.NotifyAllAsync(l => l.OnApplicationApprovedAsync(app));
+            // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
-        public Task RejectApplicationAsync(string applicationId, bool force) {
-            throw new NotImplementedException();
-            // await _broker.NotifyAllAsync(l => l.OnApplicationRejectedAsync(application)); // TODO:  Add authority id from context
+        public async Task RejectApplicationAsync(string applicationId, bool force) {
+            var app = await UpdateApplicationStateAsync(applicationId, ApplicationState.Rejected,
+                s => s == null || s == ApplicationState.New || force, null); // TODO: Add authority id
+            await _broker.NotifyAllAsync(l => l.OnApplicationRejectedAsync(app));
+            // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
@@ -96,13 +104,17 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             while (true) {
                 try {
                     var registration = await GetApplicationRegistrationAsync(applicationId);
+                    var application = registration.ToServiceModel();
                     // Disable application
                     if (!(registration.IsDisabled ?? false)) {
+                        application.Updated = new RegistryOperationModel {
+                            AuthorityId = null, // TODO:  Add authority id from context
+                            Time = DateTime.UtcNow
+                        };
                         await _iothub.PatchAsync(ApplicationRegistration.Patch(
                             registration, ApplicationRegistration.FromServiceModel(
                                 registration.ToServiceModel(), true)));
                     }
-                    var application = registration.ToServiceModel();
                     await _broker.NotifyAllAsync(l => l.OnApplicationDisabledAsync(application));
                     // TODO:  Add authority id from context
                     break;
@@ -120,12 +132,19 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             while (true) {
                 try {
                     var registration = await GetApplicationRegistrationAsync(applicationId);
+                    var application = registration.ToServiceModel();
                     // Disable application
-                    if (registration.IsDisabled ?? false) { 
+                    if (registration.IsDisabled ?? false) {
+                        application.Updated = new RegistryOperationModel {
+                            AuthorityId = null, // TODO:  Add authority id from context
+                            Time = DateTime.UtcNow
+                        };
                         await _iothub.PatchAsync(ApplicationRegistration.Patch(
                             registration, ApplicationRegistration.FromServiceModel(
                                 registration.ToServiceModel(), true)));
                     }
+                    await _broker.NotifyAllAsync(l => l.OnApplicationEnabledAsync(application));
+                    // TODO:  Add authority id from context
                     break;
                 }
                 catch (ResourceOutOfDateException ex) {
@@ -186,6 +205,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                         patched.DiscoveryProfileUri = string.IsNullOrEmpty(request.DiscoveryProfileUri) ?
                             null : request.DiscoveryProfileUri;
                     }
+
+                    patched.Updated = new RegistryOperationModel {
+                        AuthorityId = null, // TODO:  Add authority id from context
+                        Time = DateTime.UtcNow
+                    };
 
                     // Patch
                     await _iothub.PatchAsync(ApplicationRegistration.Patch(
@@ -477,12 +501,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                         if (item.SupervisorId == supervisorId) {
                             if (!(item.IsDisabled ?? false)) {
                                 // Disable
+                                var application = item.ToServiceModel();
                                 if (!(item.IsDisabled ?? false)) {
+                                    application.Updated = new RegistryOperationModel {
+                                        AuthorityId = null, // TODO Add authority
+                                        Time = DateTime.UtcNow
+                                    };
                                     await _iothub.PatchAsync(ApplicationRegistration.Patch(
                                         item, ApplicationRegistration.FromServiceModel(
-                                            item.ToServiceModel(), true)), true);
+                                            application, true)), true);
                                 }
-                                var application = item.ToServiceModel();
                                 await _broker.NotifyAllAsync(l => l.OnApplicationDisabledAsync(application));
                             }
                             else {
@@ -512,10 +540,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                             ApplicationRegistration.Logical.Equals(x, exists));
                         if (exists != patch) {
 
-                            await _iothub.PatchAsync(
-                                ApplicationRegistration.Patch(exists, patch), true);
-
                             var application = patch.ToServiceModel();
+                            application.Updated = new RegistryOperationModel {
+                                AuthorityId = null, // TODO Add authority
+                                Time = DateTime.UtcNow
+                            };
+                            await _iothub.PatchAsync(ApplicationRegistration.Patch(exists,
+                                ApplicationRegistration.FromServiceModel(application)), true);
+
                             if (exists.IsDisabled ?? false) {
                                 await _broker.NotifyAllAsync(l => l.OnApplicationEnabledAsync(application));
                             }
@@ -545,18 +577,24 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             // ... add brand new applications
             foreach (var item in add) {
                 try {
-                    var twin = ApplicationRegistration.Patch(null, item);
+                    var application = item.ToServiceModel();
+                    application.Created = new RegistryOperationModel {
+                        AuthorityId = null, // TODO Add authority
+                        Time = DateTime.UtcNow
+                    };
+
+                    var twin = ApplicationRegistration.Patch(null, 
+                        ApplicationRegistration.FromServiceModel(application));
                     await _iothub.CreateAsync(twin, true);
 
                     // Notify addition!
-                    var application = item.ToServiceModel();
                     await _broker.NotifyAllAsync(l => l.OnApplicationNewAsync(application));
                     await _broker.NotifyAllAsync(l => l.OnApplicationEnabledAsync(application));
 
-                    // Add all new endpoints
+                    // Now - add all new endpoints
                     endpoints.TryGetValue(item.ApplicationId, out var epFound);
-                    await _bulk.ProcessDiscoveryEventsAsync(epFound, result, supervisorId, null, false);
-
+                    await _bulk.ProcessDiscoveryEventsAsync(epFound, result, 
+                        supervisorId, null, false);
                     added++;
                 }
                 catch (Exception ex) {
@@ -573,6 +611,53 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                 _logger.Information("... processed discovery results from {supervisorId}: " +
                     "{added} applications added, {updated} enabled, {removed} disabled, and " +
                     "{unchanged} unchanged.", supervisorId, added, updated, removed, unchanged);
+            }
+        }
+
+        /// <summary>
+        /// Update application state
+        /// </summary>
+        /// <param name="applicationId"></param>
+        /// <param name="state"></param>
+        /// <param name="precondition"></param>
+        /// <param name="authorityId"></param>
+        /// <returns></returns>
+        private async Task<ApplicationInfoModel> UpdateApplicationStateAsync(string applicationId,
+            ApplicationState state, Func<ApplicationState?, bool> precondition, string authorityId) {
+            if (string.IsNullOrEmpty(applicationId)) {
+                throw new ArgumentNullException(nameof(applicationId),
+                    "The application id must be provided");
+            }
+            while (true) {
+                var registration = await GetApplicationRegistrationAsync(applicationId);
+                if (registration == null) {
+                    throw new ResourceNotFoundException(
+                        "A record with the specified application id does not exist.");
+                }
+
+                var application = registration.ToServiceModel();
+                if (registration.IsDisabled ?? false) {
+                    throw new ResourceInvalidStateException("The application is disabled.");
+                }
+                if (precondition != null && !precondition(registration.ApplicationState)) {
+                    throw new ResourceInvalidStateException(
+                        "The application is not in a valid state for this operation.");
+                }
+
+                application.State = state;
+                application.Approved = new RegistryOperationModel {
+                    AuthorityId = authorityId,
+                    Time = DateTime.UtcNow
+                };
+                try {
+                    var result = await _iothub.PatchAsync(ApplicationRegistration.Patch(
+                        registration, ApplicationRegistration.FromServiceModel(application)));
+                    return ApplicationRegistration.FromTwin(result).ToServiceModel();
+                }
+                catch (ResourceOutOfDateException) {
+                    _logger.Verbose("Retry update application state operation.");
+                    continue;
+                }
             }
         }
 

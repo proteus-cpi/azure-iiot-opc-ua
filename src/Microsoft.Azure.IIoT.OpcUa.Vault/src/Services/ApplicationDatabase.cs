@@ -105,7 +105,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 try {
                     var result = await _applications.ReplaceAsync(document, application);
                     var app = result.Value.ToServiceModel();
-                    await _broker.NotifyAllAsync(l => l.OnApplicationUpdatedAsync(app)); // TODO:  Add authority id from context
+                    await _broker.NotifyAllAsync(l => l.OnApplicationUpdatedAsync(app));
+                    // TODO:  Add authority id from context
                     break;
                 }
                 catch (ResourceOutOfDateException) {
@@ -119,14 +120,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         public async Task ApproveApplicationAsync(string applicationId, bool force) {
             var app = await UpdateApplicationStateAsync(applicationId, ApplicationState.Approved,
                 s => s == ApplicationState.New || force);
-            await _broker.NotifyAllAsync(l => l.OnApplicationApprovedAsync(app)); // TODO:  Add authority id from context
+            await _broker.NotifyAllAsync(l => l.OnApplicationApprovedAsync(app)); 
+            // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
         public async Task RejectApplicationAsync(string applicationId, bool force) {
             var app = await UpdateApplicationStateAsync(applicationId, ApplicationState.Rejected,
                 s => s == ApplicationState.New || force);
-            await _broker.NotifyAllAsync(l => l.OnApplicationRejectedAsync(app)); // TODO:  Add authority id from context
+            await _broker.NotifyAllAsync(l => l.OnApplicationRejectedAsync(app)); 
+            // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
@@ -148,7 +151,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
                     // Success -- Notify others to clean up
                     var app = document.Value.ToServiceModel();
-                    await _broker.NotifyAllAsync(l => l.OnApplicationDeletedAsync(app)); // TODO:  Add authority id from context
+                    await _broker.NotifyAllAsync(l => l.OnApplicationDeletedAsync(app)); 
+                    // TODO:  Add authority id from context
 
                     // Try free record id
                     await Try.Async(() => _index.FreeAsync(document.Value.ID));
@@ -164,13 +168,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <inheritdoc/>
         public async Task DisableApplicationAsync(string applicationId) {
             var app = await UpdateEnabledDisabledAsync(applicationId, false);
-            await _broker.NotifyAllAsync(l => l.OnApplicationDisabledAsync(app)); // TODO:  Add authority id from context
+            await _broker.NotifyAllAsync(l => l.OnApplicationDisabledAsync(app));
+            // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
         public async Task EnableApplicationAsync(string applicationId) {
             var app = await UpdateEnabledDisabledAsync(applicationId, true);
-            await _broker.NotifyAllAsync(l => l.OnApplicationEnabledAsync(app)); // TODO:  Add authority id from context
+            await _broker.NotifyAllAsync(l => l.OnApplicationEnabledAsync(app)); 
+            // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
@@ -473,7 +479,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="state"></param>
         /// <param name="precondition"></param>
         /// <returns></returns>
-        public async Task<ApplicationInfoModel> UpdateApplicationStateAsync(string applicationId,
+        private async Task<ApplicationInfoModel> UpdateApplicationStateAsync(string applicationId,
             ApplicationState state, Func<ApplicationState, bool> precondition) {
             if (string.IsNullOrEmpty(applicationId)) {
                 throw new ArgumentNullException(nameof(applicationId),
