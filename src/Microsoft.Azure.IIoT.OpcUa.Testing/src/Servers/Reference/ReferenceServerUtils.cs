@@ -27,13 +27,13 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using Opc.Ua;
-using Opc.Ua.Server;
-using System;
-using System.Collections.Generic;
-using System.Data;
-
 namespace Reference {
+    using Opc.Ua;
+    using Opc.Ua.Server;
+    using System;
+    using System.Collections.Generic;
+    using System.Data;
+
     /// <summary>
     /// The interface that a server exposes to objects that it contains.
     /// </summary>

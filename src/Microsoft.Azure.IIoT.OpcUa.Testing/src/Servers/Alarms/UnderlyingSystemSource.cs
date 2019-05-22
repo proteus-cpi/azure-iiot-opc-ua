@@ -27,11 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using Opc.Ua;
-
 namespace Alarms {
+    using System;
+    using System.Collections.Generic;
+    using Opc.Ua;
+
     /// <summary>
     /// This class simulates a source in the system.
     /// </summary>

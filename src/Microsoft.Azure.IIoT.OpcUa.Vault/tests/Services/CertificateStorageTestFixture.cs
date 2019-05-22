@@ -44,6 +44,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             var configuration = builder.Build();
             _serviceConfig = new VaultConfig(configuration);
             _clientConfig = new ClientConfig(configuration);
+            _vaultConfig = new KeyVaultConfig(configuration);
             _logger = SerilogTestLogger.Create<CertificateStorageTestFixture>();
             if (!InvalidConfiguration()) {
                 RandomGenerator = new ApplicationTestDataGenerator();
@@ -60,7 +61,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                 }).Result.Id;
 
                 // Create client
-                _vaultConfig = new KeyVaultConfig(configuration);
                 _keyVaultServiceClient = new KeyVaultServiceClient(_vaultConfig,
                     new AppAuthenticationProvider(_clientConfig), _logger);
 

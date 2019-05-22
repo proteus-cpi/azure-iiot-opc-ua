@@ -27,12 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using Opc.Ua;
-using Opc.Ua.Server;
-
 namespace Alarms {
+    using System;
+    using System.Collections.Generic;
+    using Opc.Ua;
+    using Opc.Ua.Server;
 
     /// <summary>
     /// Maps an alarm source to a UA object node.

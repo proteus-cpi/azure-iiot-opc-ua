@@ -27,10 +27,9 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-
 namespace Opc.Ua.Aggregates {
+    using System;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Coordinates aggregation over a time series of raw data points to yield a time series of processed data points.

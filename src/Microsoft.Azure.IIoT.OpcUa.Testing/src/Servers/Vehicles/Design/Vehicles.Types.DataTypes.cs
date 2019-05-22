@@ -27,12 +27,12 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using Opc.Ua;
-
 namespace Vehicles.Types {
+    using System;
+    using System.Collections.Generic;
+    using System.Runtime.Serialization;
+    using Opc.Ua;
+
     #region VehicleType Class
 #if (!OPCUA_EXCLUDE_VehicleType)
     /// <summary>

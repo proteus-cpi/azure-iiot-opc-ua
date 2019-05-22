@@ -27,12 +27,12 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using Opc.Ua;
-
 namespace DataAccess {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using Opc.Ua;
+
     /// <summary>
     /// An object that provides access to the underlying system.
     /// </summary>

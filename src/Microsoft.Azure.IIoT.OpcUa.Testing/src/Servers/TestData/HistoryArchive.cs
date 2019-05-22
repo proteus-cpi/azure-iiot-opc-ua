@@ -27,12 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using Opc.Ua;
-
 namespace TestData {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using Opc.Ua;
 
     /// <summary>
     /// A class that provides access to archived data.

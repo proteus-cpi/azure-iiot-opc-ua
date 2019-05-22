@@ -27,10 +27,10 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System.Text;
-using Opc.Ua;
-
 namespace HistoricalAccess {
+    using System.Text;
+    using Opc.Ua;
+
     /// <summary>
     /// Defines the types of nodes exposed by the HistoricalAccessServer NodeManager.
     /// </summary>

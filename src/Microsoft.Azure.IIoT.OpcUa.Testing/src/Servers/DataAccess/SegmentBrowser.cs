@@ -27,10 +27,9 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System.Collections.Generic;
-using Opc.Ua;
-
 namespace DataAccess {
+    using System.Collections.Generic;
+    using Opc.Ua;
 
     /// <summary>
     /// Browses the children of a segment.

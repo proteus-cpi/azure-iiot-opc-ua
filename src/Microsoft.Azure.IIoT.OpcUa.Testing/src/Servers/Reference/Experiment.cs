@@ -27,11 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using Opc.Ua;
-
 namespace Reference {
+    using System;
+    using System.Collections.Generic;
+    using Opc.Ua;
+
     /// <summary>
     /// Calculates the value of an aggregate.
     /// </summary>

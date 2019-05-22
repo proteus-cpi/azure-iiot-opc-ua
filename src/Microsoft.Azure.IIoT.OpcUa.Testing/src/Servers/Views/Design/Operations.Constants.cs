@@ -27,9 +27,9 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using Opc.Ua;
-
 namespace Operations {
+    using Opc.Ua;
+
     #region Variable Identifiers
     /// <summary>
     /// A class that declares constants for all Variables in the Model Design.

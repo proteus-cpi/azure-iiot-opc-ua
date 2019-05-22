@@ -6,21 +6,17 @@
 namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using Microsoft.Azure.IIoT.Http;
-    using Microsoft.Azure.IIoT.Hub;
-    using Microsoft.Azure.IIoT.Hub.Models;
-    using Serilog;
-    using Microsoft.Azure.IIoT.Exceptions;
     using Newtonsoft.Json.Linq;
+    using Serilog;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Endpoint services using the IoT Hub twin services for endpoint
-    /// identity registration/retrieval.
+    /// Processes the discovery results received from edge application discovery
     /// </summary>
-    public sealed class DiscoveryProcessor : IRegistryMaintenance {
+    public sealed class DiscoveryProcessor : IDiscoveryProcessor {
 
         /// <summary>
         /// Create registry services
@@ -29,8 +25,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         /// <param name="applications"></param>
         /// <param name="client"></param>
         /// <param name="logger"></param>
-        public DiscoveryProcessor(ISupervisorRegistry supervisors, IApplicationRegistry2 applications, 
-            IHttpClient client, ILogger logger) {
+        public DiscoveryProcessor(ISupervisorRegistry supervisors, 
+            IApplicationBulkProcessor applications, IHttpClient client, ILogger logger) {
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _supervisors = supervisors ?? throw new ArgumentNullException(nameof(supervisors));
@@ -109,7 +105,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         private async Task CallDiscoveryCallbacksAsync(string siteId,
             string supervisorId, DiscoveryResultModel result, Exception exception) {
             try {
-                var callbacks = result.DiscoveryConfig.Callbacks;
+                var callbacks = result?.DiscoveryConfig?.Callbacks;
                 if (callbacks == null || callbacks.Count == 0) {
                     return;
                 }
@@ -135,6 +131,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         private readonly IHttpClient _client;
         private readonly ILogger _logger;
         private readonly ISupervisorRegistry _supervisors;
-        private readonly IApplicationRegistry2 _applications;
+        private readonly IApplicationBulkProcessor _applications;
     }
 }

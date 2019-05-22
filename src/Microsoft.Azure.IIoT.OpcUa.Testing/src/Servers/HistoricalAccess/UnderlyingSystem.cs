@@ -27,12 +27,12 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System.Text;
-using System.IO;
-using Opc.Ua;
-using Opc.Ua.Server;
-
 namespace HistoricalAccess {
+    using System.Text;
+    using System.IO;
+    using Opc.Ua;
+    using Opc.Ua.Server;
+
     /// <summary>
     /// Provides access to the system which stores the data.
     /// </summary>

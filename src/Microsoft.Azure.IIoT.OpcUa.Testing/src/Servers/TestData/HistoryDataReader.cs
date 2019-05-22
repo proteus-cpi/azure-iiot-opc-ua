@@ -27,11 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using Opc.Ua;
-using Opc.Ua.Server;
-
 namespace TestData {
+    using System;
+    using Opc.Ua;
+    using Opc.Ua.Server;
+
     /// <summary>
     /// A class used to read values from a history data source.
     /// </summary>

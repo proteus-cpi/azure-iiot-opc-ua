@@ -27,11 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using Opc.Ua;
-
 namespace HistoricalEvents {
+    using System;
+    using System.Collections.Generic;
+    using Opc.Ua;
+
     #region WellTestReportState Class
 #if (!OPCUA_EXCLUDE_WellTestReportState)
     /// <summary>

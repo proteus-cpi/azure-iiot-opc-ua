@@ -27,11 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System.Collections.Generic;
-using Opc.Ua;
-using Opc.Ua.Server;
-
 namespace DataAccess {
+    using System.Collections.Generic;
+    using Opc.Ua;
+    using Opc.Ua.Server;
+
     /// <summary>
     /// A object which maps a block to a UA object.
     /// </summary>

@@ -27,14 +27,14 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Text;
-using System.IO;
-using System.Xml;
-using System.Data;
-using Opc.Ua;
-
 namespace HistoricalAccess {
+    using System;
+    using System.Text;
+    using System.IO;
+    using System.Xml;
+    using System.Data;
+    using Opc.Ua;
+
     /// <summary>
     /// Reads an item history from a file.
     /// </summary>

@@ -5,7 +5,6 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -38,15 +37,5 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
         Task<QueryApplicationsByIdResultModel> QueryApplicationsByIdAsync(
             QueryApplicationsByIdRequestModel request);
 
-        /// <summary>
-        /// Merge applications and endpoints
-        /// </summary>
-        /// <param name="siteId"></param>
-        /// <param name="supervisorId"></param>
-        /// <param name="result"></param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        Task ProcessDiscoveryEventsAsync(string siteId, string supervisorId,
-            DiscoveryResultModel result, IEnumerable<DiscoveryEventModel> events);
     }
 }

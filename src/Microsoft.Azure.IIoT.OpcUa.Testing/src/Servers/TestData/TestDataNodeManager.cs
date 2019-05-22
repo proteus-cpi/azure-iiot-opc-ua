@@ -27,14 +27,13 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using Opc.Ua;
-using Opc.Ua.Server;
-using System.Reflection;
-
 namespace TestData {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using Opc.Ua;
+    using Opc.Ua.Server;
+    using System.Reflection;
 
     /// <summary>
     /// A node manager for a variety of test data.

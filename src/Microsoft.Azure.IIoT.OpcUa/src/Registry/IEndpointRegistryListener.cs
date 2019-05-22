@@ -8,9 +8,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Notified when an endpoint configuration changes
+    /// Notified when endpoint registry changes
     /// </summary>
-    public interface IEndpointChangeListener {
+    public interface IEndpointRegistryListener {
 
         /// <summary>
         /// New endpoint

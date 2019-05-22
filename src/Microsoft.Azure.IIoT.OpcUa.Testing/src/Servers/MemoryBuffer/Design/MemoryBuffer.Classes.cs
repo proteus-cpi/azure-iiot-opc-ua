@@ -27,11 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using Opc.Ua;
-
 namespace MemoryBuffer {
+    using System;
+    using System.Collections.Generic;
+    using Opc.Ua;
+
     #region MemoryTagState Class
 #if !OPCUA_EXCLUDE_MemoryTagState
     /// <summary>

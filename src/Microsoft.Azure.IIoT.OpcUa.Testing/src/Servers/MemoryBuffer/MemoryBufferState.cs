@@ -27,14 +27,13 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using Opc.Ua;
-using Opc.Ua.Server;
-using System.Diagnostics;
-
 namespace MemoryBuffer {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using Opc.Ua;
+    using Opc.Ua.Server;
+    using System.Diagnostics;
 
     public partial class MemoryBufferState {
 

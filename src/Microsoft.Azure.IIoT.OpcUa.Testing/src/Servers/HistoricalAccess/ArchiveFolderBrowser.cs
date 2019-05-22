@@ -27,10 +27,10 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System.Collections.Generic;
-using Opc.Ua;
-
 namespace HistoricalAccess {
+    using System.Collections.Generic;
+    using Opc.Ua;
+
     /// <summary>
     /// Browses the references for an archive folder.
     /// </summary>

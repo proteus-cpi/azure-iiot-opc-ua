@@ -16,32 +16,44 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using System.Collections.Concurrent;
 
     /// <summary>
     /// Endpoint registry services using the IoT Hub twin services for endpoint
     /// identity registration/retrieval.  
     /// </summary>
-    /// <remarks>
-    /// Due to the endpoint registry being an application change listener
-    /// it cannot take a dependency on the application registry.  
-    /// This is by design to enforce a cascading hierarchical topology.
-    /// </remarks>
-    public sealed class EndpointRegistry : IEndpointRegistry, IEndpointRegistry2, 
-        IApplicationChangeListener {
+    public sealed class EndpointRegistry : IEndpointRegistry, IEndpointRegistry2,
+        IEndpointBulkProcessor, IApplicationRegistryListener, IEndpointRegistryEvents, 
+        IDisposable {
 
         /// <summary>
         /// Create endpoint registry
         /// </summary>
         /// <param name="iothub"></param>
-        /// <param name="listeners"></param>
+        /// <param name="events"></param>
         /// <param name="activate"></param>
         /// <param name="logger"></param>
-        public EndpointRegistry(IIoTHubTwinServices iothub, IEnumerable<IEndpointChangeListener> listeners,
+        public EndpointRegistry(IIoTHubTwinServices iothub, IApplicationRegistryEvents events,
             IActivationServices<EndpointRegistrationModel> activate, ILogger logger) {
             _iothub = iothub ?? throw new ArgumentNullException(nameof(iothub));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _activator = activate ?? throw new ArgumentNullException(nameof(activate));
-            _listeners = listeners?.ToList() ?? new List<IEndpointChangeListener>();
+            _listeners = new ConcurrentDictionary<string, IEndpointRegistryListener>();
+
+            // Register for application registry events
+            _unregister = events.Register(this);
+        }
+
+        /// <inheritdoc/>
+        public void Dispose() {
+            _unregister?.Invoke();
+        }
+
+        /// <inheritdoc/>
+        public Action Register(IEndpointRegistryListener listener) {
+            var token = Guid.NewGuid().ToString();
+            _listeners.TryAdd(token, listener);
+            return () => _listeners.TryRemove(token, out var _);
         }
 
         /// <inheritdoc/>
@@ -388,9 +400,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         }
 
         /// <inheritdoc/>
-        public async Task ProcessDiscoveryEventsAsync(string supervisorId, 
-            IEnumerable<EndpointInfoModel> newEndpoints,
-            DiscoveryResultModel context, string applicationId, bool hardDelete) {
+        public async Task ProcessDiscoveryEventsAsync(IEnumerable<EndpointInfoModel> newEndpoints,
+            DiscoveryResultModel context,
+            string supervisorId, string applicationId, bool hardDelete) {
 
             if (newEndpoints == null) {
                 throw new ArgumentNullException(nameof(newEndpoints));
@@ -641,8 +653,20 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             return registration.ToServiceModel();
         }
 
+        /// <summary>
+        /// Call listeners
+        /// </summary>
+        /// <param name="evt"></param>
+        /// <returns></returns>
+        private Task NotifyAllAsync(Func<IEndpointRegistryListener, Task> evt) {
+            return Task
+                .WhenAll(_listeners.Select(l => evt(l.Value)).ToArray())
+                .ContinueWith(t => Task.CompletedTask);
+        }
+
         private readonly IActivationServices<EndpointRegistrationModel> _activator;
-        private readonly List<IEndpointChangeListener> _listeners;
+        private readonly Action _unregister;
+        private readonly ConcurrentDictionary<string, IEndpointRegistryListener> _listeners;
         private readonly IIoTHubTwinServices _iothub;
         private readonly ILogger _logger;
     }

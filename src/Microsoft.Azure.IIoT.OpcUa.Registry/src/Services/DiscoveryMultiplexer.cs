@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
     /// Uses the registry identities to invoke the discovery request
     /// on all members
     /// </summary>
-    public sealed class DiscoveryServices : IDiscoveryServices, IDisposable {
+    public sealed class DiscoveryMultiplexer : IDiscoveryServices, IDisposable {
 
         private static readonly TimeSpan kSupervisorRefreshTimer =
             TimeSpan.FromMinutes(1);
@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         /// <param name="registry"></param>
         /// <param name="client"></param>
         /// <param name="logger"></param>
-        public DiscoveryServices(ISupervisorRegistry registry,
+        public DiscoveryMultiplexer(ISupervisorRegistry registry,
             IDiscoveryClient client, ILogger logger) {
 
             _registry = registry ??

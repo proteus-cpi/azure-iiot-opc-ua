@@ -27,9 +27,9 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using Opc.Ua;
-
 namespace Vehicles.Types {
+    using Opc.Ua;
+
     #region DataType Identifiers
     /// <summary>
     /// A class that declares constants for all DataTypes in the Model Design.

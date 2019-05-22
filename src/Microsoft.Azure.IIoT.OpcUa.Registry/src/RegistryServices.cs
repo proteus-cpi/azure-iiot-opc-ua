@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     /// <summary>
     /// Injected registry services
     /// </summary>
-    public sealed class RegistryModule : Module {
+    public sealed class RegistryServices : Module {
 
         /// <summary>
         /// Load the module

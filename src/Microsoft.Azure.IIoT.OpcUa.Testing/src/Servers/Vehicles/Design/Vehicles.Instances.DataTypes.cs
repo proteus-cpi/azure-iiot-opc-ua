@@ -27,13 +27,13 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using Opc.Ua;
-using Vehicles.Types;
-
 namespace Vehicles.Instances {
+    using System;
+    using System.Collections.Generic;
+    using System.Runtime.Serialization;
+    using Opc.Ua;
+    using Vehicles.Types;
+
     #region ParkingLotType Enumeration
 #if (!OPCUA_EXCLUDE_ParkingLotType)
     /// <summary>

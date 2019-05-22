@@ -27,10 +27,10 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using Opc.Ua;
-
 namespace Alarms {
+    using System;
+    using Opc.Ua;
+
     /// <summary>
     /// This class stores the state of a alarm known to the system.
     /// </summary>

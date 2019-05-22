@@ -8,9 +8,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Application change listener
+    /// Application registry change listener
     /// </summary>
-    public interface IApplicationChangeListener {
+    public interface IApplicationRegistryListener {
 
         /// <summary>
         /// Called when application is added

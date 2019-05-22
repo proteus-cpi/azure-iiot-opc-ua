@@ -27,10 +27,10 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-
 namespace Opc.Ua.Aggregates {
+    using System;
+    using System.Collections.Generic;
+
     /// <summary>
     /// A snapshot of a structured window over a stream of data to be aggregated
     /// </summary>

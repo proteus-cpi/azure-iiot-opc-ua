@@ -27,14 +27,14 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Text;
-using System.IO;
-using System.Data;
-using System.Reflection;
-using Opc.Ua;
-
 namespace HistoricalAccess {
+    using System;
+    using System.Text;
+    using System.IO;
+    using System.Data;
+    using System.Reflection;
+    using Opc.Ua;
+
     /// <summary>
     /// Stores the metadata for a node representing a folder on a file system.
     /// </summary>

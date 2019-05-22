@@ -35,7 +35,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
                 .AddEnvironmentVariables();
             _configuration = builder.Build();
             _serviceConfig = new VaultConfig(_configuration);
-            _clientConfig = new ClientConfig(_configuration);
             _logger = SerilogTestLogger.Create<ApplicationDatabaseTestFixture>();
             if (!InvalidConfiguration()) {
                 RandomGenerator = new ApplicationTestDataGenerator(kRandomStart);
@@ -66,7 +65,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
             ;
         }
 
-        private readonly IClientConfig _clientConfig;
         private readonly ILogger _logger;
         private readonly VaultConfig _serviceConfig;
         private readonly IConfigurationRoot _configuration;

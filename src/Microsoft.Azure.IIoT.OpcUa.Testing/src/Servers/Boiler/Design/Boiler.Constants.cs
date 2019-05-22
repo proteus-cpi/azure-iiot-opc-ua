@@ -27,9 +27,9 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using Opc.Ua;
-
 namespace Boiler {
+    using Opc.Ua;
+
     #region Method Identifiers
     /// <summary>
     /// A class that declares constants for all Methods in the Model Design.

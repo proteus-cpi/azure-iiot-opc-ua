@@ -27,9 +27,9 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-
 namespace Alarms {
+    using System;
+
     /// <summary>
     /// Defines the possible states for the condition.
     /// </summary>

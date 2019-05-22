@@ -27,11 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using Opc.Ua;
-
 namespace PerfTest {
+    using System;
+    using System.Collections.Generic;
+    using Opc.Ua;
+
     public static class ModelUtils
     {
         public static NodeId GetRegisterId(MemoryRegister register, ushort namespaceIndex)

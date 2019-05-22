@@ -27,11 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using Opc.Ua;
-using Opc.Ua.Server;
-
 namespace MemoryBuffer
 {
+    using Opc.Ua;
+    using Opc.Ua.Server;
+
     /// <summary>
     /// Provides a basic monitored item implementation which does not support queuing.
     /// </summary>

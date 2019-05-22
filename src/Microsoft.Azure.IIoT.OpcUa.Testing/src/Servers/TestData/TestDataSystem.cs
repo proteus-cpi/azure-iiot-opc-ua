@@ -27,13 +27,13 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Xml;
-using Opc.Ua;
-
 namespace TestData {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Xml;
+    using Opc.Ua;
+
     public interface ITestDataSystemCallback {
         void OnDataChange(
             BaseVariableState variable,

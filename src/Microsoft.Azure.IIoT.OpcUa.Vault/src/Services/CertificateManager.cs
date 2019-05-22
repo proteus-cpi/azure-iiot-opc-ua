@@ -26,23 +26,24 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     /// <summary>
     /// Cosmos db certificate request management workflow service
     /// </summary>
-    public sealed class CertificateManager : ICertificateManager,
-        IRequestManagement, IApplicationChangeListener {
+    public sealed class CertificateManager : ICertificateManager, IRequestManagement, 
+        IApplicationRegistryListener, IDisposable {
 
         /// <summary>
         /// Create certificate request
         /// </summary>
         /// <param name="registry"></param>
+        /// <param name="events"></param>
         /// <param name="groups"></param>
         /// <param name="db"></param>
         /// <param name="logger"></param>
-        public CertificateManager(IApplicationRegistry registry,
-            ICertificateDirectory groups, IItemContainerFactory db,
-            ILogger logger) {
+        public CertificateManager(IApplicationRegistry registry, IApplicationRegistryEvents events,
+            ICertificateDirectory groups, IItemContainerFactory db, ILogger logger) {
 
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _groups = groups ?? throw new ArgumentNullException(nameof(groups));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            
             if (db == null) {
                 throw new ArgumentNullException(nameof(db));
             }
@@ -50,6 +51,12 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             var container = db.OpenAsync().Result;
             _requests = container.AsDocuments();
             _index = new ContainerIndex(container);
+            _unregister = events.Register(this);
+        }
+
+        /// <inheritdoc/>
+        public void Dispose() {
+            _unregister?.Invoke();
         }
 
         /// <inheritdoc/>
@@ -754,5 +761,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         private readonly ILogger _logger;
         private readonly IDocuments _requests;
         private readonly IContainerIndex _index;
+        private readonly System.Action _unregister;
     }
 }

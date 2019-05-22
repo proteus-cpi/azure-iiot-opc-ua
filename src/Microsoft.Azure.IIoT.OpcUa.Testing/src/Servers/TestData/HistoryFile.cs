@@ -27,11 +27,11 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using Opc.Ua;
-
 namespace TestData {
+    using System;
+    using System.Collections.Generic;
+    using Opc.Ua;
+
     /// <summary>
     /// Wraps a file which contains a list of historical values.
     /// </summary>

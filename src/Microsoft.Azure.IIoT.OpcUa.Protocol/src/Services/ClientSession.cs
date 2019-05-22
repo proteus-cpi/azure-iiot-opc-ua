@@ -601,8 +601,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Protocol.Services {
 
             var bestEndpoint = filtered.FirstOrDefault();
             foreach (var endpoint in filtered) {
-                if (haveCert && (endpoint.SecurityLevel > bestEndpoint.SecurityLevel) ||
-                    !haveCert && (endpoint.SecurityLevel < bestEndpoint.SecurityLevel)) {
+                if ((haveCert && (endpoint.SecurityLevel > bestEndpoint.SecurityLevel)) ||
+                    (!haveCert && (endpoint.SecurityLevel < bestEndpoint.SecurityLevel))) {
                     bestEndpoint = endpoint;
                 }
             }

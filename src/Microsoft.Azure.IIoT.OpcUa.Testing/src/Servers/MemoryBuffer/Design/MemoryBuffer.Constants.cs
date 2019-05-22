@@ -27,9 +27,9 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using Opc.Ua;
-
 namespace MemoryBuffer {
+    using Opc.Ua;
+
     #region Object Identifiers
     /// <summary>
     /// A class that declares constants for all Objects in the Model Design.

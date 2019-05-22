@@ -9,13 +9,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Onboarding and maintenance services
+    /// Discovery processing
     /// </summary>
-    public interface IRegistryMaintenance {
+    public interface IDiscoveryProcessor {
 
         /// <summary>
         /// Consolidate any existing applications with the
-        /// provided event list from the supervisor.
+        /// provided discovery events list from the supervisor.
         /// </summary>
         /// <param name="supervisorId"></param>
         /// <param name="result"></param>

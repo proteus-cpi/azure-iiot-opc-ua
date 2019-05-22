@@ -27,15 +27,14 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Reflection;
-using System.Data;
-using Opc.Ua;
-using Opc.Ua.Server;
-
 namespace HistoricalAccess {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Reflection;
+    using System.Data;
+    using Opc.Ua;
+    using Opc.Ua.Server;
 
     /// <summary>
     /// A node manager for a server that exposes several variables.

@@ -27,13 +27,13 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Data;
-using Opc.Ua;
-
 namespace HistoricalEvents {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+    using System.Data;
+    using Opc.Ua;
+
     public class ReportGenerator {
         public void Initialize() {
             _dataset = new DataSet();

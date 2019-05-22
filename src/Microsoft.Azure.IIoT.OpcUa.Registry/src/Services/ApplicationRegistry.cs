@@ -4,37 +4,46 @@
 // ------------------------------------------------------------
 
 namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using Microsoft.Azure.IIoT.Exceptions;
     using Microsoft.Azure.IIoT.Http;
     using Microsoft.Azure.IIoT.Hub;
-    using Microsoft.Azure.IIoT.Hub.Models;
-    using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using Newtonsoft.Json.Linq;
     using Serilog;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using System.Collections.Concurrent;
 
     /// <summary>
     /// Application registry service using the IoT Hub twin services for
     /// identity managment.
     /// </summary>
-    public sealed class ApplicationRegistry : IApplicationRegistry, IApplicationRegistry2 {
+    public sealed class ApplicationRegistry : IApplicationRegistry, IApplicationRegistry2, 
+        IApplicationBulkProcessor, IApplicationRegistryEvents {
 
         /// <summary>
         /// Create registry services
         /// </summary>
         /// <param name="iothub"></param>
         /// <param name="endpoints"></param>
-        /// <param name="listeners"></param>
+        /// <param name="bulk"></param>
         /// <param name="logger"></param>
-        public ApplicationRegistry(IIoTHubTwinServices iothub, IEndpointRegistry2 endpoints,
-            IEnumerable<IApplicationChangeListener> listeners, ILogger logger) {
+        public ApplicationRegistry(IIoTHubTwinServices iothub, IEndpointRegistry2 endpoints, 
+            IEndpointBulkProcessor bulk, ILogger logger) {
             _iothub = iothub ?? throw new ArgumentNullException(nameof(iothub));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _bulk = bulk ?? throw new ArgumentNullException(nameof(bulk));
             _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
-            _listeners = listeners?.ToList() ?? new List<IApplicationChangeListener>();
+            _listeners = new ConcurrentDictionary<string, IApplicationRegistryListener>();
+        }
+
+        /// <inheritdoc/>
+        public Action Register(IApplicationRegistryListener listener) {
+            var token = Guid.NewGuid().ToString();
+            _listeners.TryAdd(token, listener);
+            return () => _listeners.TryRemove(token, out var _);
         }
 
         /// <inheritdoc/>
@@ -457,7 +466,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
                         endpoints.TryGetValue(patch.ApplicationId, out var epFound);
                         // TODO: Handle case where we take ownership of all endpoints
-                        await _endpoints.ProcessDiscoveryEventsAsync(supervisorId, epFound, result,
+                        await _bulk.ProcessDiscoveryEventsAsync(epFound, result, supervisorId,
                             patch.ApplicationId, false);
                     }
                     else {
@@ -484,7 +493,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
                     // Add all new endpoints
                     endpoints.TryGetValue(item.ApplicationId, out var epFound);
-                    await _endpoints.ProcessDiscoveryEventsAsync(supervisorId, epFound, result, null, false);
+                    await _bulk.ProcessDiscoveryEventsAsync(epFound, result, supervisorId, null, false);
 
                     added++;
                 }
@@ -571,15 +580,16 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         /// </summary>
         /// <param name="evt"></param>
         /// <returns></returns>
-        private Task NotifyAllAsync(Func<IApplicationChangeListener, Task> evt) {
+        private Task NotifyAllAsync(Func<IApplicationRegistryListener, Task> evt) {
             return Task
-                .WhenAll(_listeners.Select(l => evt(l)).ToArray())
+                .WhenAll(_listeners.Select(l => evt(l.Value)).ToArray())
                 .ContinueWith(t => Task.CompletedTask);
         }
 
         private readonly IIoTHubTwinServices _iothub;
         private readonly ILogger _logger;
+        private readonly IEndpointBulkProcessor _bulk;
         private readonly IEndpointRegistry2 _endpoints;
-        private readonly List<IApplicationChangeListener> _listeners;
+        private readonly ConcurrentDictionary<string, IApplicationRegistryListener> _listeners;
     }
 }

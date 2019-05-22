@@ -14,6 +14,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using Microsoft.Azure.IIoT.Utils;
     using Serilog;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     /// The default cosmos db based implementation of the application database.
     /// </summary>
     public sealed class ApplicationDatabase : IApplicationRegistry,
-        IApplicationRegistry2 {
+        IApplicationRegistry2, IApplicationRegistryEvents, IApplicationBulkProcessor {
 
         /// <summary>
         /// Create database
@@ -31,7 +32,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <param name="config"></param>
         /// <param name="db"></param>
         /// <param name="logger"></param>
-        public ApplicationDatabase(IEnumerable<IApplicationChangeListener> listeners,
+        public ApplicationDatabase(IEnumerable<IApplicationRegistryListener> listeners,
             IVaultConfig config, IItemContainerFactory db, ILogger logger) {
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -41,8 +42,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             var container = db.OpenAsync().Result;
             _applications = container.AsDocuments();
             _index = new ContainerIndex(container);
+            _listeners = new ConcurrentDictionary<string, IApplicationRegistryListener>();
+        }
 
-            _listeners = listeners?.ToList() ?? new List<IApplicationChangeListener>();
+        /// <inheritdoc/>
+        public Action Register(IApplicationRegistryListener listener) {
+            var token = Guid.NewGuid().ToString();
+            _listeners.TryAdd(token, listener);
+            return () => _listeners.TryRemove(token, out var _);
         }
 
         /// <inheritdoc/>
@@ -107,6 +114,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     break;
                 }
                 catch (ResourceOutOfDateException) {
+                    _logger.Verbose("Retry update application operation.");
                     continue;
                 }
             }
@@ -152,6 +160,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     break;
                 }
                 catch (ResourceOutOfDateException) {
+                    _logger.Verbose("Retry unregister application operation.");
                     continue;
                 }
             }
@@ -456,6 +465,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     return result.Value.ToServiceModel();
                 }
                 catch (ResourceOutOfDateException) {
+                    _logger.Verbose("Retry update application disable/enable operation.");
                     continue;
                 }
             }
@@ -493,6 +503,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                     return result.Value.ToServiceModel();
                 }
                 catch (ResourceOutOfDateException) {
+                    _logger.Verbose("Retry update application state operation.");
                     continue;
                 }
             }
@@ -503,9 +514,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// </summary>
         /// <param name="evt"></param>
         /// <returns></returns>
-        private Task NotifyAllAsync(Func<IApplicationChangeListener, Task> evt) {
+        private Task NotifyAllAsync(Func<IApplicationRegistryListener, Task> evt) {
             return Task
-                .WhenAll(_listeners.Select(l => evt(l)).ToArray())
+                .WhenAll(_listeners.Select(l => evt(l.Value)).ToArray())
                 .ContinueWith(t => Task.CompletedTask);
         }
 
@@ -514,6 +525,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         private readonly IContainerIndex _index;
         private readonly IDocuments _applications;
         private readonly IVaultConfig _config;
-        private readonly List<IApplicationChangeListener> _listeners;
+        private readonly ConcurrentDictionary<string, IApplicationRegistryListener> _listeners;
     }
 }

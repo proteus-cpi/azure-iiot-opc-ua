@@ -9,18 +9,21 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Extended endpoint registry
+    /// Synchronize endpoints in the registry
     /// </summary>
-    public interface IEndpointRegistry2 : IEndpointRegistry {
+    public interface IEndpointBulkProcessor { 
 
         /// <summary>
-        /// Get application endpoints
+        /// Add new endpoints, or merge newly found endpoints with the ones 
+        /// under the specified application id if id is not null.
         /// </summary>
+        /// <param name="supervisorId"></param>
+        /// <param name="context"></param>
+        /// <param name="found"></param>
         /// <param name="applicationId"></param>
-        /// <param name="includeDeleted"></param>
-        /// <param name="filterInactiveTwins"></param>
+        /// <param name="hardDelete"></param>
         /// <returns></returns>
-        Task<IEnumerable<EndpointInfoModel>> GetApplicationEndpoints(string applicationId,
-            bool includeDeleted = false, bool filterInactiveTwins = false);
+        Task ProcessDiscoveryEventsAsync(IEnumerable<EndpointInfoModel> found, DiscoveryResultModel context,
+            string supervisorId, string applicationId = null, bool hardDelete = false);
     }
 }

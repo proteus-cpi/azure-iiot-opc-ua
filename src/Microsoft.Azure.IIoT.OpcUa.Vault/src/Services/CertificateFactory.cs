@@ -10,7 +10,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using Microsoft.Azure.IIoT.Crypto.Models;
     using Microsoft.Azure.IIoT.Crypto.Utils;
     using Opc.Ua;
-    using Serilog;
     using System;
     using System.Collections.Generic;
     using System.Net;
@@ -28,10 +27,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// Create factory
         /// </summary>
         /// <param name="signer"></param>
-        /// <param name="logger"></param>
-        public CertificateFactory(IDigestSigner signer, ILogger logger) {
+        public CertificateFactory(IDigestSigner signer) {
             _signer = signer ?? throw new ArgumentNullException(nameof(signer));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <inheritdoc/>
@@ -49,8 +46,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             }
             if (publicKey.KeySize != keySize) {
                 throw new NotSupportedException(
-                    string.Format("Public key size {0} does not match expected key size {1}",
-                    publicKey.KeySize, keySize));
+                    $"Public key size {publicKey.KeySize} does not match expected key size {keySize}");
             }
 
             // new serial number
@@ -223,7 +219,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 applicationUri = builder.ToString();
             }
 
-            var uri = Opc.Ua.Utils.ParseUri(applicationUri);
+            var uri = Utils.ParseUri(applicationUri);
 
             if (uri == null) {
                 throw new ArgumentNullException(nameof(applicationUri),
@@ -260,6 +256,5 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         private const int kSerialNumberLength = 20;
         private const int kDefaultKeySize = 2048;
         private readonly IDigestSigner _signer;
-        private readonly ILogger _logger;
     }
 }

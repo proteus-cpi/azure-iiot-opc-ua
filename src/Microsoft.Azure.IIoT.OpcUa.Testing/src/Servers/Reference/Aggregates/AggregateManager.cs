@@ -27,11 +27,10 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using Opc.Ua.Server;
-using System;
-using System.Collections.Generic;
-
 namespace Opc.Ua.Aggregates {
+    using Opc.Ua.Server;
+    using System;
+    using System.Collections.Generic;
 
     /// <summary>
     /// An object that manages aggregate factories supported by the server.

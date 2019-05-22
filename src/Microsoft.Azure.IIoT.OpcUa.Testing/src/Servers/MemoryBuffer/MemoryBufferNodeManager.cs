@@ -27,14 +27,13 @@
  * http://opcfoundation.org/License/MIT/1.00/
  * ======================================================================*/
 
-using System;
-using System.Collections.Generic;
-using Opc.Ua;
-using Opc.Ua.Server;
-using Opc.Ua.Sample;
-using System.Reflection;
-
 namespace MemoryBuffer {
+    using System;
+    using System.Collections.Generic;
+    using Opc.Ua;
+    using Opc.Ua.Server;
+    using Opc.Ua.Sample;
+    using System.Reflection;
 
     /// <summary>
     /// A node manager for a variety of test data.
