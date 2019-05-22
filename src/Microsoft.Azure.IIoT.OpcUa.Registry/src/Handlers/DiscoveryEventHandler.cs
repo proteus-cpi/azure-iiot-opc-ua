@@ -119,7 +119,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Handlers {
                 if (queue.Completed) {
                     try {
                         // Process discoveries
-                        await _registry.ProcessDiscoveryAsync(supervisorId,
+                        await _registry.ProcessDiscoveryResultsAsync(supervisorId,
                             queue.Result, queue.Events);
                     }
                     catch (Exception ex) {

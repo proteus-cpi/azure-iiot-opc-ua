@@ -21,7 +21,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
         /// <param name="result"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        Task ProcessDiscoveryAsync(string supervisorId, DiscoveryResultModel result,
-            IEnumerable<DiscoveryEventModel> events);
+        Task ProcessDiscoveryResultsAsync(string supervisorId, 
+            DiscoveryResultModel result, IEnumerable<DiscoveryEventModel> events);
     }
 }

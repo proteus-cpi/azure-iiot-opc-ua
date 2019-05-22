@@ -12,6 +12,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
     using Microsoft.Azure.IIoT.Crypto.KeyVault.Clients;
     using Microsoft.Azure.IIoT.Crypto.KeyVault.Runtime;
     using Microsoft.Azure.IIoT.OpcUa.Registry;
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Default;
     using Microsoft.Azure.IIoT.OpcUa.Registry.Tests;
     using Microsoft.Azure.IIoT.OpcUa.Vault;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Runtime;
@@ -50,7 +51,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
             _vaultConfig = new KeyVaultConfig(configuration);
             _logger = SerilogTestLogger.Create<CertificateAuthorityTestFixture>();
             if (!InvalidConfiguration()) {
-                ApplicationsDatabase = new ApplicationDatabase(null, _serviceConfig,
+                ApplicationsDatabase = new ApplicationDatabase(
+                    new DefaultEventBroker(), _serviceConfig,
                     new ItemContainerFactory(new CosmosDbServiceClient(_serviceConfig, _logger)), _logger);
 
                 var timeid = DateTime.UtcNow.ToFileTimeUtc() / 1000 % 10000;
@@ -73,14 +75,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     _keyVaultServiceClient,
                     _keyVaultServiceClient,
                     new KeyValueCrlStore(_keyVaultServiceClient, _logger),
-                    new CertificateRevoker(_keyVaultServiceClient, _logger),
-                    new CertificateFactory(_keyVaultServiceClient, _logger),
+                    new CertificateRevoker(_keyVaultServiceClient),
+                    new CertificateFactory(_keyVaultServiceClient),
                     _serviceConfig,
                     _logger);
                 _keyVaultServiceClient.PurgeAsync("groups", _groupId, CancellationToken.None).Wait();
                 Services = _keyVaultCertificateGroup;
 
-                CertificateAuthority = new CertificateManager(ApplicationsDatabase, Services,
+                CertificateAuthority = new CertificateManager(ApplicationsDatabase, 
+                    (IApplicationRegistryEvents)ApplicationsDatabase, Services,
                     new ItemContainerFactory(new CosmosDbServiceClient(_serviceConfig, _logger)), _logger);
                 RequestManagement = (IRequestManagement)CertificateAuthority;
 

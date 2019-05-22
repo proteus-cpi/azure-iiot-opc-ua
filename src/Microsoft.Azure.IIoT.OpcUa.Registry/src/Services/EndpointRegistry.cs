@@ -6,7 +6,6 @@
 namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Models;
     using Microsoft.Azure.IIoT.Exceptions;
-    using Microsoft.Azure.IIoT.Http;
     using Microsoft.Azure.IIoT.Hub;
     using Microsoft.Azure.IIoT.Hub.Models;
     using Microsoft.Azure.IIoT.Utils;
@@ -16,15 +15,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using System.Collections.Concurrent;
 
     /// <summary>
     /// Endpoint registry services using the IoT Hub twin services for endpoint
     /// identity registration/retrieval.  
     /// </summary>
     public sealed class EndpointRegistry : IEndpointRegistry, IEndpointRegistry2,
-        IEndpointBulkProcessor, IApplicationRegistryListener, IEndpointRegistryEvents, 
-        IDisposable {
+        IEndpointBulkProcessor, IApplicationRegistryListener, IDisposable {
 
         /// <summary>
         /// Create endpoint registry
@@ -32,13 +29,15 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         /// <param name="iothub"></param>
         /// <param name="events"></param>
         /// <param name="activate"></param>
+        /// <param name="broker"></param>
         /// <param name="logger"></param>
         public EndpointRegistry(IIoTHubTwinServices iothub, IApplicationRegistryEvents events,
-            IActivationServices<EndpointRegistrationModel> activate, ILogger logger) {
+            IActivationServices<EndpointRegistrationModel> activate, IEndpointRegistryBroker broker,
+            ILogger logger) {
             _iothub = iothub ?? throw new ArgumentNullException(nameof(iothub));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _activator = activate ?? throw new ArgumentNullException(nameof(activate));
-            _listeners = new ConcurrentDictionary<string, IEndpointRegistryListener>();
+            _broker = broker ?? throw new ArgumentNullException(nameof(broker));
 
             // Register for application registry events
             _unregister = events.Register(this);
@@ -47,13 +46,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         /// <inheritdoc/>
         public void Dispose() {
             _unregister?.Invoke();
-        }
-
-        /// <inheritdoc/>
-        public Action Register(IEndpointRegistryListener listener) {
-            var token = Guid.NewGuid().ToString();
-            _listeners.TryAdd(token, listener);
-            return () => _listeners.TryRemove(token, out var _);
         }
 
         /// <inheritdoc/>
@@ -172,51 +164,59 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                 throw new ArgumentException(nameof(endpointId));
             }
 
-            // Get existing endpoint and compare to see if we need to patch.
-            var twin = await _iothub.GetAsync(endpointId);
-            if (twin.Id != endpointId) {
-                throw new ArgumentException("Id must be same as twin to patch",
-                    nameof(endpointId));
-            }
+            while (true) {
+                try {
+                    // Get existing endpoint and compare to see if we need to patch.
+                    var twin = await _iothub.GetAsync(endpointId);
+                    if (twin.Id != endpointId) {
+                        throw new ArgumentException("Id must be same as twin to patch",
+                            nameof(endpointId));
+                    }
 
-            // Convert to twin registration
-            var registration = BaseRegistration.ToRegistration(twin, true)
-                as EndpointRegistration;
-            if (registration == null) {
-                throw new ResourceNotFoundException(
-                    $"{endpointId} is not a endpoint registration.");
-            }
+                    // Convert to twin registration
+                    var registration = BaseRegistration.ToRegistration(twin, true)
+                        as EndpointRegistration;
+                    if (registration == null) {
+                        throw new ResourceNotFoundException(
+                            $"{endpointId} is not a endpoint registration.");
+                    }
 
-            // Update registration from update request
-            var patched = registration.ToServiceModel();
+                    // Update registration from update request
+                    var patched = registration.ToServiceModel();
 
-            var duplicate = false;
-            if (request.User != null) {
-                patched.Registration.Endpoint.User = new CredentialModel();
+                    var duplicate = false;
+                    if (request.User != null) {
+                        patched.Registration.Endpoint.User = new CredentialModel();
 
-                if (request.User.Type != null) {
-                    // Change token type?  Always duplicate since id changes.
-                    duplicate = request.User.Type !=
-                        patched.Registration.Endpoint.User.Type;
+                        if (request.User.Type != null) {
+                            // Change token type?  Always duplicate since id changes.
+                            duplicate = request.User.Type !=
+                                patched.Registration.Endpoint.User.Type;
 
-                    patched.Registration.Endpoint.User.Type =
-                        (CredentialType)request.User.Type;
+                            patched.Registration.Endpoint.User.Type =
+                                (CredentialType)request.User.Type;
+                        }
+                        if ((patched.Registration.Endpoint.User.Type
+                            ?? CredentialType.None) != CredentialType.None) {
+                            patched.Registration.Endpoint.User.Value =
+                                request.User.Value;
+                        }
+                        else {
+                            patched.Registration.Endpoint.User.Value = null;
+                        }
+                    }
+
+                    // Patch
+                    await _iothub.PatchAsync(EndpointRegistration.Patch(
+                        duplicate ? null : registration,
+                        EndpointRegistration.FromServiceModel(patched, registration.IsDisabled)));
+                    return;
                 }
-                if ((patched.Registration.Endpoint.User.Type
-                    ?? CredentialType.None) != CredentialType.None) {
-                    patched.Registration.Endpoint.User.Value =
-                        request.User.Value;
-                }
-                else {
-                    patched.Registration.Endpoint.User.Value = null;
+                catch (ResourceOutOfDateException ex) {
+                    _logger.Debug(ex, "Retrying updating endpoint...");
+                    continue;
                 }
             }
-
-            // Patch
-            await _iothub.CreateOrUpdateAsync(EndpointRegistration.Patch(
-                duplicate ? null : registration,
-                EndpointRegistration.FromServiceModel(patched, registration.IsDisabled)));
-                        // To have duplicate item disabled, too if needed
         }
 
         /// <inheritdoc/>
@@ -257,9 +257,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                     await SetSupervisorTwinSecretAsync(registration.SupervisorId,
                         registration.DeviceId, secret);
                     // Write twin activation status in twin settings
-                    await _iothub.CreateOrUpdateAsync(EndpointRegistration.Patch(
+                    await _iothub.PatchAsync(EndpointRegistration.Patch(
                         registration, EndpointRegistration.FromServiceModel(patched,
-                            registration.IsDisabled)));
+                            registration.IsDisabled)), true);
                 }
                 catch (Exception ex) {
                     // Undo activation
@@ -305,9 +305,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             // Mark as deactivated
             if (registration.Activated ?? false) {
                 patched.ActivationState = EndpointActivationState.Deactivated;
-                await _iothub.CreateOrUpdateAsync(EndpointRegistration.Patch(
+                await _iothub.PatchAsync(EndpointRegistration.Patch(
                     registration, EndpointRegistration.FromServiceModel(patched,
-                        registration.IsDisabled)));
+                        registration.IsDisabled)), true);
             }
         }
 
@@ -356,9 +356,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                                     twin.Id, null);
                             }
                         }
-                        await _iothub.CreateOrUpdateAsync(EndpointRegistration.Patch(
+                        await _iothub.PatchAsync(EndpointRegistration.Patch(
                             endpoint, EndpointRegistration.FromServiceModel(
-                                endpoint.ToServiceModel(), true))); // Disable
+                                endpoint.ToServiceModel(), true)), true); // Disable
                     }
                     catch (Exception ex) {
                         _logger.Debug(ex, "Failed disabling of twin {twin}", twin.Id);
@@ -454,10 +454,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                             await _iothub.DeleteAsync(item.DeviceId);
                         }
                         else if (!(item.IsDisabled ?? false)) {
-                            await _iothub.CreateOrUpdateAsync(
+                            await _iothub.PatchAsync(
                                 EndpointRegistration.Patch(item,
                                     EndpointRegistration.FromServiceModel(
-                                        item.ToServiceModel(), true)));
+                                        item.ToServiceModel(), true)), true);
                         }
                         else {
                             unchanged++;
@@ -486,8 +486,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                         await ApplyActivationFilterAsync(context.DiscoveryConfig?.ActivationFilter,
                             patch);
                         if (exists != patch) {
-                            await _iothub.CreateOrUpdateAsync(EndpointRegistration.Patch(
-                                exists, patch));
+                            await _iothub.PatchAsync(EndpointRegistration.Patch(
+                                exists, patch), true);
                             updated++;
                             continue;
                         }
@@ -505,7 +505,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                 try {
                     await ApplyActivationFilterAsync(context.DiscoveryConfig?.ActivationFilter,
                         item);
-                    await _iothub.CreateOrUpdateAsync(EndpointRegistration.Patch(null, item));
+                    await _iothub.CreateAsync(EndpointRegistration.Patch(null, item), true);
                     added++;
                 }
                 catch (Exception ex) {
@@ -653,20 +653,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
             return registration.ToServiceModel();
         }
 
-        /// <summary>
-        /// Call listeners
-        /// </summary>
-        /// <param name="evt"></param>
-        /// <returns></returns>
-        private Task NotifyAllAsync(Func<IEndpointRegistryListener, Task> evt) {
-            return Task
-                .WhenAll(_listeners.Select(l => evt(l.Value)).ToArray())
-                .ContinueWith(t => Task.CompletedTask);
-        }
-
         private readonly IActivationServices<EndpointRegistrationModel> _activator;
+        private readonly IEndpointRegistryBroker _broker;
         private readonly Action _unregister;
-        private readonly ConcurrentDictionary<string, IEndpointRegistryListener> _listeners;
         private readonly IIoTHubTwinServices _iothub;
         private readonly ILogger _logger;
     }

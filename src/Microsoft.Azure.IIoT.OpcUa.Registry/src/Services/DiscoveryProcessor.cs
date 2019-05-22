@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         }
 
         /// <inheritdoc/>
-        public async Task ProcessDiscoveryAsync(string supervisorId, DiscoveryResultModel result,
+        public async Task ProcessDiscoveryResultsAsync(string supervisorId, DiscoveryResultModel result,
             IEnumerable<DiscoveryEventModel> events) {
             if (string.IsNullOrEmpty(supervisorId)) {
                 throw new ArgumentNullException(nameof(supervisorId));

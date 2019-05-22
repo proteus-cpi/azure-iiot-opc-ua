@@ -478,7 +478,7 @@ namespace Opc.Ua.Sample {
                 // assign a default value to any variable value.
 
                 if (source is BaseVariableState variable && variable.Value == null) {
-                    variable.Value = TypeInfo.GetDefaultValue(variable.DataType, variable.ValueRank, Server.TypeTree);
+                    variable.Value = Ua.TypeInfo.GetDefaultValue(variable.DataType, variable.ValueRank, Server.TypeTree);
                 }
 
                 // add reference from supertype for type nodes.
@@ -2041,9 +2041,9 @@ namespace Opc.Ua.Sample {
             }
 
             // check the datatype.
-            var builtInType = TypeInfo.GetBuiltInType(variable.DataType, Server.TypeTree);
+            var builtInType = Ua.TypeInfo.GetBuiltInType(variable.DataType, Server.TypeTree);
 
-            if (!TypeInfo.IsNumericType(builtInType)) {
+            if (!Ua.TypeInfo.IsNumericType(builtInType)) {
                 return StatusCodes.BadMonitoredItemFilterUnsupported;
             }
 

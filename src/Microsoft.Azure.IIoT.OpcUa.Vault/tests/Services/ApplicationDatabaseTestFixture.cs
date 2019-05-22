@@ -8,6 +8,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
     using Microsoft.Azure.IIoT.Auth.Clients;
     using Microsoft.Azure.IIoT.Auth.Runtime;
     using Microsoft.Azure.IIoT.OpcUa.Registry;
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Default;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Runtime;
     using Microsoft.Azure.IIoT.OpcUa.Vault.Services;
     using Microsoft.Azure.IIoT.Storage.CosmosDb.Services;
@@ -38,7 +39,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Tests {
             _logger = SerilogTestLogger.Create<ApplicationDatabaseTestFixture>();
             if (!InvalidConfiguration()) {
                 RandomGenerator = new ApplicationTestDataGenerator(kRandomStart);
-                ApplicationsDatabase = new ApplicationDatabase(null, _serviceConfig,
+                ApplicationsDatabase = new ApplicationDatabase(
+                    new DefaultEventBroker(), _serviceConfig,
                     new ItemContainerFactory(new CosmosDbServiceClient(_serviceConfig, _logger)), _logger);
                 // create test set
                 ApplicationTestSet = new List<ApplicationTestData>();

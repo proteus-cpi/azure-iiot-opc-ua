@@ -420,10 +420,10 @@ Operations (Mutually exclusive):
                 config, logger);
 
 
-            await registry.CreateOrUpdateAsync(new DeviceTwinModel {
+            await registry.CreateAsync(new DeviceTwinModel {
                 Id = deviceId,
                 ModuleId = moduleId
-            });
+            }, true);
 
             var module = await registry.GetRegistrationAsync(deviceId, moduleId);
             Console.WriteLine(JsonConvert.SerializeObject(module));
@@ -459,7 +459,7 @@ Operations (Mutually exclusive):
                         item.Properties.Desired.Add(property, null);
                     }
                 }
-                await registry.CreateOrUpdateAsync(item);
+                await registry.CreateAsync(item, true);
             }
         }
 
@@ -475,7 +475,7 @@ Operations (Mutually exclusive):
             var result = await registry.QueryDeviceTwinsAsync(
                 "SELECT * from devices where IS_DEFINED(tags.DeviceType)");
             foreach (var item in result) {
-                await registry.DeleteAsync(item.Id, item.ModuleId);
+                await registry.DeleteAsync(item.Id, item.ModuleId, null);
             }
         }
 

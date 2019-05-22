@@ -69,8 +69,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Tests {
                     _keyVaultServiceClient, 
                     _keyVaultServiceClient, 
                     new KeyValueCrlStore(_keyVaultServiceClient, _logger),
-                    new CertificateRevoker(_keyVaultServiceClient, _logger),
-                    new CertificateFactory(_keyVaultServiceClient, _logger),
+                    new CertificateRevoker(_keyVaultServiceClient),
+                    new CertificateFactory(_keyVaultServiceClient),
                     _serviceConfig, 
                     _logger);
 

@@ -14,7 +14,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     using Microsoft.Azure.IIoT.Utils;
     using Serilog;
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -23,33 +22,26 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
     /// The default cosmos db based implementation of the application database.
     /// </summary>
     public sealed class ApplicationDatabase : IApplicationRegistry,
-        IApplicationRegistry2, IApplicationRegistryEvents, IApplicationBulkProcessor {
+        IApplicationRegistry2, IApplicationBulkProcessor {
 
         /// <summary>
         /// Create database
         /// </summary>
-        /// <param name="listeners"></param>
+        /// <param name="broker"></param>
         /// <param name="config"></param>
         /// <param name="db"></param>
         /// <param name="logger"></param>
-        public ApplicationDatabase(IEnumerable<IApplicationRegistryListener> listeners,
+        public ApplicationDatabase(IApplicationRegistryBroker broker,
             IVaultConfig config, IItemContainerFactory db, ILogger logger) {
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _broker = broker ?? throw new ArgumentNullException(nameof(broker));
             if (db == null) {
                 throw new ArgumentNullException(nameof(db));
             }
             var container = db.OpenAsync().Result;
             _applications = container.AsDocuments();
             _index = new ContainerIndex(container);
-            _listeners = new ConcurrentDictionary<string, IApplicationRegistryListener>();
-        }
-
-        /// <inheritdoc/>
-        public Action Register(IApplicationRegistryListener listener) {
-            var token = Guid.NewGuid().ToString();
-            _listeners.TryAdd(token, listener);
-            return () => _listeners.TryRemove(token, out var _);
         }
 
         /// <inheritdoc/>
@@ -73,10 +65,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 var result = await _applications.AddAsync(document);
 
                 var app = result.Value.ToServiceModel();
-                await NotifyAllAsync(l => l.OnApplicationNewAsync(app)); // TODO:  Add authority id from context
-                await NotifyAllAsync(l => l.OnApplicationEnabledAsync(app)); // TODO:  Add authority id from context
+                await _broker.NotifyAllAsync(l => l.OnApplicationNewAsync(app)); 
+                // TODO:  Add authority id from context
+                await _broker.NotifyAllAsync(l => l.OnApplicationEnabledAsync(app)); 
+                // TODO:  Add authority id from context
                 if (autoApprove) {
-                    await NotifyAllAsync(l => l.OnApplicationApprovedAsync(app)); // TODO:  Add authority id from context
+                    await _broker.NotifyAllAsync(l => l.OnApplicationApprovedAsync(app)); 
+                    // TODO:  Add authority id from context
                 }
 
                 return new ApplicationRegistrationResultModel {
@@ -110,7 +105,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
                 try {
                     var result = await _applications.ReplaceAsync(document, application);
                     var app = result.Value.ToServiceModel();
-                    await NotifyAllAsync(l => l.OnApplicationUpdatedAsync(app)); // TODO:  Add authority id from context
+                    await _broker.NotifyAllAsync(l => l.OnApplicationUpdatedAsync(app)); // TODO:  Add authority id from context
                     break;
                 }
                 catch (ResourceOutOfDateException) {
@@ -124,14 +119,14 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         public async Task ApproveApplicationAsync(string applicationId, bool force) {
             var app = await UpdateApplicationStateAsync(applicationId, ApplicationState.Approved,
                 s => s == ApplicationState.New || force);
-            await NotifyAllAsync(l => l.OnApplicationApprovedAsync(app)); // TODO:  Add authority id from context
+            await _broker.NotifyAllAsync(l => l.OnApplicationApprovedAsync(app)); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
         public async Task RejectApplicationAsync(string applicationId, bool force) {
             var app = await UpdateApplicationStateAsync(applicationId, ApplicationState.Rejected,
                 s => s == ApplicationState.New || force);
-            await NotifyAllAsync(l => l.OnApplicationRejectedAsync(app)); // TODO:  Add authority id from context
+            await _broker.NotifyAllAsync(l => l.OnApplicationRejectedAsync(app)); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
@@ -153,7 +148,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
 
                     // Success -- Notify others to clean up
                     var app = document.Value.ToServiceModel();
-                    await NotifyAllAsync(l => l.OnApplicationDeletedAsync(app)); // TODO:  Add authority id from context
+                    await _broker.NotifyAllAsync(l => l.OnApplicationDeletedAsync(app)); // TODO:  Add authority id from context
 
                     // Try free record id
                     await Try.Async(() => _index.FreeAsync(document.Value.ID));
@@ -169,13 +164,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
         /// <inheritdoc/>
         public async Task DisableApplicationAsync(string applicationId) {
             var app = await UpdateEnabledDisabledAsync(applicationId, false);
-            await NotifyAllAsync(l => l.OnApplicationDisabledAsync(app)); // TODO:  Add authority id from context
+            await _broker.NotifyAllAsync(l => l.OnApplicationDisabledAsync(app)); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
         public async Task EnableApplicationAsync(string applicationId) {
             var app = await UpdateEnabledDisabledAsync(applicationId, true);
-            await NotifyAllAsync(l => l.OnApplicationEnabledAsync(app)); // TODO:  Add authority id from context
+            await _broker.NotifyAllAsync(l => l.OnApplicationEnabledAsync(app)); // TODO:  Add authority id from context
         }
 
         /// <inheritdoc/>
@@ -509,22 +504,11 @@ namespace Microsoft.Azure.IIoT.OpcUa.Vault.Services {
             }
         }
 
-        /// <summary>
-        /// Call listeners
-        /// </summary>
-        /// <param name="evt"></param>
-        /// <returns></returns>
-        private Task NotifyAllAsync(Func<IApplicationRegistryListener, Task> evt) {
-            return Task
-                .WhenAll(_listeners.Select(l => evt(l.Value)).ToArray())
-                .ContinueWith(t => Task.CompletedTask);
-        }
-
         private const int kDefaultRecordsPerQuery = 10;
         private readonly ILogger _logger;
+        private readonly IApplicationRegistryBroker _broker;
         private readonly IContainerIndex _index;
         private readonly IDocuments _applications;
         private readonly IVaultConfig _config;
-        private readonly ConcurrentDictionary<string, IApplicationRegistryListener> _listeners;
     }
 }

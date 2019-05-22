@@ -5,6 +5,7 @@
 
 namespace Microsoft.Azure.IIoT.OpcUa.Registry {
     using Microsoft.Azure.IIoT.OpcUa.Registry.Services;
+    using Microsoft.Azure.IIoT.OpcUa.Registry.Default;
     using Autofac;
 
     /// <summary>
@@ -19,6 +20,8 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry {
         protected override void Load(ContainerBuilder builder) {
 
             // Services
+            builder.RegisterType<DefaultEventBroker>()
+                .AsImplementedInterfaces().SingleInstance();
             builder.RegisterType<EndpointRegistry>()
                 .AsImplementedInterfaces().SingleInstance();
             builder.RegisterType<ApplicationRegistry>()

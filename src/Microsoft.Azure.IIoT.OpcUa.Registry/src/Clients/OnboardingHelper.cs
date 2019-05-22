@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Clients {
                 await iothub.GetAsync(kId);
             }
             catch (ResourceNotFoundException) {
-                await iothub.CreateOrUpdateAsync(new DeviceTwinModel {
+                await iothub.CreateAsync(new DeviceTwinModel {
                     Id = kId
                 });
             }

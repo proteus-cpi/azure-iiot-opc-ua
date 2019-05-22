@@ -57,93 +57,102 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
 
             // Get existing endpoint and compare to see if we need to patch.
             var deviceId = SupervisorModelEx.ParseDeviceId(supervisorId, out var moduleId);
-            var twin = await _iothub.GetAsync(deviceId, moduleId);
 
-            if (twin.Id != deviceId && twin.ModuleId != moduleId) {
-                throw new ArgumentException("Id must be same as twin to patch",
-                    nameof(supervisorId));
-            }
+            while (true) {
+                try {
+                    var twin = await _iothub.GetAsync(deviceId, moduleId);
+                    if (twin.Id != deviceId && twin.ModuleId != moduleId) {
+                        throw new ArgumentException("Id must be same as twin to patch",
+                            nameof(supervisorId));
+                    }
 
-            var registration = BaseRegistration.ToRegistration(twin, true)
-                as SupervisorRegistration;
-            if (registration == null) {
-                throw new ResourceNotFoundException(
-                    $"{supervisorId} is not a supervisor registration.");
-            }
+                    var registration = BaseRegistration.ToRegistration(twin, true)
+                        as SupervisorRegistration;
+                    if (registration == null) {
+                        throw new ResourceNotFoundException(
+                            $"{supervisorId} is not a supervisor registration.");
+                    }
 
-            // Update registration from update request
-            var patched = registration.ToServiceModel();
-            if (request.Discovery != null) {
-                patched.Discovery = (DiscoveryMode)request.Discovery;
-            }
+                    // Update registration from update request
+                    var patched = registration.ToServiceModel();
+                    if (request.Discovery != null) {
+                        patched.Discovery = (DiscoveryMode)request.Discovery;
+                    }
 
-            if (request.SiteId != null) {
-                patched.SiteId = string.IsNullOrEmpty(request.SiteId) ?
-                    null : request.SiteId;
-            }
+                    if (request.SiteId != null) {
+                        patched.SiteId = string.IsNullOrEmpty(request.SiteId) ?
+                            null : request.SiteId;
+                    }
 
-            if (request.LogLevel != null) {
-                patched.LogLevel = request.LogLevel == SupervisorLogLevel.Information ?
-                    null : request.LogLevel;
-            }
+                    if (request.LogLevel != null) {
+                        patched.LogLevel = request.LogLevel == SupervisorLogLevel.Information ?
+                            null : request.LogLevel;
+                    }
 
-            if (request.DiscoveryConfig != null) {
-                if (patched.DiscoveryConfig == null) {
-                    patched.DiscoveryConfig = new DiscoveryConfigModel();
+                    if (request.DiscoveryConfig != null) {
+                        if (patched.DiscoveryConfig == null) {
+                            patched.DiscoveryConfig = new DiscoveryConfigModel();
+                        }
+                        if (request.DiscoveryConfig.AddressRangesToScan != null) {
+                            patched.DiscoveryConfig.AddressRangesToScan =
+                                string.IsNullOrEmpty(
+                                    request.DiscoveryConfig.AddressRangesToScan.Trim()) ?
+                                        null : request.DiscoveryConfig.AddressRangesToScan;
+                        }
+                        if (request.DiscoveryConfig.PortRangesToScan != null) {
+                            patched.DiscoveryConfig.PortRangesToScan =
+                                string.IsNullOrEmpty(
+                                    request.DiscoveryConfig.PortRangesToScan.Trim()) ?
+                                        null : request.DiscoveryConfig.PortRangesToScan;
+                        }
+                        if (request.DiscoveryConfig.IdleTimeBetweenScans != null) {
+                            patched.DiscoveryConfig.IdleTimeBetweenScans =
+                                request.DiscoveryConfig.IdleTimeBetweenScans;
+                        }
+                        if (request.DiscoveryConfig.MaxNetworkProbes != null) {
+                            patched.DiscoveryConfig.MaxNetworkProbes =
+                                request.DiscoveryConfig.MaxNetworkProbes <= 0 ?
+                                    null : request.DiscoveryConfig.MaxNetworkProbes;
+                        }
+                        if (request.DiscoveryConfig.NetworkProbeTimeout != null) {
+                            patched.DiscoveryConfig.NetworkProbeTimeout =
+                                request.DiscoveryConfig.NetworkProbeTimeout.Value.Ticks == 0 ?
+                                    null : request.DiscoveryConfig.NetworkProbeTimeout;
+                        }
+                        if (request.DiscoveryConfig.MaxPortProbes != null) {
+                            patched.DiscoveryConfig.MaxPortProbes =
+                                request.DiscoveryConfig.MaxPortProbes <= 0 ?
+                                    null : request.DiscoveryConfig.MaxPortProbes;
+                        }
+                        if (request.DiscoveryConfig.MinPortProbesPercent != null) {
+                            patched.DiscoveryConfig.MinPortProbesPercent =
+                                request.DiscoveryConfig.MinPortProbesPercent <= 0 ||
+                                request.DiscoveryConfig.MinPortProbesPercent > 100 ?
+                                    null : request.DiscoveryConfig.MinPortProbesPercent;
+                        }
+                        if (request.DiscoveryConfig.PortProbeTimeout != null) {
+                            patched.DiscoveryConfig.PortProbeTimeout =
+                                request.DiscoveryConfig.PortProbeTimeout.Value.Ticks == 0 ?
+                                    null : request.DiscoveryConfig.PortProbeTimeout;
+                        }
+                        if (request.DiscoveryConfig.ActivationFilter != null) {
+                            patched.DiscoveryConfig.ActivationFilter =
+                                request.DiscoveryConfig.ActivationFilter.SecurityMode == null &&
+                                request.DiscoveryConfig.ActivationFilter.SecurityPolicies == null &&
+                                request.DiscoveryConfig.ActivationFilter.TrustLists == null ?
+                                    null : request.DiscoveryConfig.ActivationFilter;
+                        }
+                    }
+                    // Patch
+                    await _iothub.PatchAsync(SupervisorRegistration.Patch(
+                        registration, SupervisorRegistration.FromServiceModel(patched)));
+                    return;
                 }
-                if (request.DiscoveryConfig.AddressRangesToScan != null) {
-                    patched.DiscoveryConfig.AddressRangesToScan =
-                        string.IsNullOrEmpty(
-                            request.DiscoveryConfig.AddressRangesToScan.Trim()) ?
-                                null : request.DiscoveryConfig.AddressRangesToScan;
-                }
-                if (request.DiscoveryConfig.PortRangesToScan != null) {
-                    patched.DiscoveryConfig.PortRangesToScan =
-                        string.IsNullOrEmpty(
-                            request.DiscoveryConfig.PortRangesToScan.Trim()) ?
-                                null : request.DiscoveryConfig.PortRangesToScan;
-                }
-                if (request.DiscoveryConfig.IdleTimeBetweenScans != null) {
-                    patched.DiscoveryConfig.IdleTimeBetweenScans =
-                        request.DiscoveryConfig.IdleTimeBetweenScans;
-                }
-                if (request.DiscoveryConfig.MaxNetworkProbes != null) {
-                    patched.DiscoveryConfig.MaxNetworkProbes =
-                        request.DiscoveryConfig.MaxNetworkProbes <= 0 ?
-                            null : request.DiscoveryConfig.MaxNetworkProbes;
-                }
-                if (request.DiscoveryConfig.NetworkProbeTimeout != null) {
-                    patched.DiscoveryConfig.NetworkProbeTimeout =
-                        request.DiscoveryConfig.NetworkProbeTimeout.Value.Ticks == 0 ?
-                            null : request.DiscoveryConfig.NetworkProbeTimeout;
-                }
-                if (request.DiscoveryConfig.MaxPortProbes != null) {
-                    patched.DiscoveryConfig.MaxPortProbes =
-                        request.DiscoveryConfig.MaxPortProbes <= 0 ?
-                            null : request.DiscoveryConfig.MaxPortProbes;
-                }
-                if (request.DiscoveryConfig.MinPortProbesPercent != null) {
-                    patched.DiscoveryConfig.MinPortProbesPercent =
-                        request.DiscoveryConfig.MinPortProbesPercent <= 0 ||
-                        request.DiscoveryConfig.MinPortProbesPercent > 100 ?
-                            null : request.DiscoveryConfig.MinPortProbesPercent;
-                }
-                if (request.DiscoveryConfig.PortProbeTimeout != null) {
-                    patched.DiscoveryConfig.PortProbeTimeout =
-                        request.DiscoveryConfig.PortProbeTimeout.Value.Ticks == 0 ?
-                            null : request.DiscoveryConfig.PortProbeTimeout;
-                }
-                if (request.DiscoveryConfig.ActivationFilter != null) {
-                    patched.DiscoveryConfig.ActivationFilter =
-                        request.DiscoveryConfig.ActivationFilter.SecurityMode == null &&
-                        request.DiscoveryConfig.ActivationFilter.SecurityPolicies == null &&
-                        request.DiscoveryConfig.ActivationFilter.TrustLists == null ?
-                            null : request.DiscoveryConfig.ActivationFilter;
+                catch (ResourceOutOfDateException ex) {
+                    _logger.Debug(ex, "Retrying updating supervisor...");
+                    continue;
                 }
             }
-            // Patch
-            await _iothub.CreateOrUpdateAsync(SupervisorRegistration.Patch(
-                registration, SupervisorRegistration.FromServiceModel(patched)));
         }
 
         /// <inheritdoc/>
