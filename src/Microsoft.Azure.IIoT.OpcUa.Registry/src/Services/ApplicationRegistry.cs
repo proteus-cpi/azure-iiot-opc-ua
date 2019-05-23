@@ -156,13 +156,6 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
         }
 
         /// <inheritdoc/>
-        public Task<QueryApplicationsByIdResultModel> QueryApplicationsByIdAsync(
-            QueryApplicationsByIdRequestModel request) {
-            // TODO
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc/>
         public async Task UpdateApplicationAsync(string applicationId,
             ApplicationRegistrationUpdateModel request) {
             if (request == null) {
@@ -240,6 +233,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                     .Select(ep => ep.Registration)
                     .ToList()
             }.SetSecurityAssessment();
+        }
+
+        /// <inheritdoc/>
+        public Task<QueryApplicationsByIdResultModel> QueryApplicationsByIdAsync(
+            QueryApplicationsByIdRequestModel request) {
+            // TODO
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc/>
