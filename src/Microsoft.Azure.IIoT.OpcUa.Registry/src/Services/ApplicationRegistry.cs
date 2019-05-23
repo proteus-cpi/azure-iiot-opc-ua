@@ -64,6 +64,13 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                         AuthorityId = null, // TODO: Add authority Id
                         Time = DateTime.UtcNow
                     },
+                    Approved = null,
+                    Updated = null,
+                    Certificate = null, RecordId = null,
+                    ApplicationId = null,
+                    State = ApplicationState.New,
+                    NotSeenSince = DateTime.UtcNow,
+                    SupervisorId = null, 
                     HostAddresses = null,
                 });
 
@@ -111,6 +118,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                             AuthorityId = null, // TODO:  Add authority id from context
                             Time = DateTime.UtcNow
                         };
+                        application.NotSeenSince = DateTime.UtcNow;
                         await _iothub.PatchAsync(ApplicationRegistration.Patch(
                             registration, ApplicationRegistration.FromServiceModel(
                                 registration.ToServiceModel(), true)));
@@ -139,9 +147,10 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                             AuthorityId = null, // TODO:  Add authority id from context
                             Time = DateTime.UtcNow
                         };
+                        application.NotSeenSince = null;
                         await _iothub.PatchAsync(ApplicationRegistration.Patch(
                             registration, ApplicationRegistration.FromServiceModel(
-                                registration.ToServiceModel(), true)));
+                                registration.ToServiceModel(), false)));
                     }
                     await _broker.NotifyAllAsync(l => l.OnApplicationEnabledAsync(application));
                     // TODO:  Add authority id from context
@@ -507,6 +516,7 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                                         AuthorityId = null, // TODO Add authority
                                         Time = DateTime.UtcNow
                                     };
+                                    application.NotSeenSince = application.Updated.Time;
                                     await _iothub.PatchAsync(ApplicationRegistration.Patch(
                                         item, ApplicationRegistration.FromServiceModel(
                                             application, true)), true);
@@ -545,8 +555,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                                 AuthorityId = null, // TODO Add authority
                                 Time = DateTime.UtcNow
                             };
+                            application.NotSeenSince = null;
                             await _iothub.PatchAsync(ApplicationRegistration.Patch(exists,
-                                ApplicationRegistration.FromServiceModel(application)), true);
+                                ApplicationRegistration.FromServiceModel(application, false)), true);
 
                             if (exists.IsDisabled ?? false) {
                                 await _broker.NotifyAllAsync(l => l.OnApplicationEnabledAsync(application));
@@ -582,9 +593,9 @@ namespace Microsoft.Azure.IIoT.OpcUa.Registry.Services {
                         AuthorityId = null, // TODO Add authority
                         Time = DateTime.UtcNow
                     };
-
+                    application.NotSeenSince = null;
                     var twin = ApplicationRegistration.Patch(null, 
-                        ApplicationRegistration.FromServiceModel(application));
+                        ApplicationRegistration.FromServiceModel(application, false));
                     await _iothub.CreateAsync(twin, true);
 
                     // Notify addition!
